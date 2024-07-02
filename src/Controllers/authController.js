@@ -1,23 +1,32 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
+
 exports.login = async (req, res) => {
   try {
     const { numeroEmpleado, numeroCuenta, contrasena } = req.body;
     console.log('Datos recibidos:', { numeroEmpleado, numeroCuenta, contrasena });
 
-    let identifier;
-    if (numeroEmpleado) {
-      identifier = numeroEmpleado;
-    } else if (numeroCuenta) {
-      identifier = numeroCuenta;
-    } else {
+    if (!numeroEmpleado && !numeroCuenta) {
       return res.status(400).json({ message: 'Debe proporcionar un número de empleado o número de cuenta' });
     }
 
-    console.log('Identificador a buscar:', identifier);
+    if (!contrasena) {
+      return res.status(400).json({ message: 'Debe proporcionar una contraseña' });
+    }
 
-    const user = await User.findByIdentifier(identifier);
+    let identifier, userType;
+    if (numeroEmpleado) {
+      identifier = numeroEmpleado;
+      userType = 'empleado';
+    } else {
+      identifier = numeroCuenta;
+      userType = 'estudiante';
+    }
+
+    console.log('Identificador a buscar:', identifier, 'Tipo de usuario:', userType);
+
+    const user = await User.findByIdentifier(identifier, userType);
 
     if (!user) {
       console.log('Usuario no encontrado');
@@ -37,23 +46,23 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { 
         userId: user.id, 
-        tipo: user.tipo,
-        roles: roles.map(r => r.nombre)
+        tipo: userType,
+        roles: roles
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
     res.json({ 
-      message: 'Login exitoso', 
+      token,
       user: { 
         id: user.id, 
         nombre: user.nombre, 
         apellido: user.apellido,
-        tipo: user.tipo,
-        roles: roles.map(r => r.nombre)
-      },
-      token 
+        tipo: userType,
+        roles: roles,
+        ...(userType === 'empleado' ? { numeroEmpleado: identifier } : { numeroCuenta: identifier })
+      }
     });
 
   } catch (error) {
