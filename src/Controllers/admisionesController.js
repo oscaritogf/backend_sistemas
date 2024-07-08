@@ -9,6 +9,13 @@ exports.createAdmision = async (req, res) => {
       id_Centro, id_Carrera, id_Sd_Carrera, email, certificado
     } = req.body;
 
+    const intentosExistentes =  await Admision.getIntentosByDNI(dni);
+
+    //vrifica el numero de intentos maximo
+    if(intentosExistentes >=3){
+      return res.status(400).json({message: "Has alcanzo el numero de intentos maximo peritido"});
+    }
+
     let imagen_url = '';
     if (certificado) {
       const result = await cloudinary.uploader.upload(certificado, {
@@ -19,13 +26,14 @@ exports.createAdmision = async (req, res) => {
 
     const admisionData = {
       dni, primer_Nombre, segundo_Nombre, primer_Apellido, segundo_Apellido,
-      id_Centro, id_Carrera, id_Sd_Carrera, email, intentos: 1, imagen: imagen_url
+      id_Centro, id_Carrera, id_Sd_Carrera, email, intentos: intentosExistentes+1, imagen: imagen_url
     };
 
     
     const newAdmision = await Admision.create(admisionData);
     //aqui envia el correo 
-    await sendConfirmationEmail(email, primer_Nombre)
+    await sendConfirmationEmail(email, primer_Nombre);
+    
     res.status(201).json(newAdmision);
   } catch (error) {
     console.error('error en ceate Admisiones', error)
