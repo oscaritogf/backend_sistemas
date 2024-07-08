@@ -13,7 +13,7 @@ exports.createAdmision = async (req, res) => {
 
     //vrifica el numero de intentos maximo
     if(intentosExistentes >=3){
-      return res.status(400).json({message: "Has alcanzo el numero de intentos maximo peritido"});
+      return res.status(400).json({message: "Has alcanzo el numero maximo de intentos permitido"});
     }
 
     let imagen_url = '';
