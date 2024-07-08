@@ -1,5 +1,6 @@
 const Admision = require('../models/Admisiones');
 const cloudinary = require('../config/cloudinary');
+const {sendConfirmationEmail} = require('../utils/emailService')
 
 exports.createAdmision = async (req, res) => {
   try {
@@ -23,6 +24,8 @@ exports.createAdmision = async (req, res) => {
 
     
     const newAdmision = await Admision.create(admisionData);
+    //aqui envia el correo 
+    await sendConfirmationEmail(email, primer_Nombre)
     res.status(201).json(newAdmision);
   } catch (error) {
     console.error('error en ceate Admisiones', error)
