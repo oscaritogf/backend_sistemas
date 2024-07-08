@@ -5,23 +5,26 @@ exports.createAdmision = async (req, res) => {
   try {
     const { 
       dni, primer_Nombre, segundo_Nombre, primer_Apellido, segundo_Apellido,
-      id_Centro, id_Carrera, id_Sd_Carrera
+      id_Centro, id_Carrera, id_Sd_Carrera, email, certificado
     } = req.body;
 
     let imagen_url = '';
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
+    if (certificado) {
+      const result = await cloudinary.uploader.upload(certificado, {
+        folder: 'certificado'
+    });
       imagen_url = result.secure_url;
     }
 
     const admisionData = {
       dni, primer_Nombre, segundo_Nombre, primer_Apellido, segundo_Apellido,
-      id_Centro, id_Carrera, id_Sd_Carrera, intentos: 1, imagen: imagen_url
+      id_Centro, id_Carrera, id_Sd_Carrera, email, intentos: 1, imagen: imagen_url
     };
 
     const newAdmision = await Admision.create(admisionData);
     res.status(201).json(newAdmision);
   } catch (error) {
+    console.error('error en ceate Admisiones', error)
     res.status(500).json({ message: error.message });
   }
 };
