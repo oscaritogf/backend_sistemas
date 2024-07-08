@@ -21,6 +21,7 @@ exports.createAdmision = async (req, res) => {
       id_Centro, id_Carrera, id_Sd_Carrera, email, intentos: 1, imagen: imagen_url
     };
 
+    
     const newAdmision = await Admision.create(admisionData);
     res.status(201).json(newAdmision);
   } catch (error) {
