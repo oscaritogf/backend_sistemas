@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 class User {
   
     static async findByIdentifier(identifier, userType) {
-      console.log('Buscando usuario con identificador:', identifier, 'Tipo:', userType);
+  
     
       let data, error;
     
