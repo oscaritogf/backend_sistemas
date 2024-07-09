@@ -9,6 +9,23 @@ exports.createAdmision = async (req, res) => {
       id_Centro, id_Carrera, id_Sd_Carrera, email, certificado
     } = req.body;
 
+// Validación de carreras
+    const carreras = await Admision.getCarreras();
+    const carrera1 = carreras.find(c => c.id_Carrera === parseInt(id_Carrera));
+    const carrera2 = carreras.find(c => c.id_Carrera === parseInt(id_Sd_Carrera));
+
+    if (carrera1 && carrera2) {
+      const facultadIngenieria = carreras.find(c => c.Facultades.nombre.toLowerCase().includes('ingeniería'))?.Facultades.id_Facultad;
+      const facultadMedicina = carreras.find(c => c.Facultades.nombre.toLowerCase().includes('medicina'))?.Facultades.id_Facultad;
+
+      if (
+        (carrera1.id_Facultad === facultadIngenieria && carrera2.id_Facultad === facultadMedicina) ||
+        (carrera1.id_Facultad === facultadMedicina && carrera2.id_Facultad === facultadIngenieria)
+      ) {
+        return res.status(400).json({ message: 'No puedes elegir una carrera de Ingeniería y otra de Medicina al mismo tiempo' });
+      }
+    }
+
     const intentosExistentes =  await Admision.getIntentosByDNI(dni);
 
     //vrifica el numero de intentos maximo
@@ -36,7 +53,7 @@ exports.createAdmision = async (req, res) => {
     
     res.status(201).json(newAdmision);
   } catch (error) {
-    console.error('error en ceate Admisiones', error)
+    console.error('error en crearte Admisiones', error)
     res.status(500).json({ message: error.message });
   }
 };
@@ -53,8 +70,21 @@ exports.getCentros = async (req, res) => {
 exports.getCarreras = async (req, res) => {
   try {
     const carreras = await Admision.getCarreras();
+    console.log('Carreras obtenids', carreras);
     res.json(carreras);
   } catch (error) {
+    console.error('Error al obtener correras: ', error);
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.getExamenesCarrera = async (req, res) => {
+  try {
+    const { carreraId } = req.params;
+    const examenes = await Admision.getExamenes(carreraId);
+    res.json(examenes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+

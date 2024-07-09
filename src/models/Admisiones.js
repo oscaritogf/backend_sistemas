@@ -31,12 +31,34 @@ class Admision {
   }
 
   static async getCarreras() {
+  const { data, error } = await supabase
+    .from('Carrera')
+    .select(`
+      id_Carrera,
+      nombre,
+      id_Facultad,
+      Facultades:id_Facultad (
+        id_Facultad,
+        nombre
+      )
+    `);
+  if (error) {
+    console.error('error al obtener carreras', error);
+    throw error;
+  }
+  return data;
+}
+
+  static async getExamenes(carreraId) {
     const { data, error } = await supabase
-      .from('Carrera')
-      .select('id_Carrera, nombre');
+      .from('carreraExamenes')
+      .select('id_Examen, Examenes(id_Examenes, nombre)')
+      .eq('id_Carrera', carreraId);
     if (error) throw error;
-    return data;
+    return data.map(item => item.Examenes);
   }
 }
+
+
 
 module.exports = Admision;
