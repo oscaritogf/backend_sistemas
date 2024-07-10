@@ -4,14 +4,14 @@ const jwt = require('jsonwebtoken');
 
 exports.login = async (req, res) => {
   try {
-    const { numeroEmpleado, numeroCuenta, contrasena } = req.body;
-    console.log('Datos recibidos:', { numeroEmpleado, numeroCuenta, contrasena });
+    const { numeroEmpleado, numeroCuenta, Contrasena } = req.body;
+    console.log('Datos recibidos:', { numeroEmpleado, numeroCuenta, Contrasena });
 
     if (!numeroEmpleado && !numeroCuenta) {
       return res.status(400).json({ message: 'Debe proporcionar un número de empleado o número de cuenta' });
     }
 
-    if (!contrasena) {
+    if (!Contrasena) {
       return res.status(400).json({ message: 'Debe proporcionar una contraseña' });
     }
 
@@ -34,7 +34,7 @@ exports.login = async (req, res) => {
     }
     console.log('Usuario encontrado:', user);
 
-    const isPasswordValid = await User.verifyPassword(contrasena, user.contrasena);
+    const isPasswordValid = await User.verifyPassword(Contrasena, user.Contrasena);
     console.log('Contraseña válida:', isPasswordValid);
     
     if (!isPasswordValid) {
@@ -91,7 +91,7 @@ exports.updatePassword = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    const isPasswordValid = await User.verifyPassword(currentPassword, user.contrasena);
+    const isPasswordValid = await User.verifyPassword(currentPassword, user.Contrasena);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Contraseña actual incorrecta' });
     }

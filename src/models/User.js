@@ -52,13 +52,13 @@ class User {
   }
 
   static async create(userData) {
-    const { contrasena, ...otherData } = userData;
+    const { Contrasena, ...otherData } = userData;
     const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
+    const hashedPassword = await bcrypt.hash(Contrasena, saltRounds);
 
     const { data, error } = await supabase
       .from('Usuario')
-      .insert({ ...otherData, contrasena: hashedPassword })
+      .insert({ ...otherData, Contrasena: hashedPassword })
       .single();
 
     if (error) throw error;
@@ -76,7 +76,7 @@ class User {
 
     const { data, error } = await supabase
       .from('Usuario')
-      .update({ contrasena: hashedPassword })
+      .update({ Contrasena: hashedPassword })
       .eq('id', userId)
       .single();
 
