@@ -322,11 +322,13 @@ class Admin {
 
   
     //aqui listo los empleados 
-  static async listEmpleados() {
-    const { data: empleados, error } = await supabase
+  static async listEmpleados(incluirInactivos = false) {
+    let query = supabase
+   // const { data: empleados, error } = await supabase
       .from('empleado')
       .select(`
         numeroEmpleado,
+        estado, 
         Usuario (
           id, 
           Nombre, 
@@ -340,7 +342,14 @@ class Admin {
           )
         )
       `);
-  
+        
+      //filto los empleados por estado
+      if(!incluirInactivos){
+        query = query.eq('estado', true);
+      }
+
+      const {data: empleados, error}= await query;
+
     if (error) throw error;
   
     return empleados.map(empleado => ({
@@ -352,7 +361,8 @@ class Admin {
       Telefono: empleado.Usuario.Telefono,
       Identidad: empleado.Usuario.Identidad,
       Imagen: empleado.Usuario.Imagen,
-      roles: empleado.Usuario.UsuarioRol.map(ur => ur.rol.nombre)
+      roles: empleado.Usuario.UsuarioRol.map(ur => ur.rol.nombre),
+      estado: empleado.Usuario, //incluir estadi en el objeto
     }));
   }
 
