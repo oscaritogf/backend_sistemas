@@ -32,19 +32,19 @@ const sendConfirmationEmail = async (to, nombre) => {
   }
 };
 
-const sendEmployeeWelcomeEmail = async (to, nombre, numeroEmpleado, password) => {
+const sendEmployeeWelcomeEmail = async (to, nombre, numeroEmpleado, contrasena) => {
   try {
     await transporter.sendMail({
       from: '"Recursos Humanos Universidad" <garcia152511@gmail.com>',
       to: to,
       subject: "Bienvenido - Credenciales de acceso",
       html: `
-        <h1>¡Bienvenido ${Nodeombre}!</h1>
+        <h1>¡Bienvenido ${nombre}!</h1>
         <p>Has sido registrado exitosamente como empleado en nuestro sistema.</p>
         <p>Tus credenciales de acceso son:</p>
         <ul>
           <li>Número de empleado: ${numeroEmpleado}</li>
-          <li>Contraseña: ${Contrasena}</li>
+          <li>Contraseña: ${contrasena}</li>
         </ul>
         <p>Por favor, cambia tu contraseña después del primer inicio de sesión.</p>
         <p>Si tienes alguna pregunta, no dudes en contactar al departamento de Recursos Humanos.</p>

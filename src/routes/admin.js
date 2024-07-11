@@ -10,7 +10,7 @@ const upload = multer({ dest: 'uploads/' });
 
 //router.get('/data', authenticateToken, checkRole('admin'), adminController.getData);
 router.post('/empleados', adminController.createEmpleado);
-router.put('/empleados/:id', adminController.updateEmpleado);
+router.put('/empleados/:numeroEmpleado', adminController.updateEmpleado);
 router.get('/empleados', adminController.listEmpleados);
 router.get('/noticias', adminController.getNoticias);
 router.post('/noticias', upload.single('imagen'), adminController.createNoticia);
