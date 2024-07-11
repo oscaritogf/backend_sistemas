@@ -94,54 +94,6 @@ class Admin {
   }*/
 
 
-  /*static async updateEmpleado(id, empleadoData) {
-    const { nombre, apellido, correo, telefono, identidad, imagen, roles } = empleadoData;
-
-    let updateData = { nombre, apellido, correo, telefono, identidad };
-
-    if (imagen) {
-      const result = await cloudinary.uploader.upload(imagen);
-      updateData.imagen = result.secure_url;
-    }
-
-    const { data: updatedUser, error: updateError } = await supabase
-      .from('Usuario')
-      .update(updateData)
-      .eq('id', id)
-      .single();
-
-    if (updateError) throw updateError;
-
-    // Actualizar roles
-    if (roles) {
-      // Primero, eliminar todos los roles existentes
-      await supabase
-        .from('UsuarioRol')
-        .delete()
-        .eq('id_Usuario', id);
-
-      // Luego, insertar los nuevos roles
-      for (const rolNombre of roles) {
-        const { data: rol } = await supabase
-          .from('rol')
-          .select('id')
-          .eq('nombre', rolNombre)
-          .single();
-
-        if (rol) {
-          await supabase
-            .from('UsuarioRol')
-            .insert({
-              id_Usuario: id,
-              id_Rol: rol.id
-            });
-        }
-      }
-    }
-
-    return { ...updatedUser, roles };
-  }*/
- 
 
     static async createEmpleado(empleadoData) {
         console.log('Datos recibidos:', empleadoData);
@@ -438,9 +390,38 @@ static async generateUniqueEmployeeNumber() {
   
       return roles;
     }
-  
+
+    static async getNoticias() {
+      let { data: noticias, error } = await supabase
+      .from('noticias')
+      .select('*');
+      if (error) {
+        console.error('Error al obtener noticias:', error);
+        throw new Error('Error al obtener noticias');
+      }
+      return noticias;
+    };
+
+    static async createNoticia(noticiaData) {
+      console.log('Datos recibidos:', noticiaData);
+      let imageUrl = '';
+      if (noticiaData.imagen) {
+        try {
+          const result = await cloudinary.uploader.upload(noticiaData.imagen.path);
+          imageUrl = result.secure_url;
+        } catch (cloudinaryError) {
+          console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
+        }
+      }
+      const { data, error } = await supabase
+        .from('noticias')
+        .insert({ ...noticiaData, imagen: imageUrl })
+        .single();
+      if (error) {
+        throw new Error('Error al crear noticia');
+      }
+      return data;
+    };
 }
-
-
 
 module.exports = Admin;

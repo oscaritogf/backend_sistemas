@@ -47,3 +47,26 @@ exports.listEmpleados = async (req, res) => {
     res.status(500).json({ message: 'Error al listar empleados', error: error.message });
   }
 };
+
+exports.getNoticias = async (req, res) => {
+  try {
+    const noticias = await Admin.getNoticias();
+    res.json(noticias);
+  } catch (error) {
+    console.error('Error al obtener noticias:', error);
+    res.status(500).json({ message: 'Error al obtener noticias', error: error.message });
+  }
+};
+
+
+exports.createNoticia = async (req, res) => {
+  try {
+    // req.file contiene la información del archivo subido por multer y req.body contiene solo los datos de texto del formulario
+    const noticiaData = { ...req.body, imagen: req.file };
+    const noticia = await Admin.createNoticia(noticiaData);
+    res.json(noticia);
+  } catch (error) {
+    console.error('Error al crear noticia:', error);
+    res.status(500).json({ message: 'Error al crear noticia', error: error.message });
+  }
+};
