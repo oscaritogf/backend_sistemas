@@ -41,9 +41,28 @@ exports.createAdmision = async (req, res) => {
       imagen_url = result.secure_url;
     }
 
+    //generar notas aleatorias
+    const generarNotaConSesgoPositivo = (min, max, sesgo = 0.7)=>{
+      const random = Math.pow(Math.random(), sesgo);
+      return Math.floor(random * (max - min) + min)
+    };
+
+    const nota1 = generarNotaConSesgoPositivo(700, 1400);
+    const nota2 = generarNotaConSesgoPositivo(400, 600);
+    console.log(`Nota1: ${nota1}, PuntajeRequerido: ${carrera1.puntajeRequerido}`); // Para depuración
+
+    const aprobacionPAA = nota1 >= carrera1.puntajeRequerido ? 'reprobó' : 'aprobó';
+    let aprobacionPAM_PCCNS = 'no aplica';
+
+    if (carrera1.Facultades.nombre.toLowerCase().includes('ingeniería')|| 
+    carrera1.Facultades.nombre.toLowerCase().includes('medicina')) {
+      aprobacionPAM_PCCNS = nota2 >= 500 ? 'aprobó' : 'reprobó';
+    }
+
     const admisionData = {
       dni, primer_Nombre, segundo_Nombre, primer_Apellido, segundo_Apellido,
-      id_Centro, id_Carrera, id_Sd_Carrera, email, intentos: intentosExistentes+1, imagen: imagen_url
+      id_Centro, id_Carrera, id_Sd_Carrera, email, intentos: intentosExistentes+1, imagen: imagen_url,
+      nota1, nota2, aprobacionPAA, aprobacionPAM_PCCNS
     };
 
     
