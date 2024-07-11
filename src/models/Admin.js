@@ -63,7 +63,10 @@ class Admin {
           .from('empleado')
           .insert({
             numeroEmpleado,
-            usuario: usuario.id
+            usuario: usuario.id,
+
+            //estado
+            estado: true,
           })
           .select()
           .single();
@@ -113,7 +116,7 @@ class Admin {
  static async updateEmpleado(numeroEmpleado, empleadoData) {
   console.log('Datos recibidos para actualización:', empleadoData);
   console.log('Actualizando empleado:', numeroEmpleado);
-  const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles } = empleadoData;
+  const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, estado } = empleadoData;
 
   try {
     // Obtener el id del usuario basándonos en el numeroEmpleado
@@ -143,6 +146,18 @@ class Admin {
       Telefono: telefono,
       Identidad: identidad
     };
+      //  Actualizar el estado del empleado si se proporciona
+      if (estado !== undefined) {
+        const { error: empleadoUpdateError } = await supabase
+          .from('empleado')
+          .update({ estado })
+          .eq('numeroEmpleado', numeroEmpleado);
+  
+        if (empleadoUpdateError) {
+          console.error('Error al actualizar estado del empleado:', empleadoUpdateError);
+          throw empleadoUpdateError;
+        }
+      }
 
     // Si se proporciona una nueva contraseña, hashearla
     if (contrasena) {
@@ -285,172 +300,25 @@ class Admin {
     const updatedRoleNames = updatedRoles.map(r => r.rol.nombre);
     console.log('Roles actualizados:', updatedRoleNames);
 
-    return { ...usuario, roles: updatedRoleNames };
+    // Incluir el estado en la respuesta
+    const { data: empleadoActualizado, error: empleadosError } = await supabase
+      .from('empleado')
+      .select('estado')
+      .eq('numeroEmpleado', numeroEmpleado)
+      .single();
+
+    if (empleadosError) {
+      console.error('Error al obtener estado actualizado del empleado:', empleadoError);
+      throw empleadoError;
+    }
+
+
+    return { ...usuario, roles: updatedRoleNames, estado: empleadoActualizado.estado }; 
   } catch (error) {
     console.error('Error en updateEmpleado:', error);
     throw error;
   }
 }
-
-/*
- static async updateEmpleado(numeroEmpleado, empleadoData) {
-    console.log('Datos recibidos para actualización:', empleadoData);
-    console.log('actualizando empleado :', numeroEmpleado);
-    const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles } = empleadoData;
-  
-
-    //primero, obtenemos el id del usuario basandonos en el numeroEmpleado
-    const {data: empleado, error:empleadoError}=await supabase
-    .from('empleado')
-    .select('usuario')
-    .eq('numeroEmpleado', numeroEmpleado)
-    .single();
-
-    if(empleadoError){
-        console.error('Errol al buscar el empleado: ', empleadoError);
-        throw new Error(`Error al buscar empleado: ${empleadoError.message}`)
-    }
-
-    if(!empleado){
-        throw new Error(`Empleado con número ${numeroEmpleado} no encontrado`);
-    }
-    const userId = empleado.usuario;
-    // Preparar los datos del usuario
-    const userData = {
-      Nombre: nombre,
-      Apellido: apellido,
-      Correo: correo,
-      Telefono: telefono,
-      Identidad: identidad
-    };
-  
-    // Si se proporciona una nueva contraseña, hashearla
-    if (contrasena) {
-      const saltRounds = 10;
-      userData.Contrasena = await bcrypt.hash(contrasena, saltRounds);
-    }
-  
-    // Subir nueva imagen a Cloudinary si se proporciona
-    if (imagen) {
-      try {
-        const result = await cloudinary.uploader.upload(imagen);
-        userData.Imagen = result.secure_url;
-      } catch (cloudinaryError) {
-        console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
-        // Decide si quieres lanzar este error o continuar sin actualizar la imagen
-      }
-    }
-  
-    // Actualizar usuario
-    const { data: usuario, error: userError } = await supabase
-      .from('Usuario')
-      .update(userData)
-      .eq('id', userId)
-      .select()
-      .single();
-  
-    if (userError) {
-      console.error('Error al actualizar usuario:', userError);
-      throw userError;
-    }
-  
-    if (!usuario) {
-      console.error('Usuario no encontrado para actualización');
-      throw new Error('Fallo al actualizar el usuario');
-    }
-  // Actualizar roles si se proporcionan
-if (roles && roles.length > 0) {
-  console.log('Actualizando roles: ', roles);
-  
-  try {
-    // Obtener roles actuales del usuario
-    const { data: currentRoles, error: currentRolesError } = await supabase
-      .from('UsuarioRol')
-      .select('rol(id, nombre)')
-      .eq('id_Usuario', userId);
-  
-    if (currentRolesError) {
-      console.error('Error al obtener roles actuales:', currentRolesError);
-      throw currentRolesError;
-    }
-  
-    console.log('Roles actuales:', currentRoles);
-
-    const currentRoleNames = currentRoles.map(r => r.rol.nombre);
-    const rolesToAdd = roles.filter(r => !currentRoleNames.includes(r));
-    const rolesToRemove = currentRoleNames.filter(r => !roles.includes(r));
-    
-    console.log('Roles a agregar:', rolesToAdd);
-    console.log('Roles a eliminar:', rolesToRemove);
-
-    // Agregar nuevos roles
-    for (const rolNombre of rolesToAdd) {
-      const { data: rol, error: rolError } = await supabase
-        .from('rol')
-        .select('id')
-        .eq('nombre', rolNombre)
-        .single();
-
-      if (rolError) {
-        console.error(`Error al buscar rol ${rolNombre}:`, rolError);
-        throw rolError;
-      }
-      
-      if (rol) {
-        const { error: userRolError } = await supabase
-          .from('UsuarioRol')
-          .insert({
-            id_Usuario: userId,
-            id_Rol: rol.id
-          });
-  
-        if (userRolError) {
-          console.error(`Error al asignar rol ${rolNombre}:`, userRolError);
-          throw userRolError;
-        }
-        console.log(`Rol ${rolNombre} agregado con éxito`);
-      } else {
-        console.warn(`Rol no encontrado: ${rolNombre}`);
-      }
-    }
-
-    // Eliminar roles que ya no se necesitan
-    for (const rolNombre of rolesToRemove) {
-      const rolToRemove = currentRoles.find(r => r.rol.nombre === rolNombre);
-      if (rolToRemove) {
-        const { error: deleteRolError } = await supabase
-          .from('UsuarioRol')
-          .delete()
-          .eq('id_Usuario', userId)
-          .eq('id_Rol', rolToRemove.rol.id);
-
-        if (deleteRolError) {
-          console.error(`Error al eliminar rol ${rolNombre}:`, deleteRolError);
-          throw deleteRolError;
-        }
-        console.log(`Rol ${rolNombre} eliminado con éxito`);
-      }
-    }
-
-    console.log('Actualización de roles completada');
-
-  } catch (error) {
-    console.error('Error en la actualización de roles:', error);
-    throw error;
-  }
-}
-// Justo después de la actualización de roles
-const { data: updatedRoles, error: updatedRolesError } = await supabase
-  .from('UsuarioRol')
-  .select('rol(nombre)')
-  .eq('id_Usuario', userId);
-
-if (updatedRolesError) {
-  console.error('Error al obtener roles actualizados:', updatedRolesError);
-} else {
-  console.log('Roles actualizados:', updatedRoles.map(r => r.rol.nombre));
-}
-  }*/
 
   
     //aqui listo los empleados 
