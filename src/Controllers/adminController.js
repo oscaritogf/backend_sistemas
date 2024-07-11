@@ -18,8 +18,15 @@ exports.createEmpleado = async (req, res) => {
 
 exports.updateEmpleado = async (req, res) => {
   try {
-    const { numeroEmpleado } = req.params;
+    const numeroEmpleado = parseInt(req.params.numeroEmpleado, 10);
+    //const { numeroEmpleado } = req.params;
+    console.log('el numero de empleado es: ',numeroEmpleado)
+
+    if(isNaN(numeroEmpleado)){
+      return res.status(404).json({ message:'numero de empleado invalido'});
+    }
     const empleadoData = req.body;
+    
     const updatedEmpleado = await Admin.updateEmpleado(numeroEmpleado, empleadoData);
     res.json({ message: 'Empleado actualizado exitosamente', empleado: updatedEmpleado });
   } catch (error) {
