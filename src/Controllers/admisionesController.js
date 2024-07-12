@@ -2,6 +2,7 @@ const Admision = require('../models/Admisiones');
 const cloudinary = require('../config/cloudinary');
 const {sendConfirmationEmail} = require('../utils/emailService')
 
+
 exports.createAdmision = async (req, res) => {
   try {
     const { 
@@ -78,6 +79,30 @@ exports.createAdmision = async (req, res) => {
   }
 };
 
+exports.getCSV = async (req, res) => {
+  try {
+    const csv = await Admision.getCSV();
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=Admisiones.csv');
+    res.send(csv);
+
+     
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.saveCSV = async (req, res) => {
+  try {
+    const csv = await Admision.getCSV();
+    const filePath = '/path/to/save/admisiones.csv'; // Replace with the desired file path
+    fs.writeFileSync(filePath, csv);
+    res.json({ message: 'CSV file saved successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.getCentros = async (req, res) => {
   try {
     const centros = await Admision.getCentros();
@@ -106,5 +131,5 @@ exports.getExamenesCarrera = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-}
+};
 

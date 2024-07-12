@@ -9,4 +9,6 @@ router.get('/centros', admisionesController.getCentros);
 router.get('/carreras', admisionesController.getCarreras);
 router.get('/carreras/:carreraId/examenes', admisionesController.getExamenesCarrera);
 
+router.get('/csv', admisionesController.getCSV);
+
 module.exports = router;
