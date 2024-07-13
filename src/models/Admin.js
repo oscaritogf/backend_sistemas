@@ -398,49 +398,144 @@ static async generateUniqueEmployeeNumber() {
   }
 
   
-    static async getRoles() {
-      const { data: roles, error } = await supabase
-        .from('rol')
-        .select('id, nombre');
-  
-      if (error) {
-        throw new Error('Error al obtener roles');
-      }
-  
-      return roles;
+  static async getRoles() {
+    const { data: roles, error } = await supabase
+      .from('rol')
+      .select('id, nombre');
+
+    if (error) {
+      throw new Error('Error al obtener roles');
     }
 
-    static async getNoticias() {
-      let { data: noticias, error } = await supabase
-      .from('noticias')
-      .select('*');
-      if (error) {
-        console.error('Error al obtener noticias:', error);
-        throw new Error('Error al obtener noticias');
-      }
-      return noticias;
-    };
+    return roles;
+  }
 
-    static async createNoticia(noticiaData) {
-      console.log('Datos recibidos:', noticiaData);
-      let imageUrl = '';
-      if (noticiaData.imagen) {
+  static async getNoticias() {
+    let { data: noticias, error } = await supabase
+    .from('noticias')
+    .select('*');
+    if (error) {
+      console.error('Error al obtener noticias:', error);
+      throw new Error('Error al obtener noticias');
+    }
+    return noticias;
+  };
+
+  static async createNoticia(noticiaData) {
+    console.log('Datos recibidos:', noticiaData);
+    let imageUrl = '';
+    if (noticiaData.imagen) {
+      try {
+        const result = await cloudinary.uploader.upload(noticiaData.imagen.path);
+        imageUrl = result.secure_url;
+      } catch (cloudinaryError) {
+        console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
+      }
+    }
+    const { data, error } = await supabase
+      .from('noticias')
+      .insert({ ...noticiaData, imagen: imageUrl })
+      .single();
+    if (error) {
+      throw new Error('Error al crear noticia');
+    }
+    return data;
+  };
+
+  static async deleteNoticia(id) {
+    try {
+      // Verificar que la noticia con el id exista
+      const { data: existingNoticia, error: selectError } = await supabase
+        .from('noticias')
+        .select('id_noticia')
+        .eq('id_noticia', id)
+        .single();
+
+      if (selectError) {
+        console.error('Error al verificar noticia:', selectError);
+        throw new Error('No existe la noticia con el id proporcionado');
+      }
+
+      if (!existingNoticia) {
+        console.error('Noticia no encontrada');
+        throw new Error('Noticia no encontrada');
+      }
+
+      // Eliminar la noticia
+      const { error: deleteError } = await supabase
+        .from('noticias')
+        .delete()
+        .eq('id_noticia', id);
+
+      if (deleteError) {
+        console.error('Error al eliminar noticia:', deleteError);
+        throw new Error('Error al eliminar noticia');
+      }
+
+      return { message: 'Noticia eliminada exitosamente' };
+    } catch (error) {
+      console.error('Error en deleteNoticia:', error);
+      throw error;
+    }
+  }
+  static async updateNoticia(id, noticiaData) {
+    const { titulo, descripcion, imagen } = noticiaData;
+  
+    try {
+      // Verificar que la noticia con el id exista
+      const { data: existingNoticia, error: selectError } = await supabase
+        .from('noticias')
+        .select('id_noticia')
+        .eq('id_noticia', id)
+        .single();
+  
+      if (selectError) {
+        console.error('Error al verificar noticia:', selectError);
+        throw new Error('Error al verificar noticia');
+      }
+  
+      if (!existingNoticia) {
+        console.error('Noticia no encontrada');
+        throw new Error('Noticia no encontrada');
+      }
+  
+      console.log('Imagen recibida:', imagen);  // Log para verificar la imagen recibida
+  
+      // Si se proporciona una nueva imagen, subirla a Cloudinary
+      if (imagen && typeof imagen === 'string' && imagen.startsWith('data:image')) {
         try {
-          const result = await cloudinary.uploader.upload(noticiaData.imagen.path);
-          imageUrl = result.secure_url;
+          const result = await cloudinary.uploader.upload(imagen);
+          noticiaData.imagen = result.secure_url;  // Actualizar la URL de la imagen en noticiaData
+          console.log('URL de la imagen subida:', noticiaData.imagen);  // Log para verificar la URL de la imagen
         } catch (cloudinaryError) {
           console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
+          throw new Error('Error al subir imagen a Cloudinary');
         }
+      } else {
+        console.log('No se proporciona una nueva imagen o la imagen no es válida');
       }
-      const { data, error } = await supabase
+  
+      // Actualizar la noticia
+      const { data, error: updateError } = await supabase
         .from('noticias')
-        .insert({ ...noticiaData, imagen: imageUrl })
-        .single();
-      if (error) {
-        throw new Error('Error al crear noticia');
+        .update(noticiaData)
+        .eq('id_noticia', id)
+        .select();
+  
+      if (updateError) {
+        console.error('Error al actualizar noticia:', updateError);
+        throw new Error('Error al actualizar noticia');
       }
+  
       return data;
-    };
-}
+    } catch (error) {
+      console.error('Error en updateNoticia:', error);
+      throw error;
+    }
+  };
+  
+  
+
+};  
 
 module.exports = Admin;
