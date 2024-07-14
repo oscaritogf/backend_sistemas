@@ -83,29 +83,6 @@ exports.createNoticia = async (req, res) => {
 };
 
 
-// exports.updateNoticia = async (req, res) => {
-//   try {
-//     const idNoticia = req.params.id_noticia;
-//     const noticiaData = req.body;
-
-//     const updatedNoticia = await Admin.updateNoticia(idNoticia, noticiaData);
-
-//     if (!updatedNoticia) {
-//       return res.status(404).json({ message: 'Noticia no encontrada' });
-//     }
-
-//     res.json({
-//       message: 'Noticia actualizada exitosamente',
-//       noticia: updatedNoticia
-//     });
-//   } catch (error) {
-//     console.error('Error al actualizar noticia:', error);
-//     res.status(500).json({
-//       message: 'Error al actualizar noticia',
-//       error: error.message
-//     });
-//   }
-// };
 exports.updateNoticia = async (req, res) => {
   try {
     console.log('Datos recibidos:', req.body); // Agrega este log para verificar los datos

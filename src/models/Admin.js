@@ -13,6 +13,22 @@ class Admin {
        
         const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
       
+         // Verificar si el número de identidad ya existe
+          const { data: existingUser, error: existingUserError } = await supabase
+          .from('Usuario')
+          .select('id')
+          .eq('Identidad', identidad)
+          .single();
+
+        if (existingUserError) {
+          console.error('Error al verificar la existencia del número de identidad:', existingUserError);
+          throw existingUserError;
+        }
+
+        if (existingUser) {
+          throw new Error('El número de identidad ya existe. No se puede crear el empleado.');
+        }
+
         // Generar número de empleado único
         const numeroEmpleado = await this.generateUniqueEmployeeNumber();
       
@@ -150,17 +166,7 @@ class Admin {
       Identidad: identidad
     };
       //  Actualizar el estado del empleado si se proporciona
-    /*  if (estado !== undefined) {
-        const { error: empleadoUpdateError } = await supabase
-          .from('empleado')
-          .update({ estado })
-          .eq('numeroEmpleado', numeroEmpleado);
-  
-        if (empleadoUpdateError) {
-          console.error('Error al actualizar estado del empleado:', empleadoUpdateError);
-          throw empleadoUpdateError;
-        }
-      }*/
+ 
 
         // Actualizar el estado y el id_Centros del empleado si se proporcionan
     const empleadoUpdateData = {};
@@ -387,7 +393,7 @@ class Admin {
       Identidad: empleado.Usuario.Identidad,
       Imagen: empleado.Usuario.Imagen,
       roles: empleado.Usuario.UsuarioRol.map(ur => ur.rol.nombre),
-      estado: empleado.Usuario, //incluir estadi en el objeto
+      estado: empleado.estado, //incluir estadi en el objeto
     }));
   }
 
