@@ -146,3 +146,21 @@ exports.deleteNoticia = async (req, res) => {
     });
   }
 };
+exports.getPac = async (req, res) => {
+  try {
+    const pac = await Admin.getPac();
+    res.json(pac);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.getTipoMatricula = async (req, res) => {
+  try {
+    const matricula = await Admin.getTipoMatricula();
+    res.json(matricula);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+

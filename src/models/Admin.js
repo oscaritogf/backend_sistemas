@@ -534,6 +534,21 @@ static async generateUniqueEmployeeNumber() {
     }
   };
   
+  //traer datos FormMatricula
+  static async getTipoMatricula() {
+    const { data, error } = await supabase
+      .from('TipoMatricula')
+      .select('id_TipoMatricula, tipoMatricula');
+    if (error) throw error;
+    return data;
+  }
+  static async getPac() {
+    const { data, error } = await supabase
+      .from('Pac')
+      .select('id_Pac, pac');
+    if (error) throw error;
+    return data;
+  }
   
 
 };  
