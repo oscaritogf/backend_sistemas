@@ -57,7 +57,7 @@ const sendEmployeeWelcomeEmail = async (to, nombre, numeroEmpleado, contrasena) 
   }
 };
 
-const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, contrasena) => {
+const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, correoInstitucional, contrasena) => {
   try {
     await transporter.sendMail({
       from: '"Departamento de  Admisiones UANH" <garcia152511@gmail.com>',
@@ -70,6 +70,7 @@ const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, contrasena) => 
         <ul>
           <li>Número de cuenta: ${numeroCuenta}</li>
           <li>Contraseña: ${contrasena}</li>
+          li>Correo Institucional: ${correoInstitucional}</li>
         </ul>
         <p>Por favor, cambia tu contraseña después del primer inicio de sesión.</p>
         <p>Si tienes alguna pregunta, no dudes en contactar al departamento de Admisiones.</p>
@@ -82,5 +83,5 @@ const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, contrasena) => 
   }
 };
 
-module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail };
+module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail };
 

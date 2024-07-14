@@ -10,6 +10,6 @@ router.get('/carreras', admisionesController.getCarreras);
 router.get('/carreras/:carreraId/examenes', admisionesController.getExamenesCarrera);
 router.get('/notas/:dni', admisionesController.getNotasByDNI);
 
-router.get('/csv', admisionesController.getCSV);
+router.get('/csv', admisionesController.saveCSV);
 
 module.exports = router;

@@ -30,6 +30,7 @@ Thumbs.db
 *.swo
 
 # Archivos de bloqueo de paquetes opcionales
+Admisiones.csv
 # Descomenta la línea que necesites
 # package-lock.json
 # yarn.lock

@@ -1,6 +1,10 @@
 const Admision = require('../models/Admisiones');
 const cloudinary = require('../config/cloudinary');
 const {sendConfirmationEmail} = require('../utils/emailService')
+const fs = require('fs');
+const csv = require('csv-parser');
+const path = require('path');
+const os = require('os');
 
 
 
@@ -43,6 +47,7 @@ exports.createAdmision = async (req, res) => {
       imagen_url = result.secure_url;
     }
 
+
     //generar notas aleatorias
     const generarNotaConSesgoPositivo = (min, max, sesgo = 0.7)=>{
       const random = Math.pow(Math.random(), sesgo);
@@ -80,9 +85,24 @@ exports.createAdmision = async (req, res) => {
   }
 };
 
+exports.sendApproved = async (req, res) => {
+
+      //generar correo institucional
+      const correoInstitucional = `${primer_Nombre[0].toLowerCase()}.${segundo_Nombre[0].toLowerCase()}.${primer_Apellido.toLowerCase()}.${segundo_Apellido.toLowerCase()}@unah.hn`;
+
+};
+
 exports.getCSV = async (req, res) => {
   try {
     const csv = await Admision.getCSV();
+
+    if (!csv) {
+      return res.status(404).json({ message: 'No hay datos para exportar' });
+    }
+    const filePath = path.join(require('os').homedir(), 'Downloads', 'Admisiones.csv'); // Replace with the desired file path
+    await fs.WriteStream(filePath, csv);
+    
+    res.json({ message: 'CSV file saved successfully', path: filePath });
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=Admisiones.csv');
     res.send(csv);
@@ -96,7 +116,7 @@ exports.getCSV = async (req, res) => {
 exports.saveCSV = async (req, res) => {
   try {
     const csv = await Admision.getCSV();
-    const filePath = '/path/to/save/admisiones.csv'; // Replace with the desired file path
+    const filePath = path.join(require('os').homedir(),'Downloads/Admisiones.csv'); // Replace with the desired file path
     fs.writeFileSync(filePath, csv);
     res.json({ message: 'CSV file saved successfully' });
   } catch (error) {
