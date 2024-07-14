@@ -19,6 +19,7 @@ app.use('/api/coordinator', coordinatorRoutes);
 app.use('/api/department-head', departmentHeadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admisiones', admisionesRoutes);
+
 const port = process.env.PORT || 3000;
 
 

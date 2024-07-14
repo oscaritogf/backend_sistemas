@@ -8,6 +8,7 @@ router.post('/', upload.single('certificado'), admisionesController.createAdmisi
 router.get('/centros', admisionesController.getCentros);
 router.get('/carreras', admisionesController.getCarreras);
 router.get('/carreras/:carreraId/examenes', admisionesController.getExamenesCarrera);
+router.get('/notas/:dni', admisionesController.getNotasByDNI);
 
 router.get('/csv', admisionesController.getCSV);
 

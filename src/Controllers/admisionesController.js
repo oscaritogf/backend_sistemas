@@ -3,6 +3,7 @@ const cloudinary = require('../config/cloudinary');
 const {sendConfirmationEmail} = require('../utils/emailService')
 
 
+
 exports.createAdmision = async (req, res) => {
   try {
     const { 
@@ -129,6 +130,51 @@ exports.getExamenesCarrera = async (req, res) => {
     const examenes = await Admision.getExamenes(carreraId);
     res.json(examenes);
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// Nuevo endpoint para obtener las notas y determinar la carrera aprobada
+exports.getNotasByDNI = async (req, res) => {
+  try {
+    const { dni } = req.params;
+    const notas = await Admision.getNotasByDNI(dni);
+
+    if (!notas) {
+      return res.status(404).json({ message: 'No se encontraron notas para el DNI proporcionado' });
+    }
+
+    const carreras = await Admision.getCarreras();
+    const carrera1 = carreras.find(c => c.id_Carrera === notas.id_Carrera);
+    const carrera2 = carreras.find(c => c.id_Carrera === notas.id_Sd_Carrera);
+
+    const resultado = {
+      nota1: notas.nota1,
+      nota2: notas.nota2,
+      carrera1: {
+        nombre: carrera1.nombre,
+        aprobacion: notas.nota1 >= carrera1.puntajeRequerido ? 'aprobó' : 'reprobó'
+      },
+      carrera2: {
+        nombre: carrera2.nombre,
+        aprobacion: notas.nota1 >= carrera2.puntajeRequerido ? 'aprobó' : 'reprobó'
+      }
+    };
+
+    if (carrera1.Facultades.nombre.toLowerCase().includes('ingeniería') ||
+      carrera1.Facultades.nombre.toLowerCase().includes('medicina')) {
+      resultado.carrera1.aprobacionPAM_PCCNS = notas.nota2 >= 500 ? 'aprobó' : 'reprobó';
+    }
+
+    if (carrera2.Facultades.nombre.toLowerCase().includes('ingeniería') ||
+      carrera2.Facultades.nombre.toLowerCase().includes('medicina')) {
+      resultado.carrera2.aprobacionPAM_PCCNS = notas.nota2 >= 500 ? 'aprobó' : 'reprobó';
+    }
+
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error al obtener notas por DNI', error);
     res.status(500).json({ message: error.message });
   }
 };

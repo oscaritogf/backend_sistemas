@@ -537,5 +537,38 @@ static async generateUniqueEmployeeNumber() {
   
 
 };  
+    static async createNoticia(noticiaData) {
+      console.log('Datos recibidos:', noticiaData);
+      let imageUrl = '';
+      if (noticiaData.imagen) {
+        try {
+          const result = await cloudinary.uploader.upload(noticiaData.imagen.path);
+          imageUrl = result.secure_url;
+        } catch (cloudinaryError) {
+          console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
+        }
+      }
+      const { data, error } = await supabase
+        .from('noticias')
+        .insert({ ...noticiaData, imagen: imageUrl })
+        .single();
+      if (error) {
+        throw new Error('Error al crear noticia');
+      }
+      return data;
+    };
+
+    static async getCentros() {
+      const { data, error } = await supabase
+        .from('Centros')
+        .select('id_Centros, Nombre');
+      if (error) throw error;
+      return data;
+    }
+}
+
+
+
+
 
 module.exports = Admin;
