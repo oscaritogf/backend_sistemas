@@ -11,7 +11,7 @@ class Admin {
 
     static async createEmpleado(empleadoData) {
        
-        const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles } = empleadoData;
+        const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
       
         // Generar número de empleado único
         const numeroEmpleado = await this.generateUniqueEmployeeNumber();
@@ -119,7 +119,7 @@ class Admin {
  static async updateEmpleado(numeroEmpleado, empleadoData) {
   console.log('Datos recibidos para actualización:', empleadoData);
   console.log('Actualizando empleado:', numeroEmpleado);
-  const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, estado } = empleadoData;
+  const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, estado, id_Centros } = empleadoData;
 
   try {
     // Obtener el id del usuario basándonos en el numeroEmpleado
@@ -150,7 +150,7 @@ class Admin {
       Identidad: identidad
     };
       //  Actualizar el estado del empleado si se proporciona
-      if (estado !== undefined) {
+    /*  if (estado !== undefined) {
         const { error: empleadoUpdateError } = await supabase
           .from('empleado')
           .update({ estado })
@@ -160,7 +160,30 @@ class Admin {
           console.error('Error al actualizar estado del empleado:', empleadoUpdateError);
           throw empleadoUpdateError;
         }
+      }*/
+
+        // Actualizar el estado y el id_Centros del empleado si se proporcionan
+    const empleadoUpdateData = {};
+    if (estado !== undefined) {
+      empleadoUpdateData.estado = estado;
+    }
+    if (id_Centros !== undefined) {
+      empleadoUpdateData.id_Centros = id_Centros;
+    }
+
+    if (Object.keys(empleadoUpdateData).length > 0) {
+      const { error: empleadoUpdateError } = await supabase
+        .from('empleado')
+        .update(empleadoUpdateData)
+        .eq('numeroEmpleado', numeroEmpleado);
+
+      if (empleadoUpdateError) {
+        console.error('Error al actualizar empleado:', empleadoUpdateError);
+        throw empleadoUpdateError;
       }
+    }
+
+
 
     // Si se proporciona una nueva contraseña, hashearla
     if (contrasena) {
@@ -306,7 +329,7 @@ class Admin {
     // Incluir el estado en la respuesta
     const { data: empleadoActualizado, error: empleadosError } = await supabase
       .from('empleado')
-      .select('estado')
+      .select('estado, id_Centros')
       .eq('numeroEmpleado', numeroEmpleado)
       .single();
 
@@ -316,7 +339,11 @@ class Admin {
     }
 
 
-    return { ...usuario, roles: updatedRoleNames, estado: empleadoActualizado.estado }; 
+    return { ...usuario, 
+      roles: updatedRoleNames, 
+      estado: empleadoActualizado.estado,
+      id_Centros: empleadoActualizado.id_Centros
+    }; 
   } catch (error) {
     console.error('Error en updateEmpleado:', error);
     throw error;
