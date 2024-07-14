@@ -5,7 +5,6 @@ class Admision {
   
 
 
-
   static async getIntentosByDNI(dni) {
     const { data, error } = await supabase
       .from('Admisiones')

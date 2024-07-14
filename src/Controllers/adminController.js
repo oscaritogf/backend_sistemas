@@ -8,6 +8,10 @@ exports.createEmpleado = async (req, res) => {
     if (!empleadoData.roles || empleadoData.roles.length === 0) {
       return res.status(400).json({ message: 'Debe especificar al menos un rol para el empleado' });
     }
+    if(!empleadoData.id_Centros){
+      return res.status(400).json({ message: 'Debe especificar el centro al que pertenece el empleado' });
+   
+    }
     const newEmpleado = await Admin.createEmpleado(empleadoData);
     res.status(201).json({ message: 'Empleado creado exitosamente', empleado: newEmpleado });
   } catch (error) {

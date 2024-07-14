@@ -58,6 +58,8 @@ class Admin {
           throw new Error('Fallo al crear el usuario');
         }
       
+        //agregandole Centros 
+       
         // Insertar empleado
         const { data: empleado, error: empleadoError } = await supabase
           .from('empleado')
@@ -67,6 +69,7 @@ class Admin {
 
             //estado
             estado: true,
+            id_Centros: id_Centros
           })
           .select()
           .single();
@@ -109,7 +112,7 @@ class Admin {
         // Enviar correo con credenciales
         await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
       
-        return { ...usuario, numeroEmpleado, roles };
+        return { ...usuario, numeroEmpleado, roles, id_Centros };
       }
 
  //actualizar un empleado
@@ -534,39 +537,18 @@ static async generateUniqueEmployeeNumber() {
     }
   };
   
-  
+
+
+  static async getCentros() {
+    const { data, error } = await supabase
+      .from('Centros')
+      .select('id_Centros, Nombre');
+    if (error) throw error;
+    return data;
+  } 
 
 };  
-    static async createNoticia(noticiaData) {
-      console.log('Datos recibidos:', noticiaData);
-      let imageUrl = '';
-      if (noticiaData.imagen) {
-        try {
-          const result = await cloudinary.uploader.upload(noticiaData.imagen.path);
-          imageUrl = result.secure_url;
-        } catch (cloudinaryError) {
-          console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
-        }
-      }
-      const { data, error } = await supabase
-        .from('noticias')
-        .insert({ ...noticiaData, imagen: imageUrl })
-        .single();
-      if (error) {
-        throw new Error('Error al crear noticia');
-      }
-      return data;
-    };
-
-    static async getCentros() {
-      const { data, error } = await supabase
-        .from('Centros')
-        .select('id_Centros, Nombre');
-      if (error) throw error;
-      return data;
-    }
-}
-
+   
 
 
 
