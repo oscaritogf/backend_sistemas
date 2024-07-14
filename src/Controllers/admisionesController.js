@@ -1,6 +1,11 @@
 const Admision = require('../models/Admisiones');
 const cloudinary = require('../config/cloudinary');
 const {sendConfirmationEmail} = require('../utils/emailService')
+const fs = require('fs');
+const csv = require('csv-parser');
+const path = require('path');
+const os = require('os');
+
 
 
 exports.createAdmision = async (req, res) => {
@@ -42,6 +47,7 @@ exports.createAdmision = async (req, res) => {
       imagen_url = result.secure_url;
     }
 
+
     //generar notas aleatorias
     const generarNotaConSesgoPositivo = (min, max, sesgo = 0.7)=>{
       const random = Math.pow(Math.random(), sesgo);
@@ -79,9 +85,24 @@ exports.createAdmision = async (req, res) => {
   }
 };
 
+exports.sendApproved = async (req, res) => {
+
+      //generar correo institucional
+      const correoInstitucional = `${primer_Nombre[0].toLowerCase()}.${segundo_Nombre[0].toLowerCase()}.${primer_Apellido.toLowerCase()}.${segundo_Apellido.toLowerCase()}@unah.hn`;
+
+};
+
 exports.getCSV = async (req, res) => {
   try {
     const csv = await Admision.getCSV();
+
+    if (!csv) {
+      return res.status(404).json({ message: 'No hay datos para exportar' });
+    }
+    const filePath = path.join(require('os').homedir(), 'Downloads', 'Admisiones.csv'); // Replace with the desired file path
+    await fs.WriteStream(filePath, csv);
+    
+    res.json({ message: 'CSV file saved successfully', path: filePath });
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=Admisiones.csv');
     res.send(csv);
@@ -95,7 +116,7 @@ exports.getCSV = async (req, res) => {
 exports.saveCSV = async (req, res) => {
   try {
     const csv = await Admision.getCSV();
-    const filePath = '/path/to/save/admisiones.csv'; // Replace with the desired file path
+    const filePath = path.join(require('os').homedir(),'Downloads/Admisiones.csv'); // Replace with the desired file path
     fs.writeFileSync(filePath, csv);
     res.json({ message: 'CSV file saved successfully' });
   } catch (error) {
@@ -129,6 +150,51 @@ exports.getExamenesCarrera = async (req, res) => {
     const examenes = await Admision.getExamenes(carreraId);
     res.json(examenes);
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// Nuevo endpoint para obtener las notas y determinar la carrera aprobada
+exports.getNotasByDNI = async (req, res) => {
+  try {
+    const { dni } = req.params;
+    const notas = await Admision.getNotasByDNI(dni);
+
+    if (!notas) {
+      return res.status(404).json({ message: 'No se encontraron notas para el DNI proporcionado' });
+    }
+
+    const carreras = await Admision.getCarreras();
+    const carrera1 = carreras.find(c => c.id_Carrera === notas.id_Carrera);
+    const carrera2 = carreras.find(c => c.id_Carrera === notas.id_Sd_Carrera);
+
+    const resultado = {
+      nota1: notas.nota1,
+      nota2: notas.nota2,
+      carrera1: {
+        nombre: carrera1.nombre,
+        aprobacion: notas.nota1 >= carrera1.puntajeRequerido ? 'aprobó' : 'reprobó'
+      },
+      carrera2: {
+        nombre: carrera2.nombre,
+        aprobacion: notas.nota1 >= carrera2.puntajeRequerido ? 'aprobó' : 'reprobó'
+      }
+    };
+
+    if (carrera1.Facultades.nombre.toLowerCase().includes('ingeniería') ||
+      carrera1.Facultades.nombre.toLowerCase().includes('medicina')) {
+      resultado.carrera1.aprobacionPAM_PCCNS = notas.nota2 >= 500 ? 'aprobó' : 'reprobó';
+    }
+
+    if (carrera2.Facultades.nombre.toLowerCase().includes('ingeniería') ||
+      carrera2.Facultades.nombre.toLowerCase().includes('medicina')) {
+      resultado.carrera2.aprobacionPAM_PCCNS = notas.nota2 >= 500 ? 'aprobó' : 'reprobó';
+    }
+
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error al obtener notas por DNI', error);
     res.status(500).json({ message: error.message });
   }
 };

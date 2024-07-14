@@ -1,12 +1,16 @@
 // controllers/adminController.js
 const Admin = require('../models/Admin');
-
+const supabase = require('../config/supabase');
 exports.createEmpleado = async (req, res) => {
   
   try {
     const empleadoData = req.body;
     if (!empleadoData.roles || empleadoData.roles.length === 0) {
       return res.status(400).json({ message: 'Debe especificar al menos un rol para el empleado' });
+    }
+    if(!empleadoData.id_Centros){
+      return res.status(400).json({ message: 'Debe especificar el centro al que pertenece el empleado' });
+   
     }
     const newEmpleado = await Admin.createEmpleado(empleadoData);
     res.status(201).json({ message: 'Empleado creado exitosamente', empleado: newEmpleado });
@@ -15,6 +19,24 @@ exports.createEmpleado = async (req, res) => {
     res.status(500).json({ message: 'Error al crear empleado', error: error.message });
   }
 };
+
+exports.getCentros = async (req, res) => {
+  try {
+    const { data: centros, error } = await supabase
+      .from('Centros')
+      .select('id_Centros, Nombre');
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json(centros);
+  } catch (error) {
+    console.error('Error al obtener los centros:', error);
+    res.status(500).json({ message: 'Error al obtener los centros' });
+  }
+};
+
 
 exports.updateEmpleado = async (req, res) => {
   try {
@@ -79,29 +101,6 @@ exports.createNoticia = async (req, res) => {
 };
 
 
-// exports.updateNoticia = async (req, res) => {
-//   try {
-//     const idNoticia = req.params.id_noticia;
-//     const noticiaData = req.body;
-
-//     const updatedNoticia = await Admin.updateNoticia(idNoticia, noticiaData);
-
-//     if (!updatedNoticia) {
-//       return res.status(404).json({ message: 'Noticia no encontrada' });
-//     }
-
-//     res.json({
-//       message: 'Noticia actualizada exitosamente',
-//       noticia: updatedNoticia
-//     });
-//   } catch (error) {
-//     console.error('Error al actualizar noticia:', error);
-//     res.status(500).json({
-//       message: 'Error al actualizar noticia',
-//       error: error.message
-//     });
-//   }
-// };
 exports.updateNoticia = async (req, res) => {
   try {
     console.log('Datos recibidos:', req.body); // Agrega este log para verificar los datos

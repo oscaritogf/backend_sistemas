@@ -1,5 +1,7 @@
+const { json } = require('express');
 const supabase = require('../config/supabase');
 const fs = require('fs').promises; // Importar el módulo fs para trabajar con el sistema de archivos
+const { Parser } = require('json2csv');
 
 class Admision {
   
@@ -15,6 +17,7 @@ class Admision {
 
     return data.length > 0 ? data[0].intentos : 0;
   }
+
   static async create(admisionData) {
     const { data, error } = await supabase
       .from('Admisiones')
@@ -128,48 +131,15 @@ class Admision {
     // Guardar el CSV en un archivo
 
     try {
-      const filePath = 'Admisiones.csv';
-      await fs.writeFile('Admisiones.csv', csv);
+    const filePath = 'Admisiones.csv';
+      await fs.writeFile(filePath, csv);
       console.log('Archivo CSV de Admisiones creado con éxito.');
     } catch (error) {
       console.error('Error al escribir el archivo CSV', error);
     }
-
+    return csv;
    
   }
-
-  // static async getCSV() {
-  //   const { data, error } = await supabase
-  //     .from('Admisiones')
-  //     .select('*');
-
-  //   if (error) {
-  //     console.error('Error al obtener datos de Admisiones', error);
-  //     throw error;
-  //   }
-
-  //   if (!data || data.length === 0) {
-  //     throw new Error('No hay datos de Admisiones');
-  //   }
-
-  //   // Convertir los datos a formato CSV
-  //   let csv = 'id_Admision,dni,primer_Nombre,segundo_Nombre,primer_Apellido,segundo_Apellido,id_Centro,id_Carrera,id_Sd_Carrera,email,intentos,nota1,nota2,aprobacionPAA,aprobacionPAM_PCCNS\n';
-  //   data.forEach(admision => {
-  //     csv += `${admision.id_Admision},${admision.dni},${admision.primer_Nombre},${admision.segundo_Nombre},${admision.primer_Apellido},${admision.segundo_Apellido},${admision.id_Centro},${admision.id_Carrera},${admision.id_Sd_Carrera},${admision.email},${admision.intentos},${admision.nota1},${admision.nota2},${admision.aprobacionPAA},${admision.aprobacionPAM_PCCNS}\n`;
-  //   });
-
-  //   // Guardar el CSV en un archivo
-
-  //   try {
-  //     const filePath = 'Admisiones.csv';
-  //     await fs.writeFile('Admisiones.csv', csv);
-  //     console.log('Archivo CSV de Admisiones creado con éxito.');
-  //   } catch (error) {
-  //     console.error('Error al escribir el archivo CSV', error);
-  //   }
-
-   
-  // }
   
 }
 
