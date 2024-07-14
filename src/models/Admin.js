@@ -373,11 +373,6 @@ class Admin {
         )
       `);
         
-      //filto los empleados por estado
-      if(!incluirInactivos){
-        query = query.eq('estado', true);
-      }
-
       const {data: empleados, error}= await query;
 
     if (error) throw error;
