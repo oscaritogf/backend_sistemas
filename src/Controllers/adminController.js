@@ -1,6 +1,6 @@
 // controllers/adminController.js
 const Admin = require('../models/Admin');
-
+const supabase = require('../config/supabase');
 exports.createEmpleado = async (req, res) => {
   
   try {
@@ -19,6 +19,24 @@ exports.createEmpleado = async (req, res) => {
     res.status(500).json({ message: 'Error al crear empleado', error: error.message });
   }
 };
+
+exports.getCentros = async (req, res) => {
+  try {
+    const { data: centros, error } = await supabase
+      .from('Centros')
+      .select('id_Centros, Nombre');
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json(centros);
+  } catch (error) {
+    console.error('Error al obtener los centros:', error);
+    res.status(500).json({ message: 'Error al obtener los centros' });
+  }
+};
+
 
 exports.updateEmpleado = async (req, res) => {
   try {
@@ -127,3 +145,4 @@ exports.deleteNoticia = async (req, res) => {
     });
   }
 };
+

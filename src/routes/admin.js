@@ -16,7 +16,7 @@ router.get('/noticias', adminController.getNoticias);
 router.post('/noticias', upload.single('imagen'), adminController.createNoticia);
 router.put('/noticias/:id_noticia',upload.single('imagen'), adminController.updateNoticia);
 router.delete('/noticias/:id_noticia', adminController.deleteNoticia);
-
+router.get('/centros', adminController.getCentros);  
 router.get('/roles', adminController.getRoles);
 module.exports = router;
 

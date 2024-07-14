@@ -14,18 +14,18 @@ class Admin {
         const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
       
          // Verificar si el número de identidad ya existe
-          const { data: existingUser, error: existingUserError } = await supabase
+        const { data: existingUser, error: existingUserError } = await supabase
           .from('Usuario')
           .select('id')
           .eq('Identidad', identidad)
-          .single();
+         
 
         if (existingUserError) {
           console.error('Error al verificar la existencia del número de identidad:', existingUserError);
           throw existingUserError;
         }
 
-        if (existingUser) {
+        if (existingUser.length > 0) {
           throw new Error('El número de identidad ya existe. No se puede crear el empleado.');
         }
 
