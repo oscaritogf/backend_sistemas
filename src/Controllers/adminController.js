@@ -2,17 +2,27 @@
 const Admin = require('../models/Admin');
 const supabase = require('../config/supabase');
 exports.createEmpleado = async (req, res) => {
-  
   try {
-    const empleadoData = req.body;
+    const empleadoData = {
+      ...req.body,
+      imagen: req.file ? req.file : null 
+    };
+
+    // Convertir roles de string a array es necesario
+    if (typeof empleadoData.roles === 'string') {
+      empleadoData.roles = JSON.parse(empleadoData.roles);
+    }
+
+    // Validar roles e id_Centros
     if (!empleadoData.roles || empleadoData.roles.length === 0) {
       return res.status(400).json({ message: 'Debe especificar al menos un rol para el empleado' });
     }
-    if(!empleadoData.id_Centros){
+    if (!empleadoData.id_Centros) {
       return res.status(400).json({ message: 'Debe especificar el centro al que pertenece el empleado' });
-   
     }
+
     const newEmpleado = await Admin.createEmpleado(empleadoData);
+
     res.status(201).json({ message: 'Empleado creado exitosamente', empleado: newEmpleado });
   } catch (error) {
     console.error('Error al crear empleado:', error);

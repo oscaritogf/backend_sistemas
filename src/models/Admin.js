@@ -7,129 +7,129 @@ const { sendEmployeeWelcomeEmail } = require('../utils/emailService');
 class Admin {
   
 
-
-
-    static async createEmpleado(empleadoData) {
-       
-        const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
-      
-         // Verificar si el número de identidad ya existe
-        const { data: existingUser, error: existingUserError } = await supabase
-          .from('Usuario')
-          .select('id')
-          .eq('Identidad', identidad)
-         
-
-        if (existingUserError) {
-          console.error('Error al verificar la existencia del número de identidad:', existingUserError);
-          throw existingUserError;
-        }
-
-        if (existingUser.length > 0) {
-          throw new Error('El número de identidad ya existe. No se puede crear el empleado.');
-        }
-
-        // Generar número de empleado único
-        const numeroEmpleado = await this.generateUniqueEmployeeNumber();
-      
-        // Hashear la contraseña
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
-      
-        // Preparar los datos del usuario
-        const userData = {
-          Nombre: nombre,
-          Apellido: apellido,
-          Correo: correo,
-          Telefono: telefono,
-          Identidad: identidad,
-          Contrasena: hashedPassword
-        };
-      
-        // Subir imagen a Cloudinary si se proporciona
-        if (imagen) {
-          try {
-            const result = await cloudinary.uploader.upload(imagen);
-            userData.Imagen = result.secure_url;
-          } catch (cloudinaryError) {
-            console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
-            // Decide si quieres lanzar este error o continuar sin imagen
-          }
-        }
-      
-        // Insertar usuario
-        const { data: usuario, error: userError } = await supabase
-          .from('Usuario')
-          .insert(userData)
-          .select()
-          .single();
-      
-        if (userError) {
-          console.error('Error al insertar usuario:', userError);
-          throw userError;
-        }
-      
-        if (!usuario) {
-          console.error('Usuario es null después de la inserción');
-          throw new Error('Fallo al crear el usuario');
-        }
-      
-        //agregandole Centros 
-       
-        // Insertar empleado
-        const { data: empleado, error: empleadoError } = await supabase
-          .from('empleado')
-          .insert({
-            numeroEmpleado,
-            usuario: usuario.id,
-
-            //estado
-            estado: true,
-            id_Centros: id_Centros
-          })
-          .select()
-          .single();
-      
-        if (empleadoError) {
-          console.error('Error al insertar empleado:', empleadoError);
-          throw empleadoError;
-        }
-      
-        // Asignar roles
-        for (const rolNombre of roles) {
-          const { data: rol, error: rolError } = await supabase
-            .from('rol')
-            .select('id')
-            .eq('nombre', rolNombre)
-            .single();
-      
-          if (rolError) {
-            console.error(`Error al buscar rol ${rolNombre}:`, rolError);
-            throw rolError;
-          }
-      
-          if (rol) {
-            const { error: userRolError } = await supabase
-              .from('UsuarioRol')
-              .insert({
-                id_Usuario: usuario.id,
-                id_Rol: rol.id
-              });
-      
-            if (userRolError) {
-              console.error(`Error al asignar rol ${rolNombre}:`, userRolError);
-              throw userRolError;
-            }
-          } else {
-            console.warn(`Rol no encontrado: ${rolNombre}`);
-          }
-        }
-      
-        // Enviar correo con credenciales
-        await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
-      
-        return { ...usuario, numeroEmpleado, roles, id_Centros };
+  static async createEmpleado(empleadoData) {
+    const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
+  
+    // Verificar si el número de identidad ya existe
+    const { data: existingUser, error: existingUserError } = await supabase
+      .from('Usuario')
+      .select('id')
+      .eq('Identidad', identidad);
+  
+    if (existingUserError) {
+      console.error('Error al verificar la existencia del número de identidad:', existingUserError);
+      throw existingUserError;
+    }
+  
+    if (existingUser.length > 0) {
+      throw new Error('El número de identidad ya existe. No se puede crear el empleado.');
+    }
+  
+    // Generar número de empleado único
+    const numeroEmpleado = await this.generateUniqueEmployeeNumber();
+  
+    // Hashear la contraseña
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
+  
+    // Preparar los datos del usuario
+    const userData = {
+      Nombre: nombre,
+      Apellido: apellido,
+      Correo: correo,
+      Telefono: telefono,
+      Identidad: identidad,
+      Contrasena: hashedPassword
+    };
+  
+    // Subir imagen a Cloudinary si se proporciona
+    if (imagen) {
+      try {
+        // `imagen` debería ser el archivo de la imagen recibido en la solicitud
+        const result = await cloudinary.uploader.upload(imagen.path);
+        userData.Imagen = result.secure_url;
+      } catch (cloudinaryError) {
+        console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
+        // Decide si quieres lanzar este error o continuar sin imagen
+        throw cloudinaryError; // Lanza el error si necesitas manejarlo arriba
       }
+    }
+  
+    // Insertar usuario
+    const { data: usuario, error: userError } = await supabase
+      .from('Usuario')
+      .insert(userData)
+      .select()
+      .single();
+  
+    if (userError) {
+      console.error('Error al insertar usuario:', userError);
+      throw userError;
+    }
+  
+    if (!usuario) {
+      console.error('Usuario es null después de la inserción');
+      throw new Error('Fallo al crear el usuario');
+    }
+  
+    // Insertar empleado
+    const { data: empleado, error: empleadoError } = await supabase
+      .from('empleado')
+      .insert({
+        numeroEmpleado,
+        usuario: usuario.id,
+        estado: true,
+        id_Centros: id_Centros
+      })
+      .select()
+      .single();
+  
+    if (empleadoError) {
+      console.error('Error al insertar empleado:', empleadoError);
+      throw empleadoError;
+    }
+  
+    if (!empleado) {
+      console.error('Empleado es null después de la inserción');
+      throw new Error('Fallo al crear el empleado');
+    }
+  
+    // Asignar roles
+    for (const rolNombre of roles) {
+      const { data: rol, error: rolError } = await supabase
+        .from('rol')
+        .select('id')
+        .eq('nombre', rolNombre)
+        .single(); // Asegura que se obtenga un solo resultado
+  
+      if (rolError) {
+        console.error(`Error al buscar rol ${rolNombre}:`, rolError);
+        throw rolError;
+      }
+  
+      if (!rol) {
+        console.error(`Rol no encontrado: ${rolNombre}`);
+        throw new Error(`Rol no encontrado: ${rolNombre}`);
+      }
+  
+      const { error: userRolError } = await supabase
+        .from('UsuarioRol')
+        .insert({
+          id_Usuario: usuario.id,
+          id_Rol: rol.id
+        });
+  
+      if (userRolError) {
+        console.error(`Error al asignar rol ${rolNombre}:`, userRolError);
+        throw userRolError;
+      }
+    }
+  
+    // Enviar correo con credenciales
+    await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
+  
+    return { ...usuario, numeroEmpleado, roles, id_Centros };
+  }
 
  //actualizar un empleado
  static async updateEmpleado(numeroEmpleado, empleadoData) {
