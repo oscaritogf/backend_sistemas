@@ -383,7 +383,7 @@ class Admin {
         )
       `);
         
-      const {data: empleados, error}= await query;
+    const {data: empleados, error}= await query;
 
     if (error) throw error;
   
