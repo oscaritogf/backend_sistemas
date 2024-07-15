@@ -365,6 +365,9 @@ class Admin {
       .select(`
         numeroEmpleado,
         estado, 
+        Centros (
+          Nombre
+        ),  
         Usuario (
           id, 
           Nombre, 
@@ -394,6 +397,7 @@ class Admin {
       Imagen: empleado.Usuario.Imagen,
       roles: empleado.Usuario.UsuarioRol.map(ur => ur.rol.nombre),
       estado: empleado.estado, //incluir estadi en el objeto
+      Centro: empleado.Centros.Nombre
     }));
   }
 
