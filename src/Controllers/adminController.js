@@ -127,6 +127,15 @@ exports.updateNoticia = async (req, res) => {
   }
 };
 
+exports.createCancelacion = async (req, res) => {
+  try {
+    const nuevaCancelacion = await Admin.createCancelacion(req.body);
+    res.status(201).json(nuevaCancelacion);
+  } catch (error) {
+    console.log('Error al crear la cancelacion:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 exports.deleteNoticia = async (req, res) => {
   try {
@@ -161,5 +170,4 @@ exports.getTipoMatricula = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 

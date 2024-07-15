@@ -595,6 +595,22 @@ static async generateUniqueEmployeeNumber() {
     return data;
   } 
 
+
+  //para cancelacion aqui comienza
+
+  static async createCancelacion(data) {
+    const { id_Pac, id_TipoMatricula, fecha_inicioCancel, fecha_finCancel, hora_inicioCancel, hora_finCancel } = data;
+    
+    const { data: newCancelacion, error } = await supabase
+      .from('CancelacionExcepcional')
+      .insert([{ id_Pac, id_TipoMatricula, fecha_inicioCancel, fecha_finCancel, hora_inicioCancel, hora_finCancel }]);
+
+    if (error) {
+      throw error;
+    }
+    return newCancelacion;
+  }
+
 };  
    
 
