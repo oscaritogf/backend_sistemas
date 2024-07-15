@@ -22,6 +22,11 @@ router.get('/roles', adminController.getRoles);
 router.get('/centros', adminController.getCentros);  
 router.post('/cancelaciones', adminController.createCancelacion);
 
+router.post('/configuraciones', adminController.crearConfiguracion);
+router.get('/listarConfig', adminController.obtenerConfiguraciones);
+router.get('/listarConfig/:id', adminController.obtenerConfiguracionPorId);
+router.put('/configuraciones/:id', adminController.actualizarConfiguracion);
+router.delete('/configuraciones/:id', adminController.eliminarConfiguracion);
 
 module.exports = router;
 

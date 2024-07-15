@@ -181,3 +181,60 @@ exports.getTipoMatricula = async (req, res) => {
   }
 };
 
+///Controlador para configurar matricul 
+exports.crearConfiguracion = async (req, res) => {
+  try {
+    const nuevaConfiguracion = await Admin.createConfiguracion(req.body);
+    res.status(201).json(nuevaConfiguracion);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+//funciona
+exports.obtenerConfiguraciones = async (req, res) => {
+  try {
+    const configuraciones = await Admin.getConfiguraciones();
+    res.json(configuraciones);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+//funciona
+exports.obtenerConfiguracionPorId = async (req, res) => {
+  try {
+    const configuracion = await Admin.getConfiguracionById(req.params.id);
+    if (configuracion) {
+      res.status(200).json(configuracion);
+    } else {
+      res.status(404).json({ message: 'Configuración no encontrada' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.actualizarConfiguracion = async (req, res) => {
+  try {
+    const configuracionActualizada = await Admin.updateConfiguracion(req.params.id, req.body);
+    if (configuracionActualizada) {
+      res.status(200).json(configuracionActualizada);
+    } else {
+      res.status(404).json({ message: 'Configuración no encontrada' });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.eliminarConfiguracion = async (req, res) => {
+  try {
+    const deleted = await Admin.deleteConfiguracion(req.params.id);
+    if (deleted) {
+      res.status(204).send();
+    } else {
+      res.status(404).json({ message: 'Configuración no encontrada' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

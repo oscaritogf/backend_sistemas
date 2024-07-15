@@ -8,6 +8,8 @@ const { sendEmployeeWelcomeEmail } = require('../utils/emailService');
 class Admin {
   
 
+
+
   static async createEmpleado(empleadoData) {
     const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
   
@@ -610,11 +612,123 @@ static async generateUniqueEmployeeNumber() {
     }
     return newCancelacion;
   }
+///Modelo para crear una configuracion de matricula 
+static async createConfiguracion(data) {
+  const {
+    id_TipoMatricula,
+    fecha_inicioPAC,
+    fecha_finPAC,
+    fecha_inicioMatri,
+    fecha_finMatri,
+    hora_inicioMatri,
+    hora_finMatri,
+    fecha_matri1,
+    indice_desdeMatri1,
+    indice_hastaMatri1,
+    pIngreso_desdeMatri1,
+    pIngreso_hastaMatri1,
+    fecha_matri2,
+    indice_desdeMatri2,
+    indice_hastaMatri2,
+    pIngreso_desdeMatri2,
+    pIngreso_hastaMatri2,
+    fecha_matri3,
+    indice_desdeMatri3,
+    indice_hastaMatri3,
+    fecha_matri4,
+    indice_desdeMatri4,
+    indice_hastaMatri4,
+    fecha_matri5,
+    indice_desdeMatri5,
+    indice_hastaMatri5,
+    id_Pac
+  } = data;
 
-};  
-   
+  const { data: newConfiguracion, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .insert([{
+      id_TipoMatricula,
+      fecha_inicioPAC,
+      fecha_finPAC,
+      fecha_inicioMatri,
+      fecha_finMatri,
+      hora_inicioMatri,
+      hora_finMatri,
+      fecha_matri1,
+      indice_desdeMatri1,
+      indice_hastaMatri1,
+      pIngreso_desdeMatri1,
+      pIngreso_hastaMatri1,
+      fecha_matri2,
+      indice_desdeMatri2,
+      indice_hastaMatri2,
+      pIngreso_desdeMatri2,
+      pIngreso_hastaMatri2,
+      fecha_matri3,
+      indice_desdeMatri3,
+      indice_hastaMatri3,
+      fecha_matri4,
+      indice_desdeMatri4,
+      indice_hastaMatri4,
+      fecha_matri5,
+      indice_desdeMatri5,
+      indice_hastaMatri5,
+      id_Pac
+    }]);
 
+  if (error) {
+    throw error;
+  }
+  return newConfiguracion;
+}
 
+static async getConfiguraciones() {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .select('*');
 
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async getConfiguracionById(id) {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .select('*')
+    .eq('id_ConfMatri', id)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async updateConfiguracion(id, updateData) {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .update(updateData)
+    .eq('id_ConfMatri', id);
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async deleteConfiguracion(id) {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .delete()
+    .eq('id_ConfMatri', id);
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+};
 
 module.exports = Admin;
