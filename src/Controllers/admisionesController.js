@@ -144,7 +144,9 @@ exports.getCarreras = async (req, res) => {
   }
 };
 
+// Controlador para obtener los exámenes por carrera
 exports.getExamenesCarrera = async (req, res) => {
+  
   try {
     const { carreraId } = req.params;
     const examenes = await Admision.getExamenes(carreraId);
@@ -153,7 +155,6 @@ exports.getExamenesCarrera = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 // Nuevo endpoint para obtener las notas y determinar la carrera aprobada
 exports.getNotasByDNI = async (req, res) => {
@@ -182,14 +183,32 @@ exports.getNotasByDNI = async (req, res) => {
       }
     };
 
-    if (carrera1.Facultades.nombre.toLowerCase().includes('ingeniería') ||
-      carrera1.Facultades.nombre.toLowerCase().includes('medicina')) {
-      resultado.carrera1.aprobacionPAM_PCCNS = notas.nota2 >= 500 ? 'aprobó' : 'reprobó';
+    // Verificar si la carrera1 existe y tiene Facultades
+    if (carrera1 && carrera1.Facultades) {
+      if (carrera1.Facultades.nombre.toLowerCase().includes('facultad de ingeniería') ||
+          carrera1.Facultades.nombre.toLowerCase().includes('facultad de medicina')) {
+        if (notas.nota2 >= 500) {
+          resultado.carrera1.aprobacionPAM_PCCNS = 'aprobó';
+        } else if (notas.nota1 >= carrera1.puntajeRequerido) {
+          resultado.carrera1.aprobacionPAM_PCCNS = 'reprobó, pero puede ingresar a la carrera que no requiere PAM o PCCNS';
+        } else {
+          resultado.carrera1.aprobacionPAM_PCCNS = 'reprobó';
+        }
+      }
     }
 
-    if (carrera2.Facultades.nombre.toLowerCase().includes('ingeniería') ||
-      carrera2.Facultades.nombre.toLowerCase().includes('medicina')) {
-      resultado.carrera2.aprobacionPAM_PCCNS = notas.nota2 >= 500 ? 'aprobó' : 'reprobó';
+    // Verificar si la carrera2 existe y tiene Facultades
+    if (carrera2 && carrera2.Facultades) {
+      if (carrera2.Facultades.nombre.toLowerCase().includes('facultad de ingeniería') ||
+          carrera2.Facultades.nombre.toLowerCase().includes('facultad de medicina')) {
+        if (notas.nota2 >= 500) {
+          resultado.carrera2.aprobacionPAM_PCCNS = 'aprobó';
+        } else if (notas.nota1 >= carrera2.puntajeRequerido) {
+          resultado.carrera2.aprobacionPAM_PCCNS = 'reprobó, pero puede ingresar a una carrera que no requiere PAM o PCCNS';
+        } else {
+          resultado.carrera2.aprobacionPAM_PCCNS = 'reprobó';
+        }
+      }
     }
 
     res.json(resultado);
@@ -198,4 +217,7 @@ exports.getNotasByDNI = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
 

@@ -53,14 +53,51 @@ class Admision {
   return data;
 }
 
-  static async getExamenes(carreraId) {
-    const { data, error } = await supabase
-      .from('carreraExamenes')
-      .select('id_Examen, Examenes(id_Examenes, nombre)')
-      .eq('id_Carrera', carreraId);
-    if (error) throw error;
-    return data.map(item => item.Examenes);
+static async getExamenes(carreraId) {
+  const { data, error } = await supabase
+    .from('carreraExamenes')
+    .select('id_Examen, Examenes(id_Examenes, nombre)')
+    .eq('id_Carrera', carreraId);
+  if (error) throw error;
+  return data.map(item => item.Examenes);
+}
+
+
+static async getNotasByDNI(dni) {
+  const { data, error } = await supabase
+    .from('Admisiones')
+    .select('id_Carrera, id_Sd_Carrera, nota1, nota2, aprobacionPAM_PCCNS, aprobacionPAA')
+    .eq('dni', dni)
+    .single();
+
+  if (error) {
+    throw error;
   }
+
+  return data;
+}
+
+static async getCarreras() {
+  const { data, error } = await supabase
+    .from('Carrera')
+    .select(`
+      id_Carrera,
+      nombre,
+      puntajeRequerido,
+      Facultades:Facultades(
+        nombre
+      )
+    `
+
+    );
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data;
+}
+
 
   static async getCSV() {
     const { data, error } = await supabase
