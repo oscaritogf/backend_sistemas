@@ -369,6 +369,7 @@ class Admin {
       .select(`
         numeroEmpleado,
         estado, 
+        created_at,
         Centros (
           Nombre
         ),  
@@ -384,14 +385,15 @@ class Admin {
             rol (nombre)
           )
         )
-      `);
-        
+      `)
+      .order('created_at', { ascending: false });
     const {data: empleados, error}= await query;
 
     if (error) throw error;
   
     return empleados.map(empleado => ({
       numeroEmpleado: empleado.numeroEmpleado,
+      fechaCreacion: empleado.created_at,
       id: empleado.Usuario.id,
       Nombre: empleado.Usuario.Nombre,
       Apellido: empleado.Usuario.Apellido,
@@ -452,7 +454,9 @@ static async generateUniqueEmployeeNumber() {
   static async getNoticias() {
     let { data: noticias, error } = await supabase
     .from('noticias')
-    .select('*');
+    .select('*')
+    .order('fecha_creacion', { ascending: false });
+    
     if (error) {
       console.error('Error al obtener noticias:', error);
       throw new Error('Error al obtener noticias');
