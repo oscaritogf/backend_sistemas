@@ -13,11 +13,15 @@ router.post('/empleados',upload.single('imagen'), adminController.createEmpleado
 router.put('/empleados/:numeroEmpleado',upload.single('imagen'), adminController.updateEmpleado);
 router.get('/empleados', adminController.listEmpleados);
 router.get('/noticias', adminController.getNoticias);
+router.get('/matricula_filtro/:id_ConfMatri', adminController.getGestionMatriculaFiltro);
+router.get('/matricula', adminController.getGestionMatricula);
 router.post('/noticias', upload.single('imagen'), adminController.createNoticia);
 router.put('/noticias/:id_noticia',upload.single('imagen'), adminController.updateNoticia);
+//router.delete('/maticula/:id_ConfMatri', adminController.deleteMatricula);
+//router.put('/maticula/:id_ConfMatri', adminController.updateMatricula);
 router.delete('/noticias/:id_noticia', adminController.deleteNoticia);
 router.get('/pac', adminController.getPac);
-router.get('/matricula', adminController.getTipoMatricula);
+router.get('/tipo_matricula', adminController.getTipoMatricula);
 router.get('/roles', adminController.getRoles);
 router.get('/centros', adminController.getCentros);  
 router.post('/cancelaciones', adminController.createCancelacion);
