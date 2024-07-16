@@ -203,11 +203,12 @@ class Admin {
     // Subir nueva imagen a Cloudinary si se proporciona
     if (imagen) {
       try {
-        const result = await cloudinary.uploader.upload(imagen);
+        const result = await cloudinary.uploader.upload(imagen.path);
         userData.Imagen = result.secure_url;
       } catch (cloudinaryError) {
         console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
         // Decide si quieres lanzar este error o continuar sin actualizar la imagen
+        throw cloudinaryError; // Lanza el error si necesitas manejarlo arriba
       }
     }
 

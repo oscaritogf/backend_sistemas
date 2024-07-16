@@ -6,12 +6,12 @@ exports.createEmpleado = async (req, res) => {
     const empleadoData = {
       ...req.body,
       imagen: req.file ? req.file : null 
-    };
+    };//mejorado
 
     // Convertir roles de string a array es necesario
     if (typeof empleadoData.roles === 'string') {
       empleadoData.roles = JSON.parse(empleadoData.roles);
-    }
+    }//nuevo 
 
     // Validar roles e id_Centros
     if (!empleadoData.roles || empleadoData.roles.length === 0) {
@@ -57,7 +57,16 @@ exports.updateEmpleado = async (req, res) => {
     if(isNaN(numeroEmpleado)){
       return res.status(404).json({ message:'numero de empleado invalido'});
     }
-    const empleadoData = req.body;
+    // const empleadoData = req.body;
+    const empleadoData = {
+      ...req.body,
+      imagen: req.file ? req.file : null 
+    };
+
+    // Convertir roles de string a array es necesario
+    if (typeof empleadoData.roles === 'string') {
+      empleadoData.roles = JSON.parse(empleadoData.roles);
+    }//nuevo 
     
     const updatedEmpleado = await Admin.updateEmpleado(numeroEmpleado, empleadoData);
     res.json({ message: 'Empleado actualizado exitosamente', empleado: updatedEmpleado });
