@@ -53,14 +53,53 @@ class Admision {
   return data;
 }
 
-  static async getExamenes(carreraId) {
-    const { data, error } = await supabase
-      .from('carreraExamenes')
-      .select('id_Examen, Examenes(id_Examenes, nombre)')
-      .eq('id_Carrera', carreraId);
-    if (error) throw error;
-    return data.map(item => item.Examenes);
+
+
+static async getExamenes(carreraId) {
+  const { data, error } = await supabase
+    .from('carreraExamenes')
+    .select('id_Examen, Examenes(id_Examenes, nombre)')
+    .eq('id_Carrera', carreraId);
+  if (error) throw error;
+  return data.map(item => item.Examenes);
+}
+
+
+static async getNotasByDNI(dni) {
+  const { data, error } = await supabase
+    .from('Admisiones')
+    .select('id_Carrera, id_Sd_Carrera, nota1, nota2, aprobacionPAM_PCCNS, aprobacionPAA')
+    .eq('dni', dni)
+    .single();
+
+  if (error) {
+    throw error;
   }
+
+  return data;
+}
+
+static async getCarreras() {
+  const { data, error } = await supabase
+    .from('Carrera')
+    .select(`
+      id_Carrera,
+      nombre,
+      puntajeRequerido,
+      Facultades:Facultades(
+        nombre
+      )
+    `
+
+    );
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data;
+}
+
 
   static async getCSV() {
     const { data, error } = await supabase
@@ -70,7 +109,7 @@ class Admision {
         // Obtener datos de la tabla Centros
     const { data: centrosData, error: centrosError } = await supabase
     .from('Centro')
-    .select('id_Centro,nombre');
+    .select('id_Centro,nombre, codigo');
 
   if (centrosError) {
     console.error('Error al obtener datos de Centros', centrosError);
@@ -82,6 +121,12 @@ class Admision {
     centrosData.forEach(centro => {
       centrosMap.set(centro.id_Centro, centro.nombre);
     });
+
+      const  centrocodMap = new Map();
+      centrosData.forEach(centro => {
+        centrocodMap.set(centro.id_Centro, centro.codigo);
+      });
+
 
          // Obtener datos de la tabla Centros
          const { data: carreraData, error: carreraError } = await supabase
@@ -120,12 +165,13 @@ class Admision {
     }
 
     // Convertir los datos a formato CSV
-    let csv = 'id_Admision,dni,primer_Nombre,segundo_Nombre,primer_Apellido,segundo_Apellido,Centro,Carrera,Sd_Carrera,email,intentos,nota1,nota2,aprobacionPAA,aprobacionPAM_PCCNS\n';
+    let csv = 'id_Admision,dni,primer_Nombre,segundo_Nombre,primer_Apellido,segundo_Apellido,Centro,Codigo,Carrera,Sd_Carrera,email,intentos,nota1,nota2,aprobacionPAA,aprobacionPAM_PCCNS\n';
     data.forEach(admision => {
+      const cent = centrocodMap.get(admision.id_Centro) || '';
       const codigoCentro = centrosMap.get(admision.id_Centro) || '';
       const nombreCarrera = carrerasMap.get(admision.id_Carrera) || '';
       const nombreSdCarrera = carrerasMap.get(admision.id_Sd_Carrera) || '';
-      csv += `${admision.id_Admision},${admision.dni},${admision.primer_Nombre},${admision.segundo_Nombre},${admision.primer_Apellido},${admision.segundo_Apellido},${codigoCentro},${nombreCarrera},${nombreSdCarrera},${admision.email},${admision.intentos},${admision.nota1},${admision.nota2},${admision.aprobacionPAA},${admision.aprobacionPAM_PCCNS}\n`;
+      csv += `${admision.id_Admision},${admision.dni},${admision.primer_Nombre},${admision.segundo_Nombre},${admision.primer_Apellido},${admision.segundo_Apellido},${codigoCentro},${cent},${nombreCarrera},${nombreSdCarrera},${admision.email},${admision.intentos},${admision.nota1},${admision.nota2},${admision.aprobacionPAA},${admision.aprobacionPAM_PCCNS}\n`;
     });
 
     // Guardar el CSV en un archivo
@@ -140,7 +186,54 @@ class Admision {
     return csv;
    
   }
+
+  static async readCsv(csvFilePath) {
+    
+  }
+
+  static async generateUniqueStudentNumber(centroNombre) {
+    const currentYear = new Date().getFullYear();
+    let uniqueNumber;
+    let isUnique = false;
   
+      const { data: centroData, error: centroError } = await supabase
+      .from('Centro')
+      .select('codigo')
+      .eq('nombre', centroNombre)
+      .single();
+
+    if (centroError) throw centroError;
+
+    const centroCode = centroData.codigo;
+
+    while (!isUnique) {
+      const randomNum = Math.floor(Math.random() * 9999) + 1;
+      uniqueNumber = `${currentYear}${centroCode.toString()}${randomNum.toString().padStart(4, '0')}`;
+  
+      // Verificar si el número ya existe
+      const { data, error } = await supabase
+        .from('estudiante')
+        .select('numeroCuenta')
+        .eq('numeroCuenta', uniqueNumber);
+  
+      if (error) throw error;
+      if (data.length === 0) isUnique = true;
+    }
+  
+    return uniqueNumber;
+  }
+  
+  
+  static async getId(dni) {
+    const { data, error } = await supabase
+      .from('Usuario')
+      .select('id, dni')
+      .eq('dni', dni);
+  
+    if (error) throw error;
+    return data;
+  }
+
 }
 
   

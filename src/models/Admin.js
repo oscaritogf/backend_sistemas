@@ -1,4 +1,5 @@
 
+
 const supabase = require('../config/supabase');
 const bcrypt = require('bcrypt');
 const cloudinary = require('../config/cloudinary');
@@ -9,127 +10,129 @@ class Admin {
 
 
 
-    static async createEmpleado(empleadoData) {
-       
-        const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
-      
-         // Verificar si el número de identidad ya existe
-        const { data: existingUser, error: existingUserError } = await supabase
-          .from('Usuario')
-          .select('id')
-          .eq('Identidad', identidad)
-         
-
-        if (existingUserError) {
-          console.error('Error al verificar la existencia del número de identidad:', existingUserError);
-          throw existingUserError;
-        }
-
-        if (existingUser.length > 0) {
-          throw new Error('El número de identidad ya existe. No se puede crear el empleado.');
-        }
-
-        // Generar número de empleado único
-        const numeroEmpleado = await this.generateUniqueEmployeeNumber();
-      
-        // Hashear la contraseña
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
-      
-        // Preparar los datos del usuario
-        const userData = {
-          Nombre: nombre,
-          Apellido: apellido,
-          Correo: correo,
-          Telefono: telefono,
-          Identidad: identidad,
-          Contrasena: hashedPassword
-        };
-      
-        // Subir imagen a Cloudinary si se proporciona
-        if (imagen) {
-          try {
-            const result = await cloudinary.uploader.upload(imagen);
-            userData.Imagen = result.secure_url;
-          } catch (cloudinaryError) {
-            console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
-            // Decide si quieres lanzar este error o continuar sin imagen
-          }
-        }
-      
-        // Insertar usuario
-        const { data: usuario, error: userError } = await supabase
-          .from('Usuario')
-          .insert(userData)
-          .select()
-          .single();
-      
-        if (userError) {
-          console.error('Error al insertar usuario:', userError);
-          throw userError;
-        }
-      
-        if (!usuario) {
-          console.error('Usuario es null después de la inserción');
-          throw new Error('Fallo al crear el usuario');
-        }
-      
-        //agregandole Centros 
-       
-        // Insertar empleado
-        const { data: empleado, error: empleadoError } = await supabase
-          .from('empleado')
-          .insert({
-            numeroEmpleado,
-            usuario: usuario.id,
-
-            //estado
-            estado: true,
-            id_Centros: id_Centros
-          })
-          .select()
-          .single();
-      
-        if (empleadoError) {
-          console.error('Error al insertar empleado:', empleadoError);
-          throw empleadoError;
-        }
-      
-        // Asignar roles
-        for (const rolNombre of roles) {
-          const { data: rol, error: rolError } = await supabase
-            .from('rol')
-            .select('id')
-            .eq('nombre', rolNombre)
-            .single();
-      
-          if (rolError) {
-            console.error(`Error al buscar rol ${rolNombre}:`, rolError);
-            throw rolError;
-          }
-      
-          if (rol) {
-            const { error: userRolError } = await supabase
-              .from('UsuarioRol')
-              .insert({
-                id_Usuario: usuario.id,
-                id_Rol: rol.id
-              });
-      
-            if (userRolError) {
-              console.error(`Error al asignar rol ${rolNombre}:`, userRolError);
-              throw userRolError;
-            }
-          } else {
-            console.warn(`Rol no encontrado: ${rolNombre}`);
-          }
-        }
-      
-        // Enviar correo con credenciales
-        await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
-      
-        return { ...usuario, numeroEmpleado, roles, id_Centros };
+  static async createEmpleado(empleadoData) {
+    const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
+  
+    // Verificar si el número de identidad ya existe
+    const { data: existingUser, error: existingUserError } = await supabase
+      .from('Usuario')
+      .select('id')
+      .eq('Identidad', identidad);
+  
+    if (existingUserError) {
+      console.error('Error al verificar la existencia del número de identidad:', existingUserError);
+      throw existingUserError;
+    }
+  
+    if (existingUser.length > 0) {
+      throw new Error('El número de identidad ya existe. No se puede crear el empleado.');
+    }
+  
+    // Generar número de empleado único
+    const numeroEmpleado = await this.generateUniqueEmployeeNumber();
+  
+    // Hashear la contraseña
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
+  
+    // Preparar los datos del usuario
+    const userData = {
+      Nombre: nombre,
+      Apellido: apellido,
+      Correo: correo,
+      Telefono: telefono,
+      Identidad: identidad,
+      Contrasena: hashedPassword
+    };
+  
+    // Subir imagen a Cloudinary si se proporciona
+    if (imagen) {
+      try {
+        // `imagen` debería ser el archivo de la imagen recibido en la solicitud
+        const result = await cloudinary.uploader.upload(imagen.path);
+        userData.Imagen = result.secure_url;
+      } catch (cloudinaryError) {
+        console.error('Error al subir imagen a Cloudinary:', cloudinaryError);
+        // Decide si quieres lanzar este error o continuar sin imagen
+        throw cloudinaryError; // Lanza el error si necesitas manejarlo arriba
       }
+    }
+  
+    // Insertar usuario
+    const { data: usuario, error: userError } = await supabase
+      .from('Usuario')
+      .insert(userData)
+      .select()
+      .single();
+  
+    if (userError) {
+      console.error('Error al insertar usuario:', userError);
+      throw userError;
+    }
+  
+    if (!usuario) {
+      console.error('Usuario es null después de la inserción');
+      throw new Error('Fallo al crear el usuario');
+    }
+  
+    // Insertar empleado
+    const { data: empleado, error: empleadoError } = await supabase
+      .from('empleado')
+      .insert({
+        numeroEmpleado,
+        usuario: usuario.id,
+        estado: true,
+        id_Centros: id_Centros
+      })
+      .select()
+      .single();
+  
+    if (empleadoError) {
+      console.error('Error al insertar empleado:', empleadoError);
+      throw empleadoError;
+    }
+  
+    if (!empleado) {
+      console.error('Empleado es null después de la inserción');
+      throw new Error('Fallo al crear el empleado');
+    }
+  
+    // Asignar roles
+    for (const rolNombre of roles) {
+      const { data: rol, error: rolError } = await supabase
+        .from('rol')
+        .select('id')
+        .eq('nombre', rolNombre)
+        .single(); // Asegura que se obtenga un solo resultado
+  
+      if (rolError) {
+        console.error(`Error al buscar rol ${rolNombre}:`, rolError);
+        throw rolError;
+      }
+  
+      if (!rol) {
+        console.error(`Rol no encontrado: ${rolNombre}`);
+        throw new Error(`Rol no encontrado: ${rolNombre}`);
+      }
+  
+      const { error: userRolError } = await supabase
+        .from('UsuarioRol')
+        .insert({
+          id_Usuario: usuario.id,
+          id_Rol: rol.id
+        });
+  
+      if (userRolError) {
+        console.error(`Error al asignar rol ${rolNombre}:`, userRolError);
+        throw userRolError;
+      }
+    }
+  
+    // Enviar correo con credenciales
+    await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
+  
+    return { ...usuario, numeroEmpleado, roles, id_Centros };
+  }
 
  //actualizar un empleado
  static async updateEmpleado(numeroEmpleado, empleadoData) {
@@ -365,6 +368,9 @@ class Admin {
       .select(`
         numeroEmpleado,
         estado, 
+        Centros (
+          Nombre
+        ),  
         Usuario (
           id, 
           Nombre, 
@@ -379,7 +385,7 @@ class Admin {
         )
       `);
         
-      const {data: empleados, error}= await query;
+    const {data: empleados, error}= await query;
 
     if (error) throw error;
   
@@ -394,6 +400,7 @@ class Admin {
       Imagen: empleado.Usuario.Imagen,
       roles: empleado.Usuario.UsuarioRol.map(ur => ur.rol.nombre),
       estado: empleado.estado, //incluir estadi en el objeto
+      Centro: empleado.Centros.Nombre
     }));
   }
 
@@ -761,5 +768,139 @@ static async generateUniqueEmployeeNumber() {
 
 
 
+
+
+  //para cancelacion aqui comienza
+
+  static async createCancelacion(data) {
+    const { id_Pac, id_TipoMatricula, fecha_inicioCancel, fecha_finCancel, hora_inicioCancel, hora_finCancel } = data;
+    
+    const { data: newCancelacion, error } = await supabase
+      .from('CancelacionExcepcional')
+      .insert([{ id_Pac, id_TipoMatricula, fecha_inicioCancel, fecha_finCancel, hora_inicioCancel, hora_finCancel }]);
+
+    if (error) {
+      throw error;
+    }
+    return newCancelacion;
+  }
+///Modelo para crear una configuracion de matricula 
+static async createConfiguracion(data) {
+  const {
+    id_TipoMatricula,
+    fecha_inicioPAC,
+    fecha_finPAC,
+    fecha_inicioMatri,
+    fecha_finMatri,
+    hora_inicioMatri,
+    hora_finMatri,
+    fecha_matri1,
+    indice_desdeMatri1,
+    indice_hastaMatri1,
+    pIngreso_desdeMatri1,
+    pIngreso_hastaMatri1,
+    fecha_matri2,
+    indice_desdeMatri2,
+    indice_hastaMatri2,
+    pIngreso_desdeMatri2,
+    pIngreso_hastaMatri2,
+    fecha_matri3,
+    indice_desdeMatri3,
+    indice_hastaMatri3,
+    fecha_matri4,
+    indice_desdeMatri4,
+    indice_hastaMatri4,
+    fecha_matri5,
+    indice_desdeMatri5,
+    indice_hastaMatri5,
+    id_Pac
+  } = data;
+
+  const { data: newConfiguracion, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .insert([{
+      id_TipoMatricula,
+      fecha_inicioPAC,
+      fecha_finPAC,
+      fecha_inicioMatri,
+      fecha_finMatri,
+      hora_inicioMatri,
+      hora_finMatri,
+      fecha_matri1,
+      indice_desdeMatri1,
+      indice_hastaMatri1,
+      pIngreso_desdeMatri1,
+      pIngreso_hastaMatri1,
+      fecha_matri2,
+      indice_desdeMatri2,
+      indice_hastaMatri2,
+      pIngreso_desdeMatri2,
+      pIngreso_hastaMatri2,
+      fecha_matri3,
+      indice_desdeMatri3,
+      indice_hastaMatri3,
+      fecha_matri4,
+      indice_desdeMatri4,
+      indice_hastaMatri4,
+      fecha_matri5,
+      indice_desdeMatri5,
+      indice_hastaMatri5,
+      id_Pac
+    }]);
+
+  if (error) {
+    throw error;
+  }
+  return newConfiguracion;
+}
+
+static async getConfiguraciones() {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .select('*');
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async getConfiguracionById(id) {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .select('*')
+    .eq('id_ConfMatri', id)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async updateConfiguracion(id, updateData) {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .update(updateData)
+    .eq('id_ConfMatri', id);
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async deleteConfiguracion(id) {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .delete()
+    .eq('id_ConfMatri', id);
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+};
 
 module.exports = Admin;

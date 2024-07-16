@@ -9,8 +9,8 @@ const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
 //router.get('/data', authenticateToken, checkRole('admin'), adminController.getData);
-router.post('/empleados', adminController.createEmpleado);
-router.put('/empleados/:numeroEmpleado', adminController.updateEmpleado);
+router.post('/empleados',upload.single('imagen'), adminController.createEmpleado);
+router.put('/empleados/:numeroEmpleado',upload.single('imagen'), adminController.updateEmpleado);
 router.get('/empleados', adminController.listEmpleados);
 router.get('/noticias', adminController.getNoticias);
 router.get('/matricula_filtro/:id_ConfMatri', adminController.getGestionMatriculaFiltro);
@@ -23,6 +23,15 @@ router.delete('/noticias/:id_noticia', adminController.deleteNoticia);
 router.get('/pac', adminController.getPac);
 router.get('/tipo_matricula', adminController.getTipoMatricula);
 router.get('/roles', adminController.getRoles);
+router.get('/centros', adminController.getCentros);  
+router.post('/cancelaciones', adminController.createCancelacion);
+
+router.post('/configuraciones', adminController.crearConfiguracion);
+router.get('/listarConfig', adminController.obtenerConfiguraciones);
+router.get('/listarConfig/:id', adminController.obtenerConfiguracionPorId);
+router.put('/configuraciones/:id', adminController.actualizarConfiguracion);
+router.delete('/configuraciones/:id', adminController.eliminarConfiguracion);
+
 module.exports = router;
 
 //put: http://localhost:3000/api/admin/empleados/1 

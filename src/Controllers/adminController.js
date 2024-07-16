@@ -3,17 +3,27 @@ const Admin = require('../models/Admin');
 const supabase = require('../config/supabase');
 
 exports.createEmpleado = async (req, res) => {
-  
   try {
-    const empleadoData = req.body;
+    const empleadoData = {
+      ...req.body,
+      imagen: req.file ? req.file : null 
+    };
+
+    // Convertir roles de string a array es necesario
+    if (typeof empleadoData.roles === 'string') {
+      empleadoData.roles = JSON.parse(empleadoData.roles);
+    }
+
+    // Validar roles e id_Centros
     if (!empleadoData.roles || empleadoData.roles.length === 0) {
       return res.status(400).json({ message: 'Debe especificar al menos un rol para el empleado' });
     }
-    if(!empleadoData.id_Centros){
+    if (!empleadoData.id_Centros) {
       return res.status(400).json({ message: 'Debe especificar el centro al que pertenece el empleado' });
-   
     }
+
     const newEmpleado = await Admin.createEmpleado(empleadoData);
+
     res.status(201).json({ message: 'Empleado creado exitosamente', empleado: newEmpleado });
   } catch (error) {
     console.error('Error al crear empleado:', error);
@@ -257,6 +267,98 @@ exports.getTipoMatricula = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+/*
+exports.deleteMatricula = async (req, res) => {
+  try {
+    const idMatricula = req.params.id_noticia;
+
+    await Admin.deleteMatricula(idMatricula);
+
+    res.json({
+      message: 'Matricula eliminada exitosamente'
+    });
+  } catch (error) {
+    console.error('Error al eliminar matricula:', error);
+    res.status(500).json({
+      message: 'Error al eliminar matricula',
+      error: error.message
+    });
+  }
+};
+*/
+exports.getPac = async (req, res) => {
+  try {
+    const pac = await Admin.getPac();
+    res.json(pac);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.getTipoMatricula = async (req, res) => {
+  try {
+    const matricula = await Admin.getTipoMatricula();
+    res.json(matricula);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 
+///Controlador para configurar matricul 
+exports.crearConfiguracion = async (req, res) => {
+  try {
+    const nuevaConfiguracion = await Admin.createConfiguracion(req.body);
+    res.status(201).json(nuevaConfiguracion);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+//funciona
+exports.obtenerConfiguraciones = async (req, res) => {
+  try {
+    const configuraciones = await Admin.getConfiguraciones();
+    res.json(configuraciones);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+//funciona
+exports.obtenerConfiguracionPorId = async (req, res) => {
+  try {
+    const configuracion = await Admin.getConfiguracionById(req.params.id);
+    if (configuracion) {
+      res.status(200).json(configuracion);
+    } else {
+      res.status(404).json({ message: 'Configuración no encontrada' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.actualizarConfiguracion = async (req, res) => {
+  try {
+    const configuracionActualizada = await Admin.updateConfiguracion(req.params.id, req.body);
+    if (configuracionActualizada) {
+      res.status(200).json(configuracionActualizada);
+    } else {
+      res.status(404).json({ message: 'Configuración no encontrada' });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.eliminarConfiguracion = async (req, res) => {
+  try {
+    const deleted = await Admin.deleteConfiguracion(req.params.id);
+    if (deleted) {
+      res.status(204).send();
+    } else {
+      res.status(404).json({ message: 'Configuración no encontrada' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

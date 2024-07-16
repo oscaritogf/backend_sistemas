@@ -1,10 +1,13 @@
 const Admision = require('../models/Admisiones');
 const cloudinary = require('../config/cloudinary');
-const {sendConfirmationEmail} = require('../utils/emailService')
+const {sendConfirmationEmail, sendStudentWelcomeEmail, sendRejectionEmail} = require('../utils/emailService')
 const fs = require('fs');
 const csv = require('csv-parser');
 const path = require('path');
 const os = require('os');
+const supabase = require('../config/supabase');
+const bcrypt = require('bcrypt');
+const { get } = require('http');
 
 
 
@@ -144,7 +147,9 @@ exports.getCarreras = async (req, res) => {
   }
 };
 
+// Controlador para obtener los exámenes por carrera
 exports.getExamenesCarrera = async (req, res) => {
+  
   try {
     const { carreraId } = req.params;
     const examenes = await Admision.getExamenes(carreraId);
@@ -153,6 +158,211 @@ exports.getExamenesCarrera = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+// End point para validar inscripcion con archivo csv
+
+
+
+exports.crearUsuario = async (req, res) => {
+  try {
+    const { archivo } = req.body;
+
+    if (!archivo) {
+      return res.status(400).json({ message: 'No se proporcionó el archivo CSV.' });
+    }
+
+    const filePath = path.join(os.homedir(),'Downloads/', archivo);
+    const results = [];
+
+    // Leer el archivo CSV
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', (row) => {
+        results.push(row);
+      })
+      .on('end', async () => {
+        console.log('CSV file successfully processed');
+        try {
+
+          // Procesar los datos del archivo CSV
+          for (const row of results) {     
+
+            const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo } = row;
+          
+            const generatePassword = () => {
+              const password = Math.floor(1000 + Math.random() * 9000);
+              return password;
+            };
+
+            //generar numero de cuenta unico
+            const generateUniqeStudentNumber = async () => {
+             
+                const currentYear = new Date().getFullYear();
+                var uniqueNumber;
+                let isUnique = false;
+              
+                while (!isUnique) {
+                  const randomNum = Math.floor(Math.random() * 9999) + 1;
+                  uniqueNumber = `${currentYear}${Codigo}${randomNum.toString().padStart(4, '0')}`;
+              
+                  // Verificar si el número ya existe
+                  const { data, error } = await supabase
+                    .from('estudiante')
+                    .select('numeroCuenta')
+                    .eq('numeroCuenta', uniqueNumber);
+              
+                  if (error) throw error;
+                  if (data.length === 0) isUnique = true;
+                }         
+              return uniqueNumber;
+            }
+
+            const getId = async (dni) => {
+              const { data, error } = await supabase
+                .from('Usuario')
+                .select('id')
+                .eq('Identidad', dni)
+                .single();
+            
+              if (error) throw error;
+              if (!data) throw new Error('No se encontró el usuario');
+            
+              return data.id;
+            };
+
+            const contrasena = generatePassword();
+            const hashedPassword = bcrypt.hashSync(contrasena.toString(), 10);
+            const numeroCuenta = await generateUniqeStudentNumber();
+
+            const correoInstitucional = `${row.primer_Nombre[0].toLowerCase()}${row.segundo_Nombre[0].toLowerCase()}${row.primer_Apellido.toLowerCase()}${row.segundo_Apellido.toLowerCase()}@unah.hn`; 
+            // Verificar si el estudiante aprobó
+            if (
+              (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'aprobó') ||
+              (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'no aplica') ||
+              (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'reprobó')
+            ) {
+               const { data: usuariosExistentes, error: users } = await supabase
+                .from('Usuario')
+                .select('*') 
+                .eq('Identidad', dni);
+
+                if (users) {
+                  console.error('Error al obtener datos de Usuario', users);
+                  throw new Error('Error al obtener datos de Usuario');
+                }
+
+                if (usuariosExistentes && usuariosExistentes.length > 0) {
+                  console.log('El usuario ya existe en la base de datos');
+                  continue;
+                };
+
+              
+
+              const { data, error } = await supabase
+                .from('Usuario')
+                .insert([
+                  {
+                    Identidad: dni,
+                    Nombre: `${row.primer_Nombre} ${row.segundo_Nombre}`,
+                    Apellido: `${row.primer_Apellido} ${row.segundo_Apellido}`,
+                    Correo: email,
+                    Contrasena: hashedPassword
+                  }
+                ]).single();
+                  console.log('Datos insertados en la tabla Usuario', data);
+                if (error)  throw new Error('Error al insertar en la tabla Usuario');
+
+                const idUsuario = await getId(dni);
+
+                await sendStudentWelcomeEmail(row.email, `${row.primer_Nombre} ${row.primer_Apellido}`, numeroCuenta,correoInstitucional, contrasena);
+
+
+                const { data: estudiante, error: usererror } = await supabase
+                  .from('estudiante')
+                  .insert([
+                    {
+                      numeroCuenta: numeroCuenta,
+                      correo_Institucional: correoInstitucional,
+                      usuario: parseInt(idUsuario),
+                    }
+                  ]);
+
+                const { data: estudianterol, error: rolerror } = await supabase  
+                  .from('UsuarioRol')
+                  .insert([
+                    {
+                      id_Rol: 2,
+                      id_Usuario: parseInt(idUsuario),
+                    }
+                  ]);
+
+                  if (rolerror) {
+                    console.error('Error al insertar en la tabla UsuarioRol', rolerror);
+                    // Opcional: devolver un error específico para esta inserción
+                  } else {  
+                    console.log('Datos insertados en la tabla UsuarioRol', estudianterol);
+                  }
+
+
+                if (usererror) {
+                  console.error('Error al insertar en la tabla Usuario', usererror);
+                  // Opcional: devolver un error específico para esta inserción
+                } else {
+                  console.log('Datos insertados en la tabla estudiantes', data);
+                }
+
+              if (error) {
+                console.error('Error al insertar en la tabla Usuario', error);
+                // Opcional: devolver un error específico para esta inserción
+              } else {
+                console.log('Datos insertados en la tabla Usuario', data);
+              }
+            } else {
+              // Llamar a la función para enviar un correo si no aprobó
+              await sendRejectionEmail(row.email, `${row.primer_Nombre} ${row.primer_Apellido}`);
+            }
+          }
+          
+          console.log('Datos procesados e insertados en la tabla Usuario');
+          res.status(200).json({ message: 'Datos procesados e insertados en la tabla Usuario' });
+
+
+
+        } catch (error) {
+          console.error('Error al procesar los datos:', error);
+          res.status(500).json({ message: 'Error al procesar los datos' });
+        }
+      });
+  } catch (error) {
+    console.error('Error al crear usuarios desde archivo CSV', error);
+    res.status(500).json({ message: 'Error al crear usuarios desde archivo CSV' });
+  }
+
+};
+
+exports.getId = async (req, res) => {
+        try {
+          const { dni } = req.body;
+          const { data, error } = await supabase
+            .from('Usuario')
+            .select('id')
+            .eq('Identidad', dni);
+      
+          if (error) {
+            console.error('Error al obtener datos de Usuario', error);
+            throw new Error('Error al obtener datos de Usuario');
+          }
+      
+          if (!data || data.length === 0) {
+            throw new Error('No hay datos de Usuario');
+          }
+      
+          res.json(data);
+        } catch (error) {
+          console.error('Error al obtener datos de Usuario', error);
+          res.status(500).json({ message: error.message });
+        }
+      };
+
 
 
 // Nuevo endpoint para obtener las notas y determinar la carrera aprobada
@@ -182,14 +392,32 @@ exports.getNotasByDNI = async (req, res) => {
       }
     };
 
-    if (carrera1.Facultades.nombre.toLowerCase().includes('ingeniería') ||
-      carrera1.Facultades.nombre.toLowerCase().includes('medicina')) {
-      resultado.carrera1.aprobacionPAM_PCCNS = notas.nota2 >= 500 ? 'aprobó' : 'reprobó';
+    // Verificar si la carrera1 existe y tiene Facultades
+    if (carrera1 && carrera1.Facultades) {
+      if (carrera1.Facultades.nombre.toLowerCase().includes('facultad de ingeniería') ||
+          carrera1.Facultades.nombre.toLowerCase().includes('facultad de medicina')) {
+        if (notas.nota2 >= 500) {
+          resultado.carrera1.aprobacionPAM_PCCNS = 'aprobó';
+        } else if (notas.nota1 >= carrera1.puntajeRequerido) {
+          resultado.carrera1.aprobacionPAM_PCCNS = 'reprobó, pero puede ingresar a la carrera que no requiere PAM o PCCNS';
+        } else {
+          resultado.carrera1.aprobacionPAM_PCCNS = 'reprobó';
+        }
+      }
     }
 
-    if (carrera2.Facultades.nombre.toLowerCase().includes('ingeniería') ||
-      carrera2.Facultades.nombre.toLowerCase().includes('medicina')) {
-      resultado.carrera2.aprobacionPAM_PCCNS = notas.nota2 >= 500 ? 'aprobó' : 'reprobó';
+    // Verificar si la carrera2 existe y tiene Facultades
+    if (carrera2 && carrera2.Facultades) {
+      if (carrera2.Facultades.nombre.toLowerCase().includes('facultad de ingeniería') ||
+          carrera2.Facultades.nombre.toLowerCase().includes('facultad de medicina')) {
+        if (notas.nota2 >= 500) {
+          resultado.carrera2.aprobacionPAM_PCCNS = 'aprobó';
+        } else if (notas.nota1 >= carrera2.puntajeRequerido) {
+          resultado.carrera2.aprobacionPAM_PCCNS = 'reprobó, pero puede ingresar a una carrera que no requiere PAM o PCCNS';
+        } else {
+          resultado.carrera2.aprobacionPAM_PCCNS = 'reprobó';
+        }
+      }
     }
 
     res.json(resultado);
@@ -198,4 +426,7 @@ exports.getNotasByDNI = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
 
