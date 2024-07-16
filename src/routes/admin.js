@@ -17,8 +17,8 @@ router.get('/matricula_filtro/:id_ConfMatri', adminController.getGestionMatricul
 router.get('/matricula', adminController.getGestionMatricula);
 router.post('/noticias', upload.single('imagen'), adminController.createNoticia);
 router.put('/noticias/:id_noticia',upload.single('imagen'), adminController.updateNoticia);
-router.delete('/maticula/:id_ConfMatri', adminController.deleteMatricula);
-router.put('/maticula/:id_ConfMatri', adminController.updateMatricula);
+//router.delete('/maticula/:id_ConfMatri', adminController.deleteMatricula);
+//router.put('/maticula/:id_ConfMatri', adminController.updateMatricula);
 router.delete('/noticias/:id_noticia', adminController.deleteNoticia);
 router.get('/pac', adminController.getPac);
 router.get('/tipo_matricula', adminController.getTipoMatricula);

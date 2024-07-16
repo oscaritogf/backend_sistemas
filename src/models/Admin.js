@@ -757,21 +757,6 @@ static async generateUniqueEmployeeNumber() {
     if (error) throw error;
     return data;
   } 
-
- 
-  
-};
-
-
-
-   
-
-
-
-
-
-  //para cancelacion aqui comienza
-
   static async createCancelacion(data) {
     const { id_Pac, id_TipoMatricula, fecha_inicioCancel, fecha_finCancel, hora_inicioCancel, hora_finCancel } = data;
     
@@ -901,6 +886,10 @@ static async deleteConfiguracion(id) {
   }
   return data;
 }
-};
+};  
+   
+
+
+
 
 module.exports = Admin;

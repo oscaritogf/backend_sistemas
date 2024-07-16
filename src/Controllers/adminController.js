@@ -1,29 +1,19 @@
 // controllers/adminController.js
-const Admin = require('../models/Admin');
+const Admin = require ('../models/Admin')
 const supabase = require('../config/supabase');
 
 exports.createEmpleado = async (req, res) => {
+  
   try {
-    const empleadoData = {
-      ...req.body,
-      imagen: req.file ? req.file : null 
-    };
-
-    // Convertir roles de string a array es necesario
-    if (typeof empleadoData.roles === 'string') {
-      empleadoData.roles = JSON.parse(empleadoData.roles);
-    }
-
-    // Validar roles e id_Centros
+    const empleadoData = req.body;
     if (!empleadoData.roles || empleadoData.roles.length === 0) {
       return res.status(400).json({ message: 'Debe especificar al menos un rol para el empleado' });
     }
-    if (!empleadoData.id_Centros) {
+    if(!empleadoData.id_Centros){
       return res.status(400).json({ message: 'Debe especificar el centro al que pertenece el empleado' });
+   
     }
-
     const newEmpleado = await Admin.createEmpleado(empleadoData);
-
     res.status(201).json({ message: 'Empleado creado exitosamente', empleado: newEmpleado });
   } catch (error) {
     console.error('Error al crear empleado:', error);
@@ -251,58 +241,21 @@ exports.deleteMatricula = async (req, res) => {
   }
 };
 */
-exports.getPac = async (req, res) => {
-  try {
-    const pac = await Admin.getPac();
-    res.json(pac);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-exports.getTipoMatricula = async (req, res) => {
-  try {
-    const matricula = await Admin.getTipoMatricula();
-    res.json(matricula);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-/*
-exports.deleteMatricula = async (req, res) => {
-  try {
-    const idMatricula = req.params.id_noticia;
 
-    await Admin.deleteMatricula(idMatricula);
 
-    res.json({
-      message: 'Matricula eliminada exitosamente'
-    });
-  } catch (error) {
-    console.error('Error al eliminar matricula:', error);
-    res.status(500).json({
-      message: 'Error al eliminar matricula',
-      error: error.message
-    });
-  }
-};
-*/
-exports.getPac = async (req, res) => {
+
+
+
+
+exports.createCancelacion = async (req, res) => {
   try {
-    const pac = await Admin.getPac();
-    res.json(pac);
+    const nuevaCancelacion = await Admin.createCancelacion(req.body);
+    res.status(201).json(nuevaCancelacion);
   } catch (error) {
+    console.log('Error al crear la cancelacion:', error);
     res.status(500).json({ message: error.message });
   }
 };
-exports.getTipoMatricula = async (req, res) => {
-  try {
-    const matricula = await Admin.getTipoMatricula();
-    res.json(matricula);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
 
 
 ///Controlador para configurar matricul 
