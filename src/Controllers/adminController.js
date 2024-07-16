@@ -1,6 +1,7 @@
 // controllers/adminController.js
 const Admin = require('../models/Admin');
 const supabase = require('../config/supabase');
+
 exports.createEmpleado = async (req, res) => {
   
   try {
@@ -87,6 +88,40 @@ exports.getNoticias = async (req, res) => {
   }
 };
 
+exports.getGestionMatricula = async (req, res) => {
+  try {
+    
+    const matricula = await Admin.getGestionMatricula();
+    res.json(matricula);
+  } catch (error) {
+    console.error('Error al obtener matricula:', error);
+    res.status(500).json({ message: 'Error al obtener matricula', error: error.message });
+  }
+};
+
+exports.getGestionMatriculaFiltro = async (req, res) => {
+  try {
+    // Obtener id_ConfMatri desde la solicitud
+    const id_ConfMatri = req.params.id_ConfMatri;
+
+    // Verificar si id_ConfMatri existe antes de consultar la base de datos
+    // Supongamos que Admin.getGestionMatricula() devuelve null si no se encuentra el id_ConfMatri
+    const matricula = await Admin.getGestionMatriculaFiltro(id_ConfMatri);
+
+    if (!matricula) {
+      // Si matricula es null (o falsy), significa que el id_ConfMatri no existe
+      return res.status(404).json({ message: 'El id_ConfMatri no existe' });
+    }
+
+    // Si el id_ConfMatri existe, continuar con la respuesta
+    res.json(matricula);
+
+  } catch (error) {
+    console.error('Error al obtener matricula:', error);
+    res.status(500).json({ message: 'Error al obtener matricula', error: error.message });
+  }
+};
+
 
 exports.createNoticia = async (req, res) => {
   try {
@@ -126,8 +161,34 @@ exports.updateNoticia = async (req, res) => {
     });
   }
 };
+/*
+exports.updateMatricula = async (req, res) => {
+  try {
+    console.log('Datos recibidos:', req.body); // Agrega este log para verificar los datos
 
+    const idMatricula = req.params.id_ConfMatri;
+    const matrciulaData = req.body;
 
+    const updatedMatricula = await Admin.updatedMatricula(idMatricula, matrciulaData);
+
+    if (!updatedMatricula) {
+      return res.status(404).json({ message: 'Matricula no encontrada' });
+    }
+
+    res.json({
+      message: 'Matricula actualizada exitosamente',
+      noticia: updatedMatricula
+    });
+  } catch (error) {
+    console.error('Error al actualizar matricula:', error);
+    res.status(500).json({
+      message: 'Error al actualizar matricula',
+      error: error.message
+    });
+  }
+};
+
+*/
 exports.deleteNoticia = async (req, res) => {
   try {
     const idNoticia = req.params.id_noticia;
@@ -161,5 +222,41 @@ exports.getTipoMatricula = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+/*
+exports.deleteMatricula = async (req, res) => {
+  try {
+    const idMatricula = req.params.id_noticia;
+
+    await Admin.deleteMatricula(idMatricula);
+
+    res.json({
+      message: 'Matricula eliminada exitosamente'
+    });
+  } catch (error) {
+    console.error('Error al eliminar matricula:', error);
+    res.status(500).json({
+      message: 'Error al eliminar matricula',
+      error: error.message
+    });
+  }
+};
+*/
+exports.getPac = async (req, res) => {
+  try {
+    const pac = await Admin.getPac();
+    res.json(pac);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.getTipoMatricula = async (req, res) => {
+  try {
+    const matricula = await Admin.getTipoMatricula();
+    res.json(matricula);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 
