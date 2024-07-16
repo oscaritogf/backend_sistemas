@@ -1,10 +1,13 @@
 const Admision = require('../models/Admisiones');
 const cloudinary = require('../config/cloudinary');
-const {sendConfirmationEmail} = require('../utils/emailService')
+const {sendConfirmationEmail, sendStudentWelcomeEmail, sendRejectionEmail} = require('../utils/emailService')
 const fs = require('fs');
 const csv = require('csv-parser');
 const path = require('path');
 const os = require('os');
+const supabase = require('../config/supabase');
+const bcrypt = require('bcrypt');
+const { get } = require('http');
 
 
 
@@ -155,6 +158,7 @@ exports.getExamenesCarrera = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Nuevo endpoint para obtener las notas y determinar la carrera aprobada
 exports.getNotasByDNI = async (req, res) => {

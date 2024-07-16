@@ -70,7 +70,7 @@ const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, correoInstituci
         <ul>
           <li>Número de cuenta: ${numeroCuenta}</li>
           <li>Contraseña: ${contrasena}</li>
-          li>Correo Institucional: ${correoInstitucional}</li>
+          <li>Correo Institucional: ${correoInstitucional}</li>
         </ul>
         <p>Por favor, cambia tu contraseña después del primer inicio de sesión.</p>
         <p>Si tienes alguna pregunta, no dudes en contactar al departamento de Admisiones.</p>
@@ -83,5 +83,24 @@ const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, correoInstituci
   }
 };
 
-module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail };
+const sendRejectionEmail = async (to, nombre) => {
+  try {
+    await transporter.sendMail({
+      from: '"Admisiones Universidad" <garcia152511@gmail.com>',
+      to: to,
+      subject: "Confirmación de registro en el proceso de admisiones",
+      html: `
+        <h1>Hola ${nombre}!</h1>
+        <p>Lamentamos informarte que no has aprovado el proceso de admisión.</p>
+        <p>Estate pendiendte de los próximos procesos de admisión.</p>
+        <p>Gracias por elegir nuestra institución.</p>
+      `
+    });
+    console.log('Correo de rechazo enviado');
+  } catch (error) {
+    console.error('Error al enviar correo de rechazo:', error);
+  }
+};
+
+module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail };
 

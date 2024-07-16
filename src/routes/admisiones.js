@@ -11,5 +11,7 @@ router.get('/carreras/:carreraId/examenes', admisionesController.getExamenesCarr
 router.get('/notas/:dni', admisionesController.getNotasByDNI);
 
 router.get('/csv', admisionesController.saveCSV);
+router.post('/usuario', admisionesController.crearUsuario);
+router.post('/id', admisionesController.getId);
 
 module.exports = router;
