@@ -24,7 +24,12 @@ router.get('/pac', adminController.getPac);
 router.get('/tipo_matricula', adminController.getTipoMatricula);
 router.get('/roles', adminController.getRoles);
 router.get('/centros', adminController.getCentros);  
+
 router.post('/cancelaciones', adminController.createCancelacion);
+router.get('/cancelaciones/:id', adminController.obtenerCancelacionExcepcionalPorId);
+router.get('/cancelaciones', adminController.obtenerCancelacionExcepcional);
+router.delete('/cancelaciones/:id', adminController.eliminarCancelacionExcepcional);
+router.put('/cancelaciones/:id', adminController.actualizarCancelacion);
 
 router.post('/configuraciones', adminController.crearConfiguracion);
 router.get('/listarConfig', adminController.obtenerConfiguraciones);

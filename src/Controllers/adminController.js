@@ -222,28 +222,6 @@ exports.getTipoMatricula = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-/*
-exports.deleteMatricula = async (req, res) => {
-  try {
-    const idMatricula = req.params.id_noticia;
-
-    await Admin.deleteMatricula(idMatricula);
-
-    res.json({
-      message: 'Matricula eliminada exitosamente'
-    });
-  } catch (error) {
-    console.error('Error al eliminar matricula:', error);
-    res.status(500).json({
-      message: 'Error al eliminar matricula',
-      error: error.message
-    });
-  }
-};
-*/
-
-
-
 
 
 
@@ -290,6 +268,39 @@ exports.obtenerConfiguracionPorId = async (req, res) => {
   }
 };
 
+exports.obtenerCancelacionExcepcional = async (req, res) => {
+  try {
+    const configuraciones = await Admin.getCancelacionExcepcional();
+    res.json(configuraciones);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.obtenerCancelacionExcepcionalPorId = async (req, res) => {
+    try {
+    const cancelacion = await Admin.getCancelacionExcepcionalById(req.params.id);
+    if (cancelacion) {
+      res.status(200).json(cancelacion);
+    } else {
+      res.status(404).json({ message: 'Configuración no encontrada' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.actualizarCancelacion = async (req, res) => {
+  try {
+    const cancelacionActualizada = await Admin.updateCancelacion(req.params.id, req.body);
+    if (cancelacionActualizada) {
+      res.status(200).json(cancelacionActualizada);
+    } else {
+      res.status(404).json({ message: 'Configuración no encontrada' });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 exports.actualizarConfiguracion = async (req, res) => {
   try {
     const configuracionActualizada = await Admin.updateConfiguracion(req.params.id, req.body);
@@ -303,15 +314,39 @@ exports.actualizarConfiguracion = async (req, res) => {
   }
 };
 
+
 exports.eliminarConfiguracion = async (req, res) => {
   try {
-    const deleted = await Admin.deleteConfiguracion(req.params.id);
-    if (deleted) {
-      res.status(204).send();
-    } else {
-      res.status(404).json({ message: 'Configuración no encontrada' });
-    }
+    const idMatricula = req.params.id;
+
+    await Admin.deleteConfiguracion(idMatricula);
+
+    res.json({
+      message: 'Matricula eliminada exitosamente'
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al eliminar matricula:', error);
+    res.status(500).json({
+      message: 'Error al eliminar matricula',
+      error: error.message
+    });
+  }
+};
+
+exports.eliminarCancelacionExcepcional = async (req, res) => {
+  try {
+    const idCancelacion= req.params.id;
+
+    await Admin.deleteCancelacionExcep(idCancelacion);
+
+    res.json({
+      message: 'Cancelacion eliminada exitosamente'
+    });
+  } catch (error) {
+    console.error('Error al eliminar cancelacion:', error);
+    res.status(500).json({
+      message: 'Error al eliminar Cancelacion',
+      error: error.message
+    });
   }
 };

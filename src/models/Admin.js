@@ -462,37 +462,7 @@ static async generateUniqueEmployeeNumber() {
     static async getGestionMatricula(){
     let {data:matricula, error}= await supabase
     .from('ConfiguracionMatricula')
-    .select(`
-      id_ConfMatri,
-      created_at,
-      id_Pac,
-      id_TipoMatricula,
-      fecha_inicioPAC,
-      fecha_finPAC,
-      fecha_inicioMatri,
-      fecha_finMatri,
-      hora_inicioMatri,
-      hora_finMatri,
-      fecha_matri1,
-      indice_desdeMatri1,
-      indice_hastaMatri1,
-      pIngreso_desdeMatri1,
-      pIngreso_hastaMatri1,
-      fecha_matri2,
-      indice_desdeMatri2,
-      indice_hastaMatri2,
-      pIngreso_desdeMatri2,
-      pIngreso_hastaMatri2,
-      fecha_matri3,
-      indice_desdeMatri3,
-      indice_hastaMatri3,
-      fecha_matri4,
-      indice_desdeMatri4,
-      indice_hastaMatri4,
-      fecha_matri5,
-      indice_desdeMatri5,
-      indice_hastaMatri5
-      `)
+    .select('*')
       if (error) {
         console.error('Error al obtener matriucla:', error);
         throw new Error('Error al obtener matricula');
@@ -542,6 +512,7 @@ static async generateUniqueEmployeeNumber() {
       }
       return matricula;
    }
+
 
   static async createNoticia(noticiaData) {
     console.log('Datos recibidos:', noticiaData);
@@ -863,11 +834,57 @@ static async getConfiguracionById(id) {
   return data;
 }
 
+static async getCancelacionExcepcional() {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
+    .select('*');
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async getCancelacionExcepcionalById(id) {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
+    .select('*')
+    .eq('id_canExcep', id)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+static async updateCancelacion(id, updateData) {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
+    .update(updateData)
+    .eq('id_canExcep', id);
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
 static async updateConfiguracion(id, updateData) {
   const { data, error } = await supabase
     .from('ConfiguracionMatricula')
     .update(updateData)
     .eq('id_ConfMatri', id);
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async deleteCancelacionExcep(id) {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
+    .delete()
+    .eq('id_canExcep', id);
 
   if (error) {
     throw error;
@@ -887,6 +904,7 @@ static async deleteConfiguracion(id) {
   return data;
 }
 };  
+
    
 
 
