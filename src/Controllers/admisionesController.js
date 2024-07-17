@@ -24,12 +24,14 @@ exports.createAdmision = async (req, res) => {
     const carrera2 = carreras.find(c => c.id_Carrera === parseInt(id_Sd_Carrera));
 
     if (carrera1 && carrera2) {
-      const facultadIngenieria = carreras.find(c => c.Facultades.nombre.toLowerCase().includes('ingeniería'))?.Facultades.id_Facultad;
-      const facultadMedicina = carreras.find(c => c.Facultades.nombre.toLowerCase().includes('medicina'))?.Facultades.id_Facultad;
-
+      const isCarrera1Ingenieria = carrera1.Facultades.nombre.toLowerCase().includes('ingeniería');
+      const isCarrera2Ingenieria = carrera2.Facultades.nombre.toLowerCase().includes('ingeniería');
+      const isCarrera1Medicina = carrera1.Facultades.nombre.toLowerCase().includes('medicina');
+      const isCarrera2Medicina = carrera2.Facultades.nombre.toLowerCase().includes('medicina');
+    
       if (
-        (carrera1.id_Facultad === facultadIngenieria && carrera2.id_Facultad === facultadMedicina) ||
-        (carrera1.id_Facultad === facultadMedicina && carrera2.id_Facultad === facultadIngenieria)
+        (isCarrera1Ingenieria && isCarrera2Medicina) ||
+        (isCarrera1Medicina && isCarrera2Ingenieria)
       ) {
         return res.status(400).json({ message: 'No puedes elegir una carrera de Ingeniería y otra de Medicina al mismo tiempo' });
       }
