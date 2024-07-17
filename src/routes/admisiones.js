@@ -10,7 +10,7 @@ router.get('/carreras', admisionesController.getCarreras);
 router.get('/carreras/:carreraId/examenes', admisionesController.getExamenesCarrera);
 router.get('/notas/:dni', admisionesController.getNotasByDNI);
 
-router.get('/csv', admisionesController.saveCSV);
+router.post('/csv', admisionesController.saveCSV);
 router.post('/usuario', admisionesController.crearUsuario);
 router.post('/id', admisionesController.getId);
 

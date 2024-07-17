@@ -119,11 +119,13 @@ exports.getCSV = async (req, res) => {
 };
 
 exports.saveCSV = async (req, res) => {
+
   try {
+    const { route, name  } = req.body;
     const csv = await Admision.getCSV();
-    const filePath = path.join('F:\Descargas/Admisiones.csv'); // Replace with the desired file path
+    const filePath = path.resolve(route,name); // Replace with the desired file path
     fs.writeFileSync(filePath, csv);
-    res.json({ message: 'CSV file saved successfully' });
+    res.json({ message: 'CSV guardado con éxito' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -173,61 +175,70 @@ exports.getExamenesCarrera = async (req, res) => {
 };
 // End point para validar inscripcion con archivo csv
 
-
+const verificarFilas = (results) => {
+  const filasAptas = [];
+  const filasNoAptas = [];
+  
+  results.forEach((row, index) => {
+    const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'Codigo', 'segundo_Nombre', 'segundo_Apellido', 'matricula'];
+    const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
+    
+    if (missingFields.length > 0) {
+      filasNoAptas.push({ fila: index + 2, error: `Datos faltantes: ${missingFields.join(', ')}`});
+    } else {
+      filasAptas.push(row);
+    }
+  });
+  
+  return { filasAptas, filasNoAptas };
+};
 
 exports.crearUsuario = async (req, res) => {
   try {
-    const { archivo } = req.body;
+    const { route, archivo } = req.body;
 
     if (!archivo) {
       return res.status(400).json({ message: 'No se proporcionó el archivo CSV.' });
     }
 
-    const filePath = path.join(os.homedir(),'Downloads/', archivo);
+    const filePath = path.join(route , archivo);
     const results = [];
 
-    // Leer el archivo CSV
     fs.createReadStream(filePath)
       .pipe(csv())
-      .on('data', (row) => {
-        results.push(row);
-      })
+      .on('data', (row) => results.push(row))
       .on('end', async () => {
         console.log('CSV file successfully processed');
+        const { filasAptas, filasNoAptas } = verificarFilas(results);
+        const errores = [];
+
         try {
-
-          // Procesar los datos del archivo CSV
-          for (const row of results) {     
-
+          for (const row of filasAptas) {
             const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo } = row;
-          
-            const generatePassword = () => {
-              const password = Math.floor(1000 + Math.random() * 9000);
-              return password;
-            };
 
-            //generar numero de cuenta unico
+            const generatePassword = () => Math.floor(1000 + Math.random() * 9000);
+
             const generateUniqeStudentNumber = async () => {
-             
                 const currentYear = new Date().getFullYear();
-                var uniqueNumber;
+                let uniqueNumber;
                 let isUnique = false;
-              
+  
                 while (!isUnique) {
                   const randomNum = Math.floor(Math.random() * 9999) + 1;
                   uniqueNumber = `${currentYear}${Codigo}${randomNum.toString().padStart(4, '0')}`;
-              
-                  // Verificar si el número ya existe
+
                   const { data, error } = await supabase
-                    .from('estudiante')
-                    .select('numeroCuenta')
-                    .eq('numeroCuenta', uniqueNumber);
-              
-                  if (error) throw error;
-                  if (data.length === 0) isUnique = true;
-                }         
+                  .from('estudiante')
+                  .select('numeroCuenta')
+                  .eq('numeroCuenta', uniqueNumber);
+
+                if (error) throw error;
+                if (data.length === 0) isUnique = true;
+              }
+
               return uniqueNumber;
-            }
+              
+            };
 
             const getId = async (dni) => {
               const { data, error } = await supabase
@@ -235,122 +246,127 @@ exports.crearUsuario = async (req, res) => {
                 .select('id')
                 .eq('Identidad', dni)
                 .single();
-            
+
               if (error) throw error;
               if (!data) throw new Error('No se encontró el usuario');
-            
+
               return data.id;
             };
 
             const contrasena = generatePassword();
             const hashedPassword = bcrypt.hashSync(contrasena.toString(), 10);
             const numeroCuenta = await generateUniqeStudentNumber();
+            const correoInstitucional = `${primer_Nombre[0].toLowerCase()}${row.segundo_Nombre[0].toLowerCase()}${primer_Apellido.toLowerCase()}${row.segundo_Apellido.toLowerCase()}@unah.hn`;
 
-            const correoInstitucional = `${row.primer_Nombre[0].toLowerCase()}${row.segundo_Nombre[0].toLowerCase()}${row.primer_Apellido.toLowerCase()}${row.segundo_Apellido.toLowerCase()}@unah.hn`; 
-            // Verificar si el estudiante aprobó
+            if (isNaN(parseInt(numeroCuenta))) {
+              console.error(`Número de cuenta inválido generado: ${numeroCuenta}`);
+              errores.push({ dni, error: `Número de cuenta inválido generado: ${numeroCuenta}` });
+              continue;
+            }
+
+            // ... (resto del código existente para procesar filas aptas)
             if (
               (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'aprobó') ||
               (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'no aplica') ||
               (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'reprobó')
-            ) {
-               const { data: usuariosExistentes, error: users } = await supabase
+            ){
+              const { data: usuariosExistentes, error: users } = await supabase
                 .from('Usuario')
-                .select('*') 
+                .select('*')
                 .eq('Identidad', dni);
 
-                if (users) {
-                  console.error('Error al obtener datos de Usuario', users);
-                  throw new Error('Error al obtener datos de Usuario');
-                }
+              if (users) {
+                console.error('Error al obtener datos de Usuario', users);
+                errores.push({ dni, error: users.message });
+                continue;
+              }
 
-                if (usuariosExistentes && usuariosExistentes.length > 0) {
-                  console.log('El usuario ya existe en la base de datos');
-                  continue;
-                };
-
-              
+              if (usuariosExistentes && usuariosExistentes.length > 0) {
+                console.log('El usuario ya existe en la base de datos');
+                continue;
+              }
 
               const { data, error } = await supabase
                 .from('Usuario')
                 .insert([
                   {
                     Identidad: dni,
-                    Nombre: `${row.primer_Nombre} ${row.segundo_Nombre}`,
-                    Apellido: `${row.primer_Apellido} ${row.segundo_Apellido}`,
+                    Nombre: `${primer_Nombre} ${row.segundo_Nombre}`,
+                    Apellido: `${primer_Apellido} ${row.segundo_Apellido}`,
                     Correo: email,
-                    Contrasena: hashedPassword
-                  }
+                    Contrasena: hashedPassword,
+                  },
                 ]).single();
-                  console.log('Datos insertados en la tabla Usuario', data);
-                if (error)  throw new Error('Error al insertar en la tabla Usuario');
 
-                const idUsuario = await getId(dni);
+              if (error) {
+                console.error('Error al insertar en la tabla Usuario', error);
+                errores.push({ dni, error: error.message });
+                continue;
+              }
 
-                await sendStudentWelcomeEmail(row.email, `${row.primer_Nombre} ${row.primer_Apellido}`, numeroCuenta,correoInstitucional, contrasena);
+              const idUsuario = await getId(dni);
 
+              await sendStudentWelcomeEmail(email, `${primer_Nombre} ${primer_Apellido}`, numeroCuenta, correoInstitucional, contrasena);
 
-                const { data: estudiante, error: usererror } = await supabase
-                  .from('estudiante')
-                  .insert([
-                    {
-                      numeroCuenta: numeroCuenta,
-                      correo_Institucional: correoInstitucional,
-                      usuario: parseInt(idUsuario),
-                    }
-                  ]);
+              const { error: estudianteError } = await supabase
+                .from('estudiante')
+                .insert([
+                  {
+                    numeroCuenta,
+                    correo_Institucional: correoInstitucional,
+                    usuario: parseInt(idUsuario),
+                  },
+                ]);
 
-                const { data: estudianterol, error: rolerror } = await supabase  
+                if (estudianteError) {
+                  console.error('Error al insertar en la tabla estudiante', estudianteError);
+                  errores.push({ dni, error: estudianteError.message });
+                  continue;
+                }
+
+                const { error: rolError } = await supabase
                   .from('UsuarioRol')
                   .insert([
                     {
                       id_Rol: 2,
                       id_Usuario: parseInt(idUsuario),
-                    }
+                    },
                   ]);
 
-                  if (rolerror) {
-                    console.error('Error al insertar en la tabla UsuarioRol', rolerror);
-                    // Opcional: devolver un error específico para esta inserción
-                  } else {  
-                    console.log('Datos insertados en la tabla UsuarioRol', estudianterol);
+                  if (rolError) {
+                    console.error('Error al insertar en la tabla UsuarioRol', rolError);
+                    errores.push({ dni, error: rolError.message });
+                  } else {
+                    console.log('Datos insertados en la tabla UsuarioRol');
                   }
-
-
-                if (usererror) {
-                  console.error('Error al insertar en la tabla Usuario', usererror);
-                  // Opcional: devolver un error específico para esta inserción
-                } else {
-                  console.log('Datos insertados en la tabla estudiantes', data);
-                }
-
-              if (error) {
-                console.error('Error al insertar en la tabla Usuario', error);
-                // Opcional: devolver un error específico para esta inserción
-              } else {
-                console.log('Datos insertados en la tabla Usuario', data);
-              }
             } else {
-              // Llamar a la función para enviar un correo si no aprobó
-              await sendRejectionEmail(row.email, `${row.primer_Nombre} ${row.primer_Apellido}`);
+              await sendRejectionEmail(email, `${primer_Nombre} ${primer_Apellido}`);
             }
           }
-          
+
           console.log('Datos procesados e insertados en la tabla Usuario');
-          res.status(200).json({ message: 'Datos procesados e insertados en la tabla Usuario' });
-
-
+          res.status(200).json({ 
+            message: 'Datos procesados e insertados en la tabla Usuario', 
+            errores,
+            filasNoAptas,
+            filasAptasProcesadas: filasAptas.length,
+            totalFilas: results.length
+          });
 
         } catch (error) {
           console.error('Error al procesar los datos:', error);
-          res.status(500).json({ message: 'Error al procesar los datos' });
+          res.status(500).json({ message: 'Error al procesar los datos', error });
         }
       });
   } catch (error) {
     console.error('Error al crear usuarios desde archivo CSV', error);
-    res.status(500).json({ message: 'Error al crear usuarios desde archivo CSV' });
+    res.status(500).json({ message: 'Error al crear usuarios desde archivo CSV', error });
   }
-
 };
+
+
+
+
 
 exports.getId = async (req, res) => {
         try {
