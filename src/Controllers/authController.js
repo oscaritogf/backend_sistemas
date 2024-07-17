@@ -34,6 +34,10 @@ exports.login = async (req, res) => {
     }
     console.log('Usuario encontrado:', user);
 
+    if (userType === 'empleado' && user.estado === false) {
+      return res.status(403).json({ message: 'Su número de empleado está desactivado' });
+    }
+
     const isPasswordValid = await User.verifyPassword(Contrasena, user.Contrasena);
     console.log('Contraseña válida:', isPasswordValid);
     
@@ -44,8 +48,8 @@ exports.login = async (req, res) => {
     const roles = await User.getRoles(user.id);
 
     const token = jwt.sign(
-      { 
-        userId: user.id, 
+      {
+        userId: user.id,
         tipo: userType,
         roles: roles
       },
@@ -53,15 +57,15 @@ exports.login = async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ 
+    res.json({
       token,
-      user: { 
-        id: user.id, 
-        nombre: user.nombre, 
+      user: {
+        id: user.id,
+        nombre: user.nombre,
         apellido: user.apellido,
         tipo: userType,
         roles: roles,
-        ...(userType === 'empleado' ? { numeroEmpleado: identifier } : { numeroCuenta: identifier })
+        ...(userType === 'empleado' ? { numeroEmpleado: identifier, estado: user.estado } : { numeroCuenta: identifier })
       }
     });
 
