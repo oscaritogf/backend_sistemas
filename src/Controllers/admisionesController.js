@@ -165,20 +165,27 @@ exports.getExamenesCarrera = async (req, res) => {
 const verificarFilas = (results) => {
   const filasAptas = [];
   const filasNoAptas = [];
-  
+
   results.forEach((row, index) => {
     const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'Codigo', 'segundo_Nombre', 'segundo_Apellido', 'matricula'];
-    const missingFields = requiredFields.filter(field => !row[field] || row[field].trim() === '');
-    
+    const missingFields = requiredFields.filter(field => !row[field] || (typeof row[field] === 'string' && row[field].trim() === ''));
+
     if (missingFields.length > 0) {
-      filasNoAptas.push({ fila: index + 2, error: `Datos faltantes: ${missingFields.join(', ')}`});
+      filasNoAptas.push({ fila: index + 2, error: `Datos faltantes: ${missingFields.join(', ')}`, data:row});
+      
+      
     } else {
       filasAptas.push(row);
     }
   });
-  
+
+  console.log("Filas Aptas:", filasAptas);
+  console.log("Filas No Aptas:", filasNoAptas);
+
   return { filasAptas, filasNoAptas };
 };
+
+
 
 exports.crearUsuario = async (req, res) => {
   try {
@@ -351,10 +358,6 @@ exports.crearUsuario = async (req, res) => {
   }
 };
 
-
-
-
-
 exports.getId = async (req, res) => {
         try {
           const { dni } = req.body;
@@ -443,6 +446,336 @@ exports.getNotasByDNI = async (req, res) => {
   }
 };
 
+exports.getJSON = async (req, res) => {
+  try {
+    const jsonData = await Admision.getJSON();
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json(jsonData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 
+// exports.crearUsuariosDesdeJSON = async (req, res) => {
+//   try {
+//     const { dataJson } = req.body;
+
+//     if (!dataJson || !Array.isArray(dataJson) || dataJson.length === 0) {
+//       return res.status(400).json({ message: 'No se proporcionaron datos JSON válidos.' });
+//     }
+
+//     const results = [];
+//     const errores = [];
+
+//     for (const row of dataJson) { 
+//       const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo } = row;
+
+//       const generatePassword = () => Math.floor(1000 + Math.random() * 9000);
+
+//       const generateUniqeStudentNumber = async () => {
+//         const currentYear = new Date().getFullYear();
+//         let uniqueNumber;
+//         let isUnique = false;
+
+//         while (!isUnique) {
+//           const randomNum = Math.floor(Math.random() * 9999) + 1;
+//           uniqueNumber = `${currentYear}${Codigo}${randomNum.toString().padStart(4, '0')}`;
+
+//           const { data, error } = await supabase
+//             .from('estudiante')
+//             .select('numeroCuenta')
+//             .eq('numeroCuenta', uniqueNumber);
+
+//           if (error) throw error;
+//           if (data.length === 0) isUnique = true;
+//         }
+
+//         return uniqueNumber;
+//       };
+
+//       const getId = async (dni) => {
+//         const { data, error } = await supabase
+//           .from('Usuario')
+//           .select('id')
+//           .eq('Identidad', dni)
+//           .single();
+
+//         if (error) throw error;
+//         if (!data) throw new Error('No se encontró el usuario');
+
+//         return data.id;
+//       };
+
+//       const contrasena = generatePassword();
+//       const hashedPassword = bcrypt.hashSync(contrasena.toString(), 10);
+//       const numeroCuenta = await generateUniqeStudentNumber();
+//       const correoInstitucional = `${primer_Nombre[0].toLowerCase()}${row.segundo_Nombre[0].toLowerCase()}${primer_Apellido.toLowerCase()}${row.segundo_Apellido.toLowerCase()}@unah.hn`;
+
+//       if (isNaN(parseInt(numeroCuenta))) {
+//         console.error(`Número de cuenta inválido generado: ${numeroCuenta}`);
+//         errores.push({ dni, error: `Número de cuenta inválido generado: ${numeroCuenta}` });
+//         continue;
+//       }
+
+//       if (
+//         (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'aprobó') ||
+//         (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'no aplica') ||
+//         (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'reprobó')
+//       ) {
+//         const { data: usuariosExistentes, error: users } = await supabase
+//           .from('Usuario')
+//           .select('*')
+//           .eq('Identidad', dni);
+
+//         if (users) {
+//           console.error('Error al obtener datos de Usuario', users);
+//           errores.push({ dni, error: users.message });
+//           continue;
+//         }
+
+//         if (usuariosExistentes && usuariosExistentes.length > 0) {
+//           console.log('El usuario ya existe en la base de datos');
+//           continue;
+//         }
+
+//         const { data, error } = await supabase
+//           .from('Usuario')
+//           .insert([
+//             {
+//               Identidad: dni,
+//               Nombre: `${primer_Nombre} ${row.segundo_Nombre}`,
+//               Apellido: `${primer_Apellido} ${row.segundo_Apellido}`,
+//               Correo: email,
+//               Contrasena: hashedPassword,
+//             },
+//           ]).single();
+
+//         if (error) {
+//           console.error('Error al insertar en la tabla Usuario', error);
+//           errores.push({ dni, error: error.message });
+//           continue;
+//         }
+
+//         const idUsuario = await getId(dni);
+
+//         await sendStudentWelcomeEmail(email, `${primer_Nombre} ${primer_Apellido}`, numeroCuenta, correoInstitucional, contrasena);
+
+//         const { error: estudianteError } = await supabase
+//           .from('estudiante')
+//           .insert([
+//             {
+//               numeroCuenta,
+//               correo_Institucional: correoInstitucional,
+//               usuario: parseInt(idUsuario),
+//             },
+//           ]);
+
+//         if (estudianteError) {
+//           console.error('Error al insertar en la tabla estudiante', estudianteError);
+//           errores.push({ dni, error: estudianteError.message });
+//           continue;
+//         }
+
+//         const { error: rolError } = await supabase
+//           .from('UsuarioRol')
+//           .insert([
+//             {
+//               id_Rol: 2,
+//               id_Usuario: parseInt(idUsuario),
+//             },
+//           ]);
+
+//         if (rolError) {
+//           console.error('Error al insertar en la tabla UsuarioRol', rolError);
+//           errores.push({ dni, error: rolError.message });
+//         } else {
+//           console.log('Datos insertados en la tabla UsuarioRol');
+//         }
+//       } else {
+//         await sendRejectionEmail(email, `${primer_Nombre} ${primer_Apellido}`);
+//       }
+//     }
+
+//     console.log('Datos procesados e insertados en la tabla Usuario');
+//     res.status(200).json({
+//       message: 'Datos procesados e insertados en la tabla Usuario',
+//       errores,
+//       totalFilas: dataJson.length,
+//     });
+
+//   } catch (error) {
+//     console.error('Error al procesar los datos:', error);
+//     res.status(500).json({ message: 'Error al procesar los datos', error });
+//   }
+// };
+
+
+exports.crearUsuariosDesdeJson = async (req, res) => {
+  try {
+    const { dataJson } = req.body;
+
+    if (!dataJson || !Array.isArray(dataJson)) {
+      return res.status(400).json({ message: 'No se proporcionó el JSON de datos o el formato es incorrecto.' });
+    }
+
+    const results = dataJson;
+    const { filasAptas, filasNoAptas } = verificarFilas(results);
+
+    console.log("Resultados Verificados - Filas Aptas:", filasAptas);
+    console.log("Resultados Verificados - Filas No Aptas:", filasNoAptas);
+
+    const errores = [];
+    const filasAptasProcesadas = [];
+
+    try {
+      for (const row of filasAptas) {
+        const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo } = row;
+
+        const generatePassword = () => Math.floor(1000 + Math.random() * 9000);
+
+        const generateUniqueStudentNumber = async () => {
+          const currentYear = new Date().getFullYear();
+          let uniqueNumber;
+          let isUnique = false;
+
+          while (!isUnique) {
+            const randomNum = Math.floor(Math.random() * 9999) + 1;
+            uniqueNumber = `${currentYear}${Codigo}${randomNum.toString().padStart(4, '0')}`;
+
+            const { data, error } = await supabase
+              .from('estudiante')
+              .select('numeroCuenta')
+              .eq('numeroCuenta', uniqueNumber);
+
+            if (error) throw error;
+            if (data.length === 0) isUnique = true;
+          }
+
+          return uniqueNumber;
+        };
+
+        const getId = async (dni) => {
+          const { data, error } = await supabase
+            .from('Usuario')
+            .select('id')
+            .eq('Identidad', dni)
+            .single();
+
+          if (error) throw error;
+          if (!data) throw new Error('No se encontró el usuario');
+
+          return data.id;
+        };
+
+        const contrasena = generatePassword();
+        const hashedPassword = bcrypt.hashSync(contrasena.toString(), 10);
+        const numeroCuenta = await generateUniqueStudentNumber();
+        const correoInstitucional = `${primer_Nombre[0].toLowerCase()}${row.segundo_Nombre[0].toLowerCase()}${primer_Apellido.toLowerCase()}${row.segundo_Apellido.toLowerCase()}@unah.hn`;
+
+        if (isNaN(parseInt(numeroCuenta))) {
+          console.error(`Número de cuenta inválido generado: ${numeroCuenta}`);
+          errores.push({ dni, error: `Número de cuenta inválido generado: ${numeroCuenta}` });
+          continue;
+        }
+
+        if (
+          (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'aprobó') ||
+          (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'no aplica') ||
+          (aprobacionPAA === 'aprobó' && aprobacionPAM_PCCNS === 'reprobó')
+        ) {
+          const { data: usuariosExistentes, error: users } = await supabase
+            .from('Usuario')
+            .select('*')
+            .eq('Identidad', dni);
+
+          if (users) {
+            console.error('Error al obtener datos de Usuario', users);
+            errores.push({ dni, error: users.message });
+            continue;
+          }
+
+          if (usuariosExistentes && usuariosExistentes.length > 0) {
+            console.log('El usuario ya existe en la base de datos');
+            continue;
+          }
+
+          const { data, error } = await supabase
+            .from('Usuario')
+            .insert([
+              {
+                Identidad: dni,
+                Nombre: `${primer_Nombre} ${row.segundo_Nombre}`,
+                Apellido: `${primer_Apellido} ${row.segundo_Apellido}`,
+                Correo: email,
+                Contrasena: hashedPassword,
+              },
+            ]).single();
+
+          if (error) {
+            console.error('Error al insertar en la tabla Usuario', error);
+            errores.push({ dni, error: error.message });
+            continue;
+          }
+
+          const idUsuario = await getId(dni);
+
+          await sendStudentWelcomeEmail(email, `${primer_Nombre} ${primer_Apellido}`, numeroCuenta, correoInstitucional, contrasena);
+
+          const { error: estudianteError } = await supabase
+            .from('estudiante')
+            .insert([
+              {
+                numeroCuenta,
+                correo_Institucional: correoInstitucional,
+                usuario: parseInt(idUsuario),
+              },
+            ]);
+
+          if (estudianteError) {
+            console.error('Error al insertar en la tabla estudiante', estudianteError);
+            errores.push({ dni, error: estudianteError.message });
+            continue;
+          }
+
+          const { error: rolError } = await supabase
+            .from('UsuarioRol')
+            .insert([
+              {
+                id_Rol: 2,
+                id_Usuario: parseInt(idUsuario),
+              },
+            ]);
+
+          if (rolError) {
+            console.error('Error al insertar en la tabla UsuarioRol', rolError);
+            errores.push({ dni, error: rolError.message });
+          } else {
+            console.log('Datos insertados en la tabla UsuarioRol');
+          }
+        } else {
+          await sendRejectionEmail(email, `${primer_Nombre} ${primer_Apellido}`);
+        }
+
+        filasAptasProcesadas.push(row); // Almacenar las filas procesadas exitosamente
+      }
+
+      console.log('Datos procesados e insertados en la tabla Usuario');
+      res.status(200).json({ 
+        message: 'Datos procesados e insertados en la tabla Usuario', 
+        errores,
+        filasNoAptas,
+        filasAptasProcesadas: filasAptasProcesadas.length,
+        totalFilas: results.length
+      });
+
+    } catch (error) {
+      console.error('Error al procesar los datos:', error);
+      res.status(500).json({ message: 'Error al procesar los datos', error });
+    }
+  } catch (error) {
+    console.error('Error al crear usuarios desde JSON', error);
+    res.status(500).json({ message: 'Error al crear usuarios desde JSON', error });
+  }
+};

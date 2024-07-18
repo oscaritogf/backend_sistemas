@@ -229,6 +229,96 @@ static async getCarreras() {
     return data;
   }
 
+  static async getJSON() {
+    const { data, error } = await supabase
+      .from('Admisiones')
+      .select('*');
+  
+    if (error) {
+      console.error('Error al obtener datos de Admisiones', error);
+      throw error;
+    }
+  
+    if (!data || data.length === 0) {
+      throw new Error('No hay datos de Admisiones');
+    }
+  
+    // Obtener datos de la tabla Centros
+    const { data: centrosData, error: centrosError } = await supabase
+      .from('Centro')
+      .select('id_Centro, nombre, codigo');
+  
+    if (centrosError) {
+      console.error('Error al obtener datos de Centros', centrosError);
+      throw new Error('Error al obtener datos de Centros');
+    }
+  
+    // Crear un mapa de id_Centro a codigo y nombre
+    const centrosMap = new Map();
+    const centrocodMap = new Map();
+    centrosData.forEach(centro => {
+      centrosMap.set(centro.id_Centro, centro.nombre);
+      centrocodMap.set(centro.id_Centro, centro.codigo);
+    });
+  
+    // Obtener datos de la tabla Carreras
+    const { data: carrerasData, error: carrerasError } = await supabase
+      .from('Carrera')
+      .select('id_Carrera, nombre, puntajeRequerido');
+  
+    if (carrerasError) {
+      console.error('Error al obtener datos de Carreras', carrerasError);
+      throw new Error('Error al obtener datos de Carreras');
+    }
+  
+    // Crear un mapa de id_Carrera a nombre y puntajeRequerido
+    const carrerasMap = new Map();
+    const puntajeMap = new Map();
+    carrerasData.forEach(carrera => {
+      carrerasMap.set(carrera.id_Carrera, carrera.nombre);
+      puntajeMap.set(carrera.id_Carrera, carrera.puntajeRequerido);
+    });
+  
+    // Convertir los datos a formato JSON
+    const jsonData = data.map(admision => {
+      const cent = centrocodMap.get(admision.id_Centro) || '';
+      const codigoCentro = centrosMap.get(admision.id_Centro) || '';
+      const nombreCarrera = carrerasMap.get(admision.id_Carrera) || '';
+      const nombreSdCarrera = carrerasMap.get(admision.id_Sd_Carrera) || '';
+  
+      // Determinar el valor de matricula
+      let matricula = 'ninguna';
+      if (admision.nota1 >= puntajeMap.get(admision.id_Carrera)) {
+        matricula = nombreCarrera;
+      } else if (admision.nota1 >= puntajeMap.get(admision.id_Sd_Carrera)) {
+        matricula = nombreSdCarrera;
+      }
+  
+      return {
+        id_Admision: admision.id_Admision,
+        dni: admision.dni,
+        primer_Nombre: admision.primer_Nombre,
+        segundo_Nombre: admision.segundo_Nombre,
+        primer_Apellido: admision.primer_Apellido,
+        segundo_Apellido: admision.segundo_Apellido,
+        Centro: codigoCentro,
+        Codigo: cent,
+        Carrera: nombreCarrera,
+        Sd_Carrera: nombreSdCarrera,
+        email: admision.email,
+        intentos: admision.intentos,
+        nota1: admision.nota1,
+        nota2: admision.nota2,
+        aprobacionPAA: admision.aprobacionPAA,
+        aprobacionPAM_PCCNS: admision.aprobacionPAM_PCCNS,
+        matricula: matricula
+      };
+    });
+  
+    return jsonData;
+  }
+  
+
 }
 
   

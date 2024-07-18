@@ -14,4 +14,8 @@ router.get('/csv', admisionesController.saveCSV);
 router.post('/usuario', admisionesController.crearUsuario);
 router.post('/id', admisionesController.getId);
 
+
+router.post('/usuarios/json', admisionesController.crearUsuariosDesdeJson);
+router.get('/json', admisionesController.getJSON);
+
 module.exports = router;
