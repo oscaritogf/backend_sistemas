@@ -118,7 +118,6 @@ exports.getCSV = async (req, res) => {
   }
 };
 
-
 exports.saveCSV = async (req, res) => {
   try {
     const csv = await Admision.getCSV();

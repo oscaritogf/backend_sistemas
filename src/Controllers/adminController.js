@@ -180,34 +180,7 @@ exports.updateNoticia = async (req, res) => {
     });
   }
 };
-/*
-exports.updateMatricula = async (req, res) => {
-  try {
-    console.log('Datos recibidos:', req.body); // Agrega este log para verificar los datos
 
-    const idMatricula = req.params.id_ConfMatri;
-    const matrciulaData = req.body;
-
-    const updatedMatricula = await Admin.updatedMatricula(idMatricula, matrciulaData);
-
-    if (!updatedMatricula) {
-      return res.status(404).json({ message: 'Matricula no encontrada' });
-    }
-
-    res.json({
-      message: 'Matricula actualizada exitosamente',
-      noticia: updatedMatricula
-    });
-  } catch (error) {
-    console.error('Error al actualizar matricula:', error);
-    res.status(500).json({
-      message: 'Error al actualizar matricula',
-      error: error.message
-    });
-  }
-};
-
-*/
 exports.deleteNoticia = async (req, res) => {
   try {
     const idNoticia = req.params.id_noticia;
@@ -241,29 +214,6 @@ exports.getTipoMatricula = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-/*
-exports.deleteMatricula = async (req, res) => {
-  try {
-    const idMatricula = req.params.id_noticia;
-
-    await Admin.deleteMatricula(idMatricula);
-
-    res.json({
-      message: 'Matricula eliminada exitosamente'
-    });
-  } catch (error) {
-    console.error('Error al eliminar matricula:', error);
-    res.status(500).json({
-      message: 'Error al eliminar matricula',
-      error: error.message
-    });
-  }
-};
-*/
-
-
-
-
 
 
 exports.createCancelacion = async (req, res) => {
