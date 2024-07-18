@@ -161,34 +161,7 @@ exports.updateNoticia = async (req, res) => {
     });
   }
 };
-/*
-exports.updateMatricula = async (req, res) => {
-  try {
-    console.log('Datos recibidos:', req.body); // Agrega este log para verificar los datos
 
-    const idMatricula = req.params.id_ConfMatri;
-    const matrciulaData = req.body;
-
-    const updatedMatricula = await Admin.updatedMatricula(idMatricula, matrciulaData);
-
-    if (!updatedMatricula) {
-      return res.status(404).json({ message: 'Matricula no encontrada' });
-    }
-
-    res.json({
-      message: 'Matricula actualizada exitosamente',
-      noticia: updatedMatricula
-    });
-  } catch (error) {
-    console.error('Error al actualizar matricula:', error);
-    res.status(500).json({
-      message: 'Error al actualizar matricula',
-      error: error.message
-    });
-  }
-};
-
-*/
 exports.deleteNoticia = async (req, res) => {
   try {
     const idNoticia = req.params.id_noticia;
@@ -289,15 +262,20 @@ exports.obtenerCancelacionExcepcionalPorId = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 exports.actualizarCancelacion = async (req, res) => {
+  console.log('Received update request for id:', req.params.id);
+  console.log('Update data:', req.body);
   try {
     const cancelacionActualizada = await Admin.updateCancelacion(req.params.id, req.body);
-    if (cancelacionActualizada) {
-      res.status(200).json(cancelacionActualizada);
+    console.log('Updated cancelacion:', cancelacionActualizada);
+    if (cancelacionActualizada && cancelacionActualizada.length > 0) {
+      res.status(200).json(cancelacionActualizada[0]);
     } else {
       res.status(404).json({ message: 'Configuración no encontrada' });
     }
   } catch (error) {
+    console.error('Error in actualizarCancelacion:', error);
     res.status(400).json({ message: error.message });
   }
 };

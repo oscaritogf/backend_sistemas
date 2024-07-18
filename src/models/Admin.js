@@ -534,44 +534,7 @@ static async generateUniqueEmployeeNumber() {
     }
     return data;
   };
-/*
-  static async deleteGestionMatricula(id) {
-    try {
-      // Verificar que la matricula con el id exista
-      const { data: existingMatricula, error: selectError } = await supabase
-        .from('GestionMatricula')
-        .select('id_ConfMatri')
-        .eq('id_ConfMatri', id)
-        .single();
 
-      if (selectError) {
-        console.error('Error al verificar matrciula:', selectError);
-        throw new Error('No existe la mtricula con el id proporcionado');
-      }
-
-      if (!existingMatricula) {
-        console.error('Matricul no encontrada');
-        throw new Error('Matricula no encontrada');
-      }
-
-      // Eliminar la matricula
-      const { error: deleteError } = await supabase
-        .from('GestionMatricula')
-        .delete()
-        .eq('id_ConfMatri', id);
-
-      if (deleteError) {
-        console.error('Error al eliminar matricula:', deleteError);
-        throw new Error('Error al eliminar matricula');
-      }
-
-      return { message: 'Matricula eliminada exitosamente' };
-    } catch (error) {
-      console.error('Error en deleteConfigucionMatricula:', error);
-      throw error;
-    }
-  }
-*/
   static async deleteNoticia(id) {
     try {
       // Verificar que la noticia con el id exista
@@ -663,47 +626,7 @@ static async generateUniqueEmployeeNumber() {
       throw error;
     }
   };
-/*
-  static async updateGestionMatricula(id, gestionMatriculaData) {
-    const { pac,tipoMatricula, created_at } = noticiaData;
-  
-    try {
-      // Verificar que la noticia con el id exista
-      const { data: existingMatricula, error: selectError } = await supabase
-        .from('GestionMatricula')
-        .select('id_ConfMatri')
-        .eq('id_ConfMatri', id)
-        .single();
-  
-      if (selectError) {
-        console.error('Error al verificar matricula:', selectError);
-        throw new Error('Error al verificar matricula');
-      }
-  
-      if (!existingMatricula) {
-        console.error('Matricula no encontrada');
-        throw new Error('Matricula no encontrada');
-      }
-      
-      // Actualizar la matricula
-      const { data, error: updateError } = await supabase
-        .from('ConfiguracionMatricula')
-        .update(noticiaData)
-        .eq('id_noticia', id)
-        .select();
-  
-      if (updateError) {
-        console.error('Error al actualizar noticia:', updateError);
-        throw new Error('Error al actualizar noticia');
-      }
-  
-      return data;
-    } catch (error) {
-      console.error('Error en updateNoticia:', error);
-      throw error;
-    }
-  };
-  */
+
   //traer datos FormMatricula
   static async getTipoMatricula() {
     const { data, error } = await supabase
@@ -728,6 +651,8 @@ static async generateUniqueEmployeeNumber() {
     if (error) throw error;
     return data;
   } 
+
+
   static async createCancelacion(data) {
     const { id_Pac, id_TipoMatricula, fecha_inicioCancel, fecha_finCancel, hora_inicioCancel, hora_finCancel } = data;
     
@@ -857,11 +782,13 @@ static async getCancelacionExcepcionalById(id) {
   }
   return data;
 }
+
 static async updateCancelacion(id, updateData) {
   const { data, error } = await supabase
     .from('CancelacionExcepcional')
     .update(updateData)
-    .eq('id_canExcep', id);
+    .eq('id_canExcep', id)
+    .select();
 
   if (error) {
     throw error;
@@ -890,80 +817,6 @@ static async updateConfiguracion(id, data) {
 }
 
 
-/*
-static async updateConfiguracion(id, data) {
-  const {
-    id_TipoMatricula,
-    fecha_inicioPAC,
-    fecha_finPAC,
-    fecha_inicioMatri,
-    fecha_finMatri,
-    hora_inicioMatri,
-    hora_finMatri,
-    fecha_matri1,
-    indice_desdeMatri1,
-    indice_hastaMatri1,
-    pIngreso_desdeMatri1,
-    pIngreso_hastaMatri1,
-    fecha_matri2,
-    indice_desdeMatri2,
-    indice_hastaMatri2,
-    pIngreso_desdeMatri2,
-    pIngreso_hastaMatri2,
-    fecha_matri3,
-    indice_desdeMatri3,
-    indice_hastaMatri3,
-    fecha_matri4,
-    indice_desdeMatri4,
-    indice_hastaMatri4,
-    fecha_matri5,
-    indice_desdeMatri5,
-    indice_hastaMatri5,
-    id_Pac
-  } = data;
-
-  console.log('Datos recibidos para actualización id:', id);
-  const { data: updatedConfiguracion, error } = await supabase
-    .from('ConfiguracionMatricula')
-    .update({
-      id_TipoMatricula,
-      fecha_inicioPAC,
-      fecha_finPAC,
-      fecha_inicioMatri,
-      fecha_finMatri,
-      hora_inicioMatri,
-      hora_finMatri,
-      fecha_matri1,
-      indice_desdeMatri1,
-      indice_hastaMatri1,
-      pIngreso_desdeMatri1,
-      pIngreso_hastaMatri1,
-      fecha_matri2,
-      indice_desdeMatri2,
-      indice_hastaMatri2,
-      pIngreso_desdeMatri2,
-      pIngreso_hastaMatri2,
-      fecha_matri3,
-      indice_desdeMatri3,
-      indice_hastaMatri3,
-      fecha_matri4,
-      indice_desdeMatri4,
-      indice_hastaMatri4,
-      fecha_matri5,
-      indice_desdeMatri5,
-      indice_hastaMatri5,
-      id_Pac
-    })
-    .eq('id_ConfMatri', id);
-
-  if (error) {
-    console.error('error de base', error);
-    throw error;
-   
-  }
-  console.log('actualizacion de configuracion', updatedConfiguracion);
-  return updatedConfiguracion;
-}*/
 
 static async deleteCancelacionExcep(id) {
   const { data, error } = await supabase
