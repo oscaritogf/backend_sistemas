@@ -118,19 +118,7 @@ exports.getCSV = async (req, res) => {
   }
 };
 
-exports.saveCSV = async (req, res) => {
 
-  try {
-    const { route, name  } = req.body;
-    const csv = await Admision.getCSV();
-    const filePath = path.resolve(route,name); // Replace with the desired file path
-    fs.writeFileSync(filePath, csv);
-    res.json({ message: 'CSV guardado con éxito' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-/*
 exports.saveCSV = async (req, res) => {
   try {
     const csv = await Admision.getCSV();
@@ -140,7 +128,7 @@ exports.saveCSV = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};*/
+};
 
 exports.getCentros = async (req, res) => {
   try {
