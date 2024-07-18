@@ -34,7 +34,9 @@ router.put('/cancelaciones/:id', adminController.actualizarCancelacion);
 router.post('/configuraciones', adminController.crearConfiguracion);
 router.get('/listarConfig', adminController.obtenerConfiguraciones);
 router.get('/listarConfig/:id', adminController.obtenerConfiguracionPorId);
+
 router.put('/configuraciones/:id', adminController.actualizarConfiguracion);
+
 router.delete('/configuraciones/:id', adminController.eliminarConfiguracion);
 
 module.exports = router;

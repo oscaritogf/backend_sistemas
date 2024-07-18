@@ -301,16 +301,36 @@ exports.actualizarCancelacion = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+
 exports.actualizarConfiguracion = async (req, res) => {
   try {
-    const configuracionActualizada = await Admin.updateConfiguracion(req.params.id, req.body);
-    if (configuracionActualizada) {
-      res.status(200).json(configuracionActualizada);
-    } else {
-      res.status(404).json({ message: 'Configuración no encontrada' });
+    const { id } = req.params;
+    const data = req.body;
+
+    // Log the incoming request data
+    console.log('ID recibido:', id);  // Log ID
+    console.log('Datos recibidos:', data);  // Log incoming data
+
+    const configuracionActualizada = await Admin.updateConfiguracion(id, data);
+
+    console.log('Resultado de updateConfiguracion:', configuracionActualizada);  // Log result
+
+    if (!configuracionActualizada || configuracionActualizada.length === 0) {
+      return res.status(404).json({ message: 'Configuración no encontrada' });
     }
+
+    res.json({
+      message: 'Configuración actualizada exitosamente',
+      configuracion: configuracionActualizada
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error al actualizar configuracion:', error);
+    res.status(500).json({
+      message: 'Error al actualizar configuracion',
+      error: error.message,
+      stack: error.stack  // Log full error stack
+    });
   }
 };
 

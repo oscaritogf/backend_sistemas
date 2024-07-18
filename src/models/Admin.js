@@ -868,17 +868,102 @@ static async updateCancelacion(id, updateData) {
   }
   return data;
 }
-static async updateConfiguracion(id, updateData) {
-  const { data, error } = await supabase
+
+
+static async updateConfiguracion(id, data) {
+  console.log('Updating configuration with ID:', id);  // Log ID
+  console.log('Data to update:', data);  // Log incoming data
+
+  const { data: updatedConfiguracion, error } = await supabase
     .from('ConfiguracionMatricula')
-    .update(updateData)
+    .update(data)
+    .eq('id_ConfMatri', id)
+    .select();  // Ensure we get the updated data
+
+  if (error) {
+    console.error('Error in updateConfiguracion:', error);  // Log error
+    throw error;
+  }
+
+  console.log('Updated configuration:', updatedConfiguracion);  // Log result
+  return updatedConfiguracion;
+}
+
+
+/*
+static async updateConfiguracion(id, data) {
+  const {
+    id_TipoMatricula,
+    fecha_inicioPAC,
+    fecha_finPAC,
+    fecha_inicioMatri,
+    fecha_finMatri,
+    hora_inicioMatri,
+    hora_finMatri,
+    fecha_matri1,
+    indice_desdeMatri1,
+    indice_hastaMatri1,
+    pIngreso_desdeMatri1,
+    pIngreso_hastaMatri1,
+    fecha_matri2,
+    indice_desdeMatri2,
+    indice_hastaMatri2,
+    pIngreso_desdeMatri2,
+    pIngreso_hastaMatri2,
+    fecha_matri3,
+    indice_desdeMatri3,
+    indice_hastaMatri3,
+    fecha_matri4,
+    indice_desdeMatri4,
+    indice_hastaMatri4,
+    fecha_matri5,
+    indice_desdeMatri5,
+    indice_hastaMatri5,
+    id_Pac
+  } = data;
+
+  console.log('Datos recibidos para actualización id:', id);
+  const { data: updatedConfiguracion, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .update({
+      id_TipoMatricula,
+      fecha_inicioPAC,
+      fecha_finPAC,
+      fecha_inicioMatri,
+      fecha_finMatri,
+      hora_inicioMatri,
+      hora_finMatri,
+      fecha_matri1,
+      indice_desdeMatri1,
+      indice_hastaMatri1,
+      pIngreso_desdeMatri1,
+      pIngreso_hastaMatri1,
+      fecha_matri2,
+      indice_desdeMatri2,
+      indice_hastaMatri2,
+      pIngreso_desdeMatri2,
+      pIngreso_hastaMatri2,
+      fecha_matri3,
+      indice_desdeMatri3,
+      indice_hastaMatri3,
+      fecha_matri4,
+      indice_desdeMatri4,
+      indice_hastaMatri4,
+      fecha_matri5,
+      indice_desdeMatri5,
+      indice_hastaMatri5,
+      id_Pac
+    })
     .eq('id_ConfMatri', id);
 
   if (error) {
+    console.error('error de base', error);
     throw error;
+   
   }
-  return data;
-}
+  console.log('actualizacion de configuracion', updatedConfiguracion);
+  return updatedConfiguracion;
+}*/
 
 static async deleteCancelacionExcep(id) {
   const { data, error } = await supabase
