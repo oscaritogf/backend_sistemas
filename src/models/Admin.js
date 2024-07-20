@@ -734,50 +734,7 @@ static async createConfiguracion(data) {
   }
   return newConfiguracion;
 }
-/*
-static async getConfiguraciones() {
-  const { data, error } = await supabase
-    .from('ConfiguracionMatricula')
-    .select('*');
 
-  if (error) {
-    throw error;
-  }
-  return data;
-}
-
-static async getConfiguracionById(id) {
-  const { data, error } = await supabase
-    .from('ConfiguracionMatricula')
-    .select('*')
-    .eq('id_ConfMatri', id)
-    .single();
-
-  if (error) {
-    throw error;
-  }
-  return data;
-}
-
-static async updateConfiguracion(id, data) {
-  console.log('Updating configuration with ID:', id);  // Log ID
-  console.log('Data to update:', data);  // Log incoming data
-
-  const { data: updatedConfiguracion, error } = await supabase
-    .from('ConfiguracionMatricula')
-    .update(data)
-    .eq('id_ConfMatri', id)
-    .select();  // Ensure we get the updated data
-
-  if (error) {
-    console.error('Error in updateConfiguracion:', error);  // Log error
-    throw error;
-  }
-
-  console.log('Updated configuration:', updatedConfiguracion);  // Log result
-  return updatedConfiguracion;
-}
-*/
 
 static async getConfiguraciones() {
   const { data, error } = await supabase
