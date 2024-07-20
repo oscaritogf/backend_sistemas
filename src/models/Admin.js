@@ -495,6 +495,7 @@ class Admin {
         numeroEmpleado,
         estado, 
         created_at,
+        id_Centros,
         Centros (
           Nombre
         ),  
@@ -533,6 +534,7 @@ class Admin {
       roles: empleado.Usuario.UsuarioRol.map(ur => ur.rol.nombre),
       estado: empleado.estado, //incluir estadi en el objeto
       Centro: empleado.Centros.Nombre,
+      CentroId: empleado.id_Centros,
       DepartamentoId: empleado.id_Departamento,
       Departamento: empleado.Departamentos.Nombre
     }));
