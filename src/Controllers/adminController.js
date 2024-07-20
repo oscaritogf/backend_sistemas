@@ -267,7 +267,18 @@ exports.actualizarCancelacion = async (req, res) => {
   console.log('Received update request for id:', req.params.id);
   console.log('Update data:', req.body);
   try {
-    const cancelacionActualizada = await Admin.updateCancelacion(req.params.id, req.body);
+    // Validar y convertir los datos si es necesario
+    const updateData = {
+      ...req.body,
+      id_TipoMatricula: parseInt(req.body.id_TipoMatricula, 10),
+      id_Pac: parseInt(req.body.id_Pac, 10),
+    };
+
+    if (isNaN(updateData.id_TipoMatricula) || isNaN(updateData.id_Pac)) {
+      throw new Error('Invalid data: id_TipoMatricula and id_Pac must be numbers');
+    }
+
+    const cancelacionActualizada = await Admin.updateCancelacion(req.params.id, updateData);
     console.log('Updated cancelacion:', cancelacionActualizada);
     if (cancelacionActualizada && cancelacionActualizada.length > 0) {
       res.status(200).json(cancelacionActualizada[0]);
@@ -279,6 +290,7 @@ exports.actualizarCancelacion = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 
 exports.actualizarConfiguracion = async (req, res) => {

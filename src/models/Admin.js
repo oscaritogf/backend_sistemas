@@ -734,7 +734,7 @@ static async createConfiguracion(data) {
   }
   return newConfiguracion;
 }
-
+/*
 static async getConfiguraciones() {
   const { data, error } = await supabase
     .from('ConfiguracionMatricula')
@@ -759,44 +759,6 @@ static async getConfiguracionById(id) {
   return data;
 }
 
-static async getCancelacionExcepcional() {
-  const { data, error } = await supabase
-    .from('CancelacionExcepcional')
-    .select('*');
-
-  if (error) {
-    throw error;
-  }
-  return data;
-}
-
-static async getCancelacionExcepcionalById(id) {
-  const { data, error } = await supabase
-    .from('CancelacionExcepcional')
-    .select('*')
-    .eq('id_canExcep', id)
-    .single();
-
-  if (error) {
-    throw error;
-  }
-  return data;
-}
-
-static async updateCancelacion(id, updateData) {
-  const { data, error } = await supabase
-    .from('CancelacionExcepcional')
-    .update(updateData)
-    .eq('id_canExcep', id)
-    .select();
-
-  if (error) {
-    throw error;
-  }
-  return data;
-}
-
-
 static async updateConfiguracion(id, data) {
   console.log('Updating configuration with ID:', id);  // Log ID
   console.log('Data to update:', data);  // Log incoming data
@@ -815,6 +777,76 @@ static async updateConfiguracion(id, data) {
   console.log('Updated configuration:', updatedConfiguracion);  // Log result
   return updatedConfiguracion;
 }
+*/
+
+static async getConfiguraciones() {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .select(`
+      *,
+      Pac (id_Pac, pac),
+      TipoMatricula (id_TipoMatricula, tipoMatricula)
+    `);
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async getConfiguracionById(id) {
+  const { data, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .select(`
+      *,
+      Pac (id_Pac, pac),
+      TipoMatricula (id_TipoMatricula, tipoMatricula)
+    `)
+    .eq('id_ConfMatri', id)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+static async updateConfiguracion(id, data) {
+  console.log('Updating configuration with ID:', id);
+  console.log('Data to update:', data);
+
+  const { data: updatedConfiguracion, error } = await supabase
+    .from('ConfiguracionMatricula')
+    .update(data)
+    .eq('id_ConfMatri', id)
+    .select(`
+      *,
+      Pac (id_Pac, pac),
+      TipoMatricula (id_TipoMatricula, tipoMatricula)
+    `);
+
+  if (error) {
+    console.error('Error in updateConfiguracion:', error);
+    throw error;
+  }
+
+  console.log('Updated configuration:', updatedConfiguracion);
+  return updatedConfiguracion;
+}
+
+static async updateCancelacion(id, updateData) {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
+    .update(updateData)
+    .eq('id_canExcep', id)
+    .select();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
 
 
 
@@ -841,11 +873,66 @@ static async deleteConfiguracion(id) {
   }
   return data;
 }
+
+static async getCancelacionExcepcional() {
+  // Consulta a la tabla CancelacionExcepcional
+  let query = supabase
+    .from('CancelacionExcepcional')
+    .select(`
+      id_canExcep,
+      created_at,
+      Pac (
+        pac
+      ),  
+      TipoMatricula (
+        tipoMatricula
+      )
+    `)
+   
+
+  // Ejecutar la consulta
+  const { data: configuraciones, error } = await query;
+
+  // Manejo de errores
+  if (error) throw error;
+
+  // Transformar los datos a la forma esperada
+  return configuraciones.map(configuraciones => ({
+    id_canExcep: configuraciones.id_canExcep,
+    created_at: configuraciones.created_at,
+    pac: configuraciones.Pac.pac,
+    tipoMatricula: configuraciones.TipoMatricula.tipoMatricula
+  }));
+}
+
+static async getCancelacionExcepcionalById(id) {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
+    .select(`
+      id_canExcep,
+      created_at,
+      Pac (
+        id_Pac,
+        pac
+      ),  
+      TipoMatricula (
+        id_TipoMatricula,
+        tipoMatricula
+      ),
+      fecha_inicioCancel,
+      fecha_finCancel,
+      hora_inicioCancel,
+      hora_finCancel
+    `)
+    .eq('id_canExcep', id)
+    .single();
+  if (error) {
+    throw error;
+  }
+  return data;
+}
 };  
 
    
-
-
-
 
 module.exports = Admin;
