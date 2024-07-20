@@ -97,6 +97,16 @@ exports.listEmpleados = async (req, res) => {
   }
 };
 
+exports.getDepartamentos = async (req, res) => {
+  try {
+    const departamentos = await Admin.getDepartamentos();
+    res.json(departamentos);  
+  } catch (error) {
+    console.error('Error al obtener departamentos:', error);
+    res.status(500).json({ message: 'Error al obtener departamentos', error: error.message });
+  }
+};
+
 exports.getNoticias = async (req, res) => {
   try {
     const noticias = await Admin.getNoticias();

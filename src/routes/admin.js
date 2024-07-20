@@ -12,6 +12,7 @@ const upload = multer({ dest: 'uploads/' });
 router.post('/empleados',upload.single('imagen'), adminController.createEmpleado);
 router.put('/empleados/:numeroEmpleado',upload.single('imagen'), adminController.updateEmpleado);
 router.get('/empleados', adminController.listEmpleados);
+router.get('/departamentos', adminController.getDepartamentos);
 router.get('/noticias', adminController.getNoticias);
 router.get('/matricula_filtro/:id_ConfMatri', adminController.getGestionMatriculaFiltro);
 router.get('/matricula', adminController.getGestionMatricula);

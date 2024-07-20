@@ -11,7 +11,7 @@ class Admin {
 
 
   static async createEmpleado(empleadoData) {
-    const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros } = empleadoData;
+    const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, id_Centros, id_Departamento } = empleadoData;
   
     // Verificar si el número de identidad ya existe
     const { data: existingUser, error: existingUserError } = await supabase
@@ -28,6 +28,52 @@ class Admin {
       throw new Error('El número de identidad ya existe. No se puede crear el empleado.');
     }
   
+    // Verificar si ya existe un coordinador o jefeDepartamento para el departamento
+    const { data: empleados, error: empleadosError } = await supabase
+      .from('empleado')
+      .select(`
+        numeroEmpleado,
+        Usuario (
+          id,
+          Nombre,
+          Apellido,
+          UsuarioRol (
+            rol (nombre)
+          )
+        )
+      `)
+      .eq('id_Departamento', id_Departamento);
+
+    if (empleadosError) {
+      console.error('Error al obtener empleados:', empleadosError);
+      throw empleadosError;
+    }
+
+    // Extraer los nombres de roles de los empleados existentes en el departamento
+    const existingRoles = empleados.flatMap(emp => emp.Usuario.UsuarioRol.map(ur => ({ 
+      numeroEmpleado: emp.numeroEmpleado,
+      role: ur.rol.nombre, 
+      userId: emp.Usuario.id, 
+      nombre: emp.Usuario.Nombre, 
+      apellido: emp.Usuario.Apellido 
+    })));
+
+    // Verificar si ya existen Coordinador o JefeDepartamento en el departamento
+    for (const role of roles) {
+      if (role === 'Coordinador') {
+        const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador');
+        if (existingCoordinator) {
+          throw new Error(`Ya existe un Coordinador en este departamento: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+        }
+      }
+      if (role === 'JefeDepartamento') {
+        const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento');
+        if (existingJefeDepartamento) {
+          throw new Error(`Ya existe un Jefe de Departamento en este departamento: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
+        }
+      }
+    }
+
     // Generar número de empleado único
     const numeroEmpleado = await this.generateUniqueEmployeeNumber();
   
@@ -82,7 +128,8 @@ class Admin {
         numeroEmpleado,
         usuario: usuario.id,
         estado: true,
-        id_Centros: id_Centros
+        id_Centros: id_Centros,
+        id_Departamento: id_Departamento
       })
       .select()
       .single();
@@ -131,14 +178,14 @@ class Admin {
     // Enviar correo con credenciales
     await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
   
-    return { ...usuario, numeroEmpleado, roles, id_Centros };
+    return { ...usuario, numeroEmpleado, roles, id_Centros, id_Departamento };
   }
 
  //actualizar un empleado
  static async updateEmpleado(numeroEmpleado, empleadoData) {
   console.log('Datos recibidos para actualización:', empleadoData);
   console.log('Actualizando empleado:', numeroEmpleado);
-  const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles, estado, id_Centros } = empleadoData;
+  const { nombre, apellido, correo, telefono, identidad, contrasena, imagen, roles=[], estado, id_Centros, id_Departamento } = empleadoData;
 
   try {
     // Obtener el id del usuario basándonos en el numeroEmpleado
@@ -179,6 +226,9 @@ class Admin {
     if (id_Centros !== undefined) {
       empleadoUpdateData.id_Centros = id_Centros;
     }
+    if (id_Departamento !== undefined) {
+      empleadoUpdateData.id_Departamento = id_Departamento;
+    }
 
     if (Object.keys(empleadoUpdateData).length > 0) {
       const { error: empleadoUpdateError } = await supabase
@@ -191,6 +241,54 @@ class Admin {
         throw empleadoUpdateError;
       }
     }
+
+
+    // Verificar si ya existe un coordinador o jefeDepartamento para el departamento
+    const { data: empleados, error: error } = await supabase
+      .from('empleado')
+      .select(`
+        numeroEmpleado,
+        Usuario (
+          id,
+          Nombre,
+          Apellido,
+          UsuarioRol (
+            rol (nombre)
+          )
+        )
+      `)
+      .eq('id_Departamento', id_Departamento);
+
+    if (error) {
+      console.error('Error al obtener empleados:', error);
+      throw error;
+    }
+
+    // Extraer los nombres de roles de los empleados existentes en el departamento
+    const existingRoles = empleados.flatMap(emp => emp.Usuario.UsuarioRol.map(ur => ({ 
+      numeroEmpleado: emp.numeroEmpleado,
+      role: ur.rol.nombre, 
+      userId: emp.Usuario.id, 
+      nombre: emp.Usuario.Nombre, 
+      apellido: emp.Usuario.Apellido 
+    })));
+
+    // Verificar si ya existen Coordinador o JefeDepartamento en el departamento
+    for (const role of roles) {
+      if (role === 'Coordinador') {
+        const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador');
+        if (existingCoordinator) {
+          throw new Error(`Ya existe un Coordinador en este departamento: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+        }
+      }
+      if (role === 'JefeDepartamento') {
+        const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento');
+        if (existingJefeDepartamento) {
+          throw new Error(`Ya existe un Jefe de Departamento en este departamento: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
+        }
+      }
+    }
+
 
 
 
@@ -339,7 +437,7 @@ class Admin {
     // Incluir el estado en la respuesta
     const { data: empleadoActualizado, error: empleadosError } = await supabase
       .from('empleado')
-      .select('estado, id_Centros')
+      .select('estado, id_Centros, id_Departamento')
       .eq('numeroEmpleado', numeroEmpleado)
       .single();
 
@@ -352,7 +450,8 @@ class Admin {
     return { ...usuario, 
       roles: updatedRoleNames, 
       estado: empleadoActualizado.estado,
-      id_Centros: empleadoActualizado.id_Centros
+      id_Centros: empleadoActualizado.id_Centros,
+      id_Departamento: empleadoActualizado.id_Departamento
     }; 
   } catch (error) {
     console.error('Error en updateEmpleado:', error);
@@ -360,6 +459,32 @@ class Admin {
   }
 }
 
+
+  static async getDepartamentos() {
+    const { data, error } = await supabase
+      .from('Departamentos')
+      .select(`
+        id_Departamento,
+        Nombre,
+        id_Facultad,
+        Facultades:id_Facultad (
+          id_Facultad,
+          nombre
+        )
+      `);
+    if (error) {
+      console.error('error al obtener los departamentos', error);
+      throw error;
+    }
+    return data.map(departamento => ({
+      id_Departamento: departamento.id_Departamento,
+      Nombre: departamento.Nombre,
+      Facultad: {
+        facultad: departamento.Facultades.nombre,
+        id_Facultad: departamento.Facultades.id_Facultad,
+      }
+    }));
+  }
   
     //aqui listo los empleados 
   static async listEmpleados(incluirInactivos = false) {
@@ -373,6 +498,10 @@ class Admin {
         Centros (
           Nombre
         ),  
+        id_Departamento,
+        Departamentos (
+          Nombre
+        ),
         Usuario (
           id, 
           Nombre, 
@@ -403,7 +532,9 @@ class Admin {
       Imagen: empleado.Usuario.Imagen,
       roles: empleado.Usuario.UsuarioRol.map(ur => ur.rol.nombre),
       estado: empleado.estado, //incluir estadi en el objeto
-      Centro: empleado.Centros.Nombre
+      Centro: empleado.Centros.Nombre,
+      DepartamentoId: empleado.id_Departamento,
+      Departamento: empleado.Departamentos.Nombre
     }));
   }
 
