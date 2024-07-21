@@ -1,3 +1,6 @@
+
+
+
 exports.getData = async (req, res) => {
     try {
       // Aquí iría la lógica para obtener datos del jefe de departamento
