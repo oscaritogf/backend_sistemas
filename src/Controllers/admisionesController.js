@@ -161,25 +161,36 @@ exports.getExamenesCarrera = async (req, res) => {
   }
 };
 // End point para validar inscripcion con archivo csv
-
 const verificarFilas = (results) => {
   const filasAptas = [];
   const filasNoAptas = [];
 
   results.forEach((row, index) => {
-    const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'Codigo', 'segundo_Nombre', 'segundo_Apellido', 'matricula', 'depto'];
+    const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'segundo_Nombre', 'segundo_Apellido', 'matricula', 'depto'];
     const cleanedRow = {};
 
-    // Eliminar todos los espacios en blanco en las propiedades de la fila
+    // Limpiar los campos requeridos, excepto 'Codigo'
     requiredFields.forEach(field => {
-      if (row[field] && typeof row[field] === 'string') {
-        cleanedRow[field] = row[field].replace(/\s+/g, '');
+      if (row[field] !== null && row[field] !== undefined) {
+        if (typeof row[field] === 'string') {
+          cleanedRow[field] = row[field].replace(/\s+/g, '');
+        } else {
+          cleanedRow[field] = row[field];
+        }
       } else {
-        cleanedRow[field] = row[field];
+        cleanedRow[field] = '';
       }
     });
 
-    const missingFields = requiredFields.filter(field => !cleanedRow[field] || (typeof cleanedRow[field] === 'string' && cleanedRow[field].trim() === ''));
+    // Agregar 'Codigo' sin ninguna modificación
+    cleanedRow['Codigo'] = row['Codigo'];
+
+    // Identificar los campos faltantes
+    const missingFields = requiredFields.filter(field => 
+      cleanedRow[field] === '' || 
+      cleanedRow[field] === null || 
+      cleanedRow[field] === undefined
+    );
 
     if (missingFields.length > 0) {
       filasNoAptas.push({ fila: index + 2, error: `Datos faltantes: ${missingFields.join(', ')}`, data: cleanedRow });
@@ -313,7 +324,14 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
     try {
       for (const row of filasAptas) {
         const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo, matricula, depto } = row;
-
+        const codigoNumerico = parseInt(row.Codigo, 10);
+       
+      //   // Añadir aquí la validación del Codigo
+      // if (Codigo.length !== 3 || !/^\d{3}$/.test(Codigo)) {
+      //   console.error(`Código inválido: ${Codigo}`);
+      //   errores.push({ dni, error: `Código inválido: ${Codigo}` });
+      //   continue;
+      // }
         const generatePassword = () => Math.floor(1000 + Math.random() * 9000);
 
         const generateUniqueStudentNumber = async () => {
@@ -323,7 +341,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
 
           while (!isUnique) {
             const randomNum = Math.floor(Math.random() * 9999) + 1;
-            uniqueNumber = `${currentYear}${Codigo}${randomNum.toString().padStart(4, '0')}`;
+            uniqueNumber = `${currentYear}00${Codigo}${randomNum.toString().padStart(4, '0')}`;
 
             const { data, error } = await supabase
               .from('estudiante')
@@ -352,7 +370,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
 
         const contrasena = generatePassword();
         const hashedPassword = bcrypt.hashSync(contrasena.toString(), 10);
-        const numeroCuenta = await generateUniqueStudentNumber();
+        const numeroCuenta = await generateUniqueStudentNumber(); 
         const correoInstitucional = `${primer_Nombre[0].toLowerCase()}${row.segundo_Nombre[0].toLowerCase()}${primer_Apellido.toLowerCase()}${row.segundo_Apellido.toLowerCase()}@unah.hn`;
 
         if (isNaN(parseInt(numeroCuenta))) {
@@ -362,7 +380,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
         }
 
         if (
-            matricula !== 'ninguna'
+            matricula.toLowerCase() !== 'ninguna'
         ) {
           const { data: usuariosExistentes, error: users } = await supabase
             .from('Usuario')
