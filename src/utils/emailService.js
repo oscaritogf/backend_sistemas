@@ -32,4 +32,75 @@ const sendConfirmationEmail = async (to, nombre) => {
   }
 };
 
-module.exports = { sendConfirmationEmail };
+const sendEmployeeWelcomeEmail = async (to, nombre, numeroEmpleado, contrasena) => {
+  try {
+    await transporter.sendMail({
+      from: '"Recursos Humanos Universidad" <garcia152511@gmail.com>',
+      to: to,
+      subject: "Bienvenido - Credenciales de acceso",
+      html: `
+        <h1>¡Bienvenido ${nombre}!</h1>
+        <p>Has sido registrado exitosamente como empleado en nuestro sistema.</p>
+        <p>Tus credenciales de acceso son:</p>
+        <ul>
+          <li>Número de empleado: ${numeroEmpleado}</li>
+          <li>Contraseña: ${contrasena}</li>
+        </ul>
+        <p>Por favor, cambia tu contraseña después del primer inicio de sesión.</p>
+        <p>Si tienes alguna pregunta, no dudes en contactar al departamento de Recursos Humanos.</p>
+      `
+    });
+    console.log('Correo de bienvenida enviado al nuevo empleado');
+  } catch (error) {
+    console.error('Error al enviar correo de bienvenida al empleado:', error);
+    throw error;
+  }
+};
+
+const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, correoInstitucional, contrasena) => {
+  try {
+    await transporter.sendMail({
+      from: '"Departamento de  Admisiones UANH" <garcia152511@gmail.com>',
+      to: to,
+      subject: "Bienvenido - Credenciales de acceso",
+      html: `
+        <h1>¡Bienvenido ${nombre}!</h1>
+        <p>Has sido registrado exitosamente como estudiante en nuestro sistema.</p>
+        <p>Tus credenciales de acceso son:</p>
+        <ul>
+          <li>Número de cuenta: ${numeroCuenta}</li>
+          <li>Contraseña: ${contrasena}</li>
+          <li>Correo Institucional: ${correoInstitucional}</li>
+        </ul>
+        <p>Por favor, cambia tu contraseña después del primer inicio de sesión.</p>
+        <p>Si tienes alguna pregunta, no dudes en contactar al departamento de Admisiones.</p>
+      `
+    });
+    console.log('Correo de bienvenida enviado al nuevo estudiante');
+  } catch (error) {
+    console.error('Error al enviar correo de bienvenida al estudiante:', error);
+    throw error;
+  }
+};
+
+const sendRejectionEmail = async (to, nombre) => {
+  try {
+    await transporter.sendMail({
+      from: '"Admisiones Universidad" <garcia152511@gmail.com>',
+      to: to,
+      subject: "Confirmación de registro en el proceso de admisiones",
+      html: `
+        <h1>Hola ${nombre}!</h1>
+        <p>Lamentamos informarte que no has aprovado el proceso de admisión.</p>
+        <p>Estate pendiendte de los próximos procesos de admisión.</p>
+        <p>Gracias por elegir nuestra institución.</p>
+      `
+    });
+    console.log('Correo de rechazo enviado');
+  } catch (error) {
+    console.error('Error al enviar correo de rechazo:', error);
+  }
+};
+
+module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail };
+

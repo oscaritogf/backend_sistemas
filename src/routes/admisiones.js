@@ -8,5 +8,13 @@ router.post('/', upload.single('certificado'), admisionesController.createAdmisi
 router.get('/centros', admisionesController.getCentros);
 router.get('/carreras', admisionesController.getCarreras);
 router.get('/carreras/:carreraId/examenes', admisionesController.getExamenesCarrera);
+router.get('/notas/:dni', admisionesController.getNotasByDNI);
+
+router.get('/csv', admisionesController.saveCSV);
+router.post('/id', admisionesController.getId);
+
+
+router.post('/usuarios/json', admisionesController.crearUsuariosDesdeJson);
+router.get('/json', admisionesController.getJSON);
 
 module.exports = router;

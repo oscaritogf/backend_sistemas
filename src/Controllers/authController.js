@@ -4,14 +4,14 @@ const jwt = require('jsonwebtoken');
 
 exports.login = async (req, res) => {
   try {
-    const { numeroEmpleado, numeroCuenta, contrasena } = req.body;
-    console.log('Datos recibidos:', { numeroEmpleado, numeroCuenta, contrasena });
+    const { numeroEmpleado, numeroCuenta, Contrasena } = req.body;
+    console.log('Datos recibidos:', { numeroEmpleado, numeroCuenta, Contrasena });
 
     if (!numeroEmpleado && !numeroCuenta) {
       return res.status(400).json({ message: 'Debe proporcionar un número de empleado o número de cuenta' });
     }
 
-    if (!contrasena) {
+    if (!Contrasena) {
       return res.status(400).json({ message: 'Debe proporcionar una contraseña' });
     }
 
@@ -34,7 +34,11 @@ exports.login = async (req, res) => {
     }
     console.log('Usuario encontrado:', user);
 
-    const isPasswordValid = await User.verifyPassword(contrasena, user.contrasena);
+    if (userType === 'empleado' && user.estado === false) {
+      return res.status(403).json({ message: 'Su número de empleado está desactivado' });
+    }
+
+    const isPasswordValid = await User.verifyPassword(Contrasena, user.Contrasena);
     console.log('Contraseña válida:', isPasswordValid);
     
     if (!isPasswordValid) {
@@ -44,8 +48,8 @@ exports.login = async (req, res) => {
     const roles = await User.getRoles(user.id);
 
     const token = jwt.sign(
-      { 
-        userId: user.id, 
+      {
+        userId: user.id,
         tipo: userType,
         roles: roles
       },
@@ -53,15 +57,15 @@ exports.login = async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ 
+    res.json({
       token,
-      user: { 
-        id: user.id, 
-        nombre: user.nombre, 
+      user: {
+        id: user.id,
+        nombre: user.nombre,
         apellido: user.apellido,
         tipo: userType,
         roles: roles,
-        ...(userType === 'empleado' ? { numeroEmpleado: identifier } : { numeroCuenta: identifier })
+        ...(userType === 'empleado' ? { numeroEmpleado: identifier, estado: user.estado } : { numeroCuenta: identifier })
       }
     });
 
@@ -91,7 +95,7 @@ exports.updatePassword = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    const isPasswordValid = await User.verifyPassword(currentPassword, user.contrasena);
+    const isPasswordValid = await User.verifyPassword(currentPassword, user.Contrasena);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Contraseña actual incorrecta' });
     }
