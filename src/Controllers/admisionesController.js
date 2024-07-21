@@ -303,7 +303,6 @@ exports.getJSON = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 exports.crearUsuariosDesdeJson = async (req, res) => {
   try {
     const { dataJson } = req.body;
@@ -336,12 +335,12 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
           while (!isUnique) {
             const randomNum = Math.floor(Math.random() * 9999) + 1;
             uniqueNumber = `${currentYear}00${Codigo}${randomNum.toString().padStart(4, '0')}`;
-            if (Codigo > 9 ) {
+            if (Codigo > 9) {
               uniqueNumber = `${currentYear}0${Codigo}${randomNum.toString().padStart(4, '0')}`;
-            } if ( Codigo > 99)  {
+            }
+            if (Codigo > 99) {
               uniqueNumber = `${currentYear}${Codigo}${randomNum.toString().padStart(4, '0')}`;
             }
-          }
 
             const { data, error } = await supabase
               .from('estudiante')
@@ -379,17 +378,15 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
           continue;
         }
 
-        if (
-            matricula.toLowerCase() !== 'ninguna'
-        ) {
-          const { data: usuariosExistentes, error: users } = await supabase
+        if (matricula.toLowerCase() !== 'ninguna') {
+          const { data: usuariosExistentes, error: usersError } = await supabase
             .from('Usuario')
             .select('*')
             .eq('Identidad', dni);
 
-          if (users) {
-            console.error('Error al obtener datos de Usuario', users);
-            errores.push({ dni, error: users.message });
+          if (usersError) {
+            console.error('Error al obtener datos de Usuario', usersError);
+            errores.push({ dni, error: usersError.message });
             continue;
           }
 
