@@ -167,7 +167,7 @@ const verificarFilas = (results) => {
   const filasNoAptas = [];
 
   results.forEach((row, index) => {
-    const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'Codigo', 'segundo_Nombre', 'segundo_Apellido', 'matricula'];
+    const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'Codigo', 'segundo_Nombre', 'segundo_Apellido', 'matricula', 'depto'];
     const cleanedRow = {};
 
     // Eliminar todos los espacios en blanco en las propiedades de la fila
@@ -312,7 +312,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
 
     try {
       for (const row of filasAptas) {
-        const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo, matricula } = row;
+        const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo, matricula, depto } = row;
 
         const generatePassword = () => Math.floor(1000 + Math.random() * 9000);
 
@@ -409,6 +409,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
                 numeroCuenta,
                 correo_Institucional: correoInstitucional,
                 usuario: parseInt(idUsuario),
+                id_Depto: depto
               },
             ]);
 
