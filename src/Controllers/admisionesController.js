@@ -166,7 +166,7 @@ const verificarFilas = (results) => {
   const filasNoAptas = [];
 
   results.forEach((row, index) => {
-    const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'segundo_Nombre', 'segundo_Apellido', 'matricula', 'depto'];
+    const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'segundo_Nombre', 'segundo_Apellido', 'matricula', 'depto', 'Codigo'];
     const cleanedRow = {};
 
     // Limpiar los campos requeridos, excepto 'Codigo'
@@ -325,13 +325,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
       for (const row of filasAptas) {
         const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo, matricula, depto } = row;
         const codigoNumerico = parseInt(row.Codigo, 10);
-       
-      //   // Añadir aquí la validación del Codigo
-      // if (Codigo.length !== 3 || !/^\d{3}$/.test(Codigo)) {
-      //   console.error(`Código inválido: ${Codigo}`);
-      //   errores.push({ dni, error: `Código inválido: ${Codigo}` });
-      //   continue;
-      // }
+    
         const generatePassword = () => Math.floor(1000 + Math.random() * 9000);
 
         const generateUniqueStudentNumber = async () => {
@@ -342,6 +336,12 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
           while (!isUnique) {
             const randomNum = Math.floor(Math.random() * 9999) + 1;
             uniqueNumber = `${currentYear}00${Codigo}${randomNum.toString().padStart(4, '0')}`;
+            if (Codigo > 9 ) {
+              uniqueNumber = `${currentYear}0${Codigo}${randomNum.toString().padStart(4, '0')}`;
+            } if ( Codigo > 99)  {
+              uniqueNumber = `${currentYear}${Codigo}${randomNum.toString().padStart(4, '0')}`;
+            }
+          }
 
             const { data, error } = await supabase
               .from('estudiante')
