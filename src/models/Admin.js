@@ -600,37 +600,7 @@ static async generateUniqueEmployeeNumber() {
     static async getGestionMatricula(){
     let {data:matricula, error}= await supabase
     .from('ConfiguracionMatricula')
-    .select(`
-      id_ConfMatri,
-      created_at,
-      id_Pac,
-      id_TipoMatricula,
-      fecha_inicioPAC,
-      fecha_finPAC,
-      fecha_inicioMatri,
-      fecha_finMatri,
-      hora_inicioMatri,
-      hora_finMatri,
-      fecha_matri1,
-      indice_desdeMatri1,
-      indice_hastaMatri1,
-      pIngreso_desdeMatri1,
-      pIngreso_hastaMatri1,
-      fecha_matri2,
-      indice_desdeMatri2,
-      indice_hastaMatri2,
-      pIngreso_desdeMatri2,
-      pIngreso_hastaMatri2,
-      fecha_matri3,
-      indice_desdeMatri3,
-      indice_hastaMatri3,
-      fecha_matri4,
-      indice_desdeMatri4,
-      indice_hastaMatri4,
-      fecha_matri5,
-      indice_desdeMatri5,
-      indice_hastaMatri5
-      `)
+    .select('*')
       if (error) {
         console.error('Error al obtener matriucla:', error);
         throw new Error('Error al obtener matricula');
@@ -681,6 +651,7 @@ static async generateUniqueEmployeeNumber() {
       return matricula;
    }
 
+
   static async createNoticia(noticiaData) {
     console.log('Datos recibidos:', noticiaData);
     let imageUrl = '';
@@ -702,8 +673,7 @@ static async generateUniqueEmployeeNumber() {
     return data;
   };
 
-
-static async deleteNoticia(id) {
+  static async deleteNoticia(id) {
     try {
       // Verificar que la noticia con el id exista
       const { data: existingNoticia, error: selectError } = await supabase
@@ -795,7 +765,6 @@ static async deleteNoticia(id) {
     }
   };
 
-  
   //traer datos FormMatricula
   static async getTipoMatricula() {
     const { data, error } = await supabase
@@ -820,6 +789,8 @@ static async deleteNoticia(id) {
     if (error) throw error;
     return data;
   } 
+
+
   static async createCancelacion(data) {
     const { id_Pac, id_TipoMatricula, fecha_inicioCancel, fecha_finCancel, hora_inicioCancel, hora_finCancel } = data;
     
@@ -902,10 +873,15 @@ static async createConfiguracion(data) {
   return newConfiguracion;
 }
 
+
 static async getConfiguraciones() {
   const { data, error } = await supabase
     .from('ConfiguracionMatricula')
-    .select('*');
+    .select(`
+      *,
+      Pac (id_Pac, pac),
+      TipoMatricula (id_TipoMatricula, tipoMatricula)
+    `);
 
   if (error) {
     throw error;
@@ -916,7 +892,11 @@ static async getConfiguraciones() {
 static async getConfiguracionById(id) {
   const { data, error } = await supabase
     .from('ConfiguracionMatricula')
-    .select('*')
+    .select(`
+      *,
+      Pac (id_Pac, pac),
+      TipoMatricula (id_TipoMatricula, tipoMatricula)
+    `)
     .eq('id_ConfMatri', id)
     .single();
 
@@ -926,11 +906,50 @@ static async getConfiguracionById(id) {
   return data;
 }
 
-static async updateConfiguracion(id, updateData) {
-  const { data, error } = await supabase
+static async updateConfiguracion(id, data) {
+  console.log('Updating configuration with ID:', id);
+  console.log('Data to update:', data);
+
+  const { data: updatedConfiguracion, error } = await supabase
     .from('ConfiguracionMatricula')
+    .update(data)
+    .eq('id_ConfMatri', id)
+    .select(`
+      *,
+      Pac (id_Pac, pac),
+      TipoMatricula (id_TipoMatricula, tipoMatricula)
+    `);
+
+  if (error) {
+    console.error('Error in updateConfiguracion:', error);
+    throw error;
+  }
+
+  console.log('Updated configuration:', updatedConfiguracion);
+  return updatedConfiguracion;
+}
+
+static async updateCancelacion(id, updateData) {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
     .update(updateData)
-    .eq('id_ConfMatri', id);
+    .eq('id_canExcep', id)
+    .select();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+
+
+
+static async deleteCancelacionExcep(id) {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
+    .delete()
+    .eq('id_canExcep', id);
 
   if (error) {
     throw error;
@@ -949,10 +968,66 @@ static async deleteConfiguracion(id) {
   }
   return data;
 }
-};  
+
+static async getCancelacionExcepcional() {
+  // Consulta a la tabla CancelacionExcepcional
+  let query = supabase
+    .from('CancelacionExcepcional')
+    .select(`
+      id_canExcep,
+      created_at,
+      Pac (
+        pac
+      ),  
+      TipoMatricula (
+        tipoMatricula
+      )
+    `)
    
 
+  // Ejecutar la consulta
+  const { data: configuraciones, error } = await query;
 
+  // Manejo de errores
+  if (error) throw error;
 
+  // Transformar los datos a la forma esperada
+  return configuraciones.map(configuraciones => ({
+    id_canExcep: configuraciones.id_canExcep,
+    created_at: configuraciones.created_at,
+    pac: configuraciones.Pac.pac,
+    tipoMatricula: configuraciones.TipoMatricula.tipoMatricula
+  }));
+}
+
+static async getCancelacionExcepcionalById(id) {
+  const { data, error } = await supabase
+    .from('CancelacionExcepcional')
+    .select(`
+      id_canExcep,
+      created_at,
+      Pac (
+        id_Pac,
+        pac
+      ),  
+      TipoMatricula (
+        id_TipoMatricula,
+        tipoMatricula
+      ),
+      fecha_inicioCancel,
+      fecha_finCancel,
+      hora_inicioCancel,
+      hora_finCancel
+    `)
+    .eq('id_canExcep', id)
+    .single();
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+};  
+
+   
 
 module.exports = Admin;
