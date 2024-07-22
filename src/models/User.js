@@ -3,39 +3,56 @@ const bcrypt = require('bcrypt');
 
 class User {
   
-  static async findByIdentifier(identifier, userType) {
-    let data, error;
-    if (userType === 'empleado') {
-      ({ data, error } = await supabase
-        .from('empleado')
-        .select('*, Usuario (*), estado')
-        .eq('numeroEmpleado', identifier)
-        .single());
-    } else {
-      ({ data, error } = await supabase
-        .from('estudiante')
-        .select('*, Usuario (*)')
-        .eq('numeroCuenta', identifier)
-        .single());
+
+
+    static async findByIdentifier(identifier, userType) {
+      let data, error;
+      if (userType === 'empleado') {
+        ({ data, error } = await supabase
+          .from('empleado')
+          .select(`
+            *,
+            Usuario (*),
+            estado,
+            Departamentos (id_Departamento, Nombre)
+          `)
+          .eq('numeroEmpleado', identifier)
+          .single());
+      } else {
+        ({ data, error } = await supabase
+          .from('estudiante')
+          .select(`
+            *,
+            Usuario (*),
+             Departamentos (id_Departamento, Nombre)
+          `)
+          .eq('numeroCuenta', identifier)
+          .single());
+      }
+    
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error al buscar usuario:', error);
+        throw error;
+      }
+    
+      if (data) {
+        console.log('Usuario encontrado:', data);
+        return {
+          ...data.Usuario,
+          tipo: userType,
+          departamento: data.Departamentos.Nombre,
+          //id_Departamento: data.Departamentos.id,
+          ...(userType === 'empleado' 
+            ? { numeroEmpleado: data.numeroEmpleado, estado: data.estado } 
+            : { numeroCuenta: data.numeroCuenta })
+        };
+      }
+    
+      console.log('Usuario no encontrado');
+      return null;
     }
-  
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error al buscar usuario:', error);
-      throw error;
-    }
-  
-    if (data) {
-      console.log('Usuario encontrado:', data);
-      return {
-        ...data.Usuario,
-        tipo: userType,
-        ...(userType === 'empleado' ? { numeroEmpleado: data.numeroEmpleado, estado: data.estado } : { numeroCuenta: data.numeroCuenta })
-      };
-    }
-  
-    console.log('Usuario no encontrado');
-    return null;
-  }
+    
+   
 
 
   static async getRoles(userId) {
