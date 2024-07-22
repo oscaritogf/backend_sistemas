@@ -89,8 +89,17 @@ const supabase = require('../../config/supabase');
         const { uv, nombre } = asignatura;
 
         // Validar que la cantidad de días proporcionados corresponda a las UV
-        if (dias.length !== uv) {
-            throw new Error('La cantidad de días no coincide con las unidades valorativas.');
+        if (dias.length !== uv && dias.length !== 1) {
+            throw new Error(`La cantidad de días (${dias.length}) no coincide con las unidades valorativas (${uv}).`);
+        }
+
+        // Validar que la diferencia entre Hora_inicio y Hora_Final sea igual a las unidades valorativas si hay solo un día
+        const horaInicio = new Date(`1970-01-01T${Hora_inicio}Z`);
+        const horaFinal = new Date(`1970-01-01T${Hora_Final}Z`);
+        const horasDiferencia = (horaFinal - horaInicio) / (1000 * 60 * 60);
+
+        if (dias.length === 1 && horasDiferencia !== uv) {
+            throw new Error(`La diferencia entre la hora de inicio y la hora de finalización (${horasDiferencia} horas) debe ser igual a las unidades valorativas (${uv} horas) cuando se asigna a un solo día.`);
         }
 
         // Insertar la sección y obtener el ID de la nueva sección
@@ -125,6 +134,7 @@ const supabase = require('../../config/supabase');
         res.status(400).json({ message: 'Error al crear sección', error: error.message });
     }
 };
+
 
 
 exports.getActiveDocentesByDepartment = async (req, res) => {
