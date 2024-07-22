@@ -273,22 +273,21 @@ class Admin {
       apellido: emp.Usuario.Apellido 
     })));
 
-    // Verificar si ya existen Coordinador o JefeDepartamento en el departamento
+    // Verificar si ya existen Coordinador o JefeDepartamento en el departamento, excepto para el empleado actual
     for (const role of roles) {
       if (role === 'Coordinador') {
-        const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador');
+        const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador' && r.numeroEmpleado !== numeroEmpleado);
         if (existingCoordinator) {
           throw new Error(`Ya existe un Coordinador en este departamento: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
         }
       }
       if (role === 'JefeDepartamento') {
-        const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento');
+        const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento' && r.numeroEmpleado !== numeroEmpleado);
         if (existingJefeDepartamento) {
           throw new Error(`Ya existe un Jefe de Departamento en este departamento: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
         }
       }
     }
-
 
 
 
