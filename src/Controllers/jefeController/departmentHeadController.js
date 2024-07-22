@@ -1,11 +1,187 @@
+// controllers/departmentHeadController.js
+const Jefe = require ('../../models/jefeModels/DepartmentJefe');
+const supabase = require('../../config/supabase');
 
-
-
-exports.getData = async (req, res) => {
+//obtener asignaturas
+  exports.getAsignaturas = async (req, res) => {
     try {
-      // Aquí iría la lógica para obtener datos del jefe de departamento
-      res.json({ message: 'Datos del jefe de departamento', data: { id: req.user.userId, tipo: 'jefe_departamento' } });
+      const asignaturas = await Jefe.getAsignaturas();
+      res.json({ message: 'Lista de asignaturas', data: asignaturas });
     } catch (error) {
-      res.status(500).json({ message: 'Error al obtener datos del jefe de departamento', error: error.message });
+      res.status(500).json({ message: 'Error al obtener la lista de asignaturas', error: error.message });
     }
   };
+
+  //obtener edificios
+  exports.getEdificios = async (req, res) => {
+    try {
+      const edificios = await Jefe.getEdificios();
+      res.json({ message: 'Lista de edificios', data: edificios });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de edificios', error: error.message });
+    }
+  };
+
+  //obtener aulas
+  exports.getAulas = async (req, res) => {
+    try {
+      const aulas = await Jefe.getAulas();
+      res.json({ message: 'Lista de aulas', data: aulas });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de aulas', error: error.message });
+    }
+  };
+
+  // Crear secciones
+  // exports.insertSeccions = async (req, res) => {
+  //     try {
+  //         const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos } = req.body;
+  //         const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, };
+  
+  //         // Verificar la existencia de los valores en la base de datos
+  //         await Jefe.existsInTable('empleado', 'numeroEmpleado', data.id_Docentes);
+  //         await Jefe.existsInTable('Aula', 'id_Aula', data.id_Aula);
+  //         await Jefe.existsInTable('Edificios', 'id_Edficios', data.id_Edificios);
+        
+  
+  //         // Verificar duplicados
+  //         await Jefe.isDuplicate(data);
+  
+  //         // Verificar traslape de horarios
+  //         await Jefe.hasTimeConflict(data);
+  
+  //         // Insertar la sección si todas las validaciones pasan
+  //         const seccion = await Jefe.insertSeccions(data);
+  
+  //         res.json({ message: 'Sección creada', data: seccion });
+  
+  //     } catch (error) {
+  //         console.error('Error al crear la sección:', error);
+  //         res.status(400).json({ message: 'Error al crear sección', error: error.message });
+  //     }
+  // };
+
+
+  exports.insertSeccions = async (req, res) => {
+    try {
+        const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, dias } = req.body;
+
+        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos };
+
+        // Verificar la existencia de los valores en la base de datos
+        await Jefe.existsInTable('empleado', 'numeroEmpleado', id_Docentes);
+        await Jefe.existsInTable('Aula', 'id_Aula', id_Aula);
+        await Jefe.existsInTable('Edificios', 'id_Edficios', id_Edificios);
+
+        // Verificar duplicados
+        await Jefe.isDuplicate(data);
+
+        // Verificar traslape de horarios
+        await Jefe.hasTimeConflict(data);
+
+        // Obtener UV y nombre de la asignatura
+        const asignatura = await Jefe.getAsignaturasByCode(codigoAsignatura);
+
+        if (!asignatura) {
+            throw new Error('Código de asignatura no válido o sin unidades valorativas.');
+        }
+
+        const { uv, nombre } = asignatura;
+
+        // Validar que la cantidad de días proporcionados corresponda a las UV
+        if (dias.length !== uv) {
+            throw new Error('La cantidad de días no coincide con las unidades valorativas.');
+        }
+
+        // Insertar la sección y obtener el ID de la nueva sección
+        const { data: seccion, error: insertError } = await supabase
+            .from('Secciones')
+            .insert(data)
+            .select('id_Secciones')
+            .single();
+
+        if (insertError) {
+            throw new Error('Error al insertar la sección: ' + insertError.message);
+        }
+
+        // Asignar días a la nueva sección
+        for (let dia of dias) {
+            const { error: dayInsertError } = await supabase
+                .from('seccion_dias')
+                .insert({
+                    id_seccion: seccion.id_Secciones,
+                    id_dia: dia
+                });
+
+            if (dayInsertError) {
+                throw new Error('Error al asignar días a la sección: ' + dayInsertError.message);
+            }
+        }
+
+        res.json({ message: 'Sección creada y días asignados', data: seccion, asignatura: nombre });
+
+    } catch (error) {
+        console.error('Error al crear la sección:', error);
+        res.status(400).json({ message: 'Error al crear sección', error: error.message });
+    }
+};
+
+
+exports.getActiveDocentesByDepartment = async (req, res) => {
+    try {
+        // Extraer el id del departamento del cuerpo de la solicitud
+        const { id_Departamento } = req.body;
+        
+        // Validar que id_Departamento esté presente
+        if (!id_Departamento) {
+            return res.status(400).json({ message: 'El id del departamento es requerido.' });
+        }
+
+        // Obtener la lista de docentes activos por departamento
+        const docentes = await Jefe.getActiveDocentesByDepartment(id_Departamento);
+
+        // Enviar respuesta exitosa
+        res.json({ message: 'Lista de docentes activos por departamento', data: docentes });
+    } catch (error) {
+        console.error('Error al obtener la lista de docentes activos por departamento:', error);
+        res.status(500).json({ message: 'Error al obtener la lista de docentes activos por departamento', error: error.message });
+    }
+};
+
+
+  exports.getDias = async (req, res) => {
+    try {
+      const dias = await Jefe.getDias();
+      res.json({ message: 'Lista de días', data: dias });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de días', error: error.message });
+    }
+  };
+
+  exports.getSecciones = async (req, res) => {
+    try {
+      const secciones = await Jefe.getSecciones();
+      res.json({ message: 'Lista de secciones', data: secciones });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de secciones', error: error.message });
+    }
+  };
+
+  exports.getDocentes = async (req, res) => {
+    try {
+      const docentes = await Jefe.getDocentes();
+      res.json({ message: 'Lista de docentes', data: docentes });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de docentes', error: error.message });
+    }
+  };
+
+
+// exports.getData = async (req, res) => {
+//     try {
+//       // Aquí iría la lógica para obtener datos del jefe de departamento
+//       res.json({ message: 'Datos del jefe de departamento', data: { id: req.user.userId, tipo: 'jefe_departamento' } });
+//     } catch (error) {
+//       res.status(500).json({ message: 'Error al obtener datos del jefe de departamento', error: error.message });
+//     }
+//   };
