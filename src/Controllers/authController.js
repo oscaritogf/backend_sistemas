@@ -62,13 +62,13 @@ exports.login = async (req, res) => {
       token,
       user: {
         id: user.id,
-        nombre: user.nombre,
-        apellido: user.apellido,
+        nombre: user.Nombre,
+        apellido: user.Apellido,
         tipo: userType,
         roles: roles,
         imagen: user.Imagen,
         departamento: user.departamento,
-        id_Departamento: user.id_Departamento,
+        id_departamento: user.id_departamento,
         ...(userType === 'empleado' ? { numeroEmpleado: identifier, estado: user.estado } : { numeroCuenta: identifier })
       }
     });

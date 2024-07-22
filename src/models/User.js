@@ -41,6 +41,7 @@ class User {
           ...data.Usuario,
           tipo: userType,
           departamento: data.Departamentos.Nombre,
+          id_departamento: data.Departamentos.id_Departamento,
           //id_Departamento: data.Departamentos.id,
           ...(userType === 'empleado' 
             ? { numeroEmpleado: data.numeroEmpleado, estado: data.estado } 
