@@ -12,6 +12,15 @@ class Jefe {
         return asignaturas;
     }
 
+    //Obtener asignaturas
+    static async getAsignaturasByDepartamento(id) {
+        const { data: asignaturas, error } = await supabase
+            .from('Asignaturas')
+            .select('*')
+            .eq('id_Departamento', id);
+        return asignaturas;
+    }
+
     // Obtener unidades valorativas y nombre de la asignatura por código
 static async getAsignaturasByCode(codigoAsignatura) {
     const { data, error } = await supabase
