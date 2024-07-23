@@ -13,9 +13,9 @@ const supabase = require('../../config/supabase');
   };
 
   exports.getAsignaturasByDepartamento = async (req, res) => {
-    const { id_Departamento } = req.body;
+    const { id_Departamento } = req.params;
     try {
-      const asignaturas = await Jefe.getAsignaturas(id_Departamento);
+      const asignaturas = await Jefe.getAsignaturasByDepartamento(id_Departamento);
       res.json({ message: `Lista de asignaturas del departamento con id ${id_Departamento}`, data: asignaturas });
     } catch (error) {
       res.status(500).json({ message: 'Error al obtener la lista de asignaturas del departamento con id ${id_Departamento}', error: error.message });
