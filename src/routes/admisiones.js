@@ -13,7 +13,7 @@ router.get('/notas/:dni', admisionesController.getNotasByDNI);
 router.get('/csv', admisionesController.saveCSV);
 router.post('/id', admisionesController.getId);
 
-
+router.post('/actualizar', admisionesController.proceso);
 router.post('/usuarios/json', admisionesController.crearUsuariosDesdeJson);
 router.get('/json', admisionesController.getJSON);
 

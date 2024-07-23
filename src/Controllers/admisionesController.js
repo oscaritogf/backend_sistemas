@@ -18,7 +18,7 @@ exports.createAdmision = async (req, res) => {
       id_Centro, id_Carrera, id_Sd_Carrera, email, certificado
     } = req.body;
 
-// Validación de carreras
+    // Validación de carreras
     const carreras = await Admision.getCarreras();
     const carrera1 = carreras.find(c => c.id_Carrera === parseInt(id_Carrera));
     const carrera2 = carreras.find(c => c.id_Carrera === parseInt(id_Sd_Carrera));
@@ -39,24 +39,23 @@ exports.createAdmision = async (req, res) => {
 
     const intentosExistentes =  await Admision.getIntentosByDNI(dni);
 
-    //vrifica el numero de intentos maximo
-    if(intentosExistentes >=3){
-      return res.status(400).json({message: "Has alcanzo el numero maximo de intentos permitido"});
+    // Verificar el número de intentos máximo
+    if(intentosExistentes >= 3){
+      return res.status(400).json({ message: "Has alcanzado el número máximo de intentos permitido" });
     }
 
     let imagen_url = '';
     if (certificado) {
       const result = await cloudinary.uploader.upload(certificado, {
         folder: 'certificado'
-    });
+      });
       imagen_url = result.secure_url;
     }
 
-
-    //generar notas aleatorias
-    const generarNotaConSesgoPositivo = (min, max, sesgo = 0.7)=>{
+    // Generar notas aleatorias
+    const generarNotaConSesgoPositivo = (min, max, sesgo = 0.7) => {
       const random = Math.pow(Math.random(), sesgo);
-      return Math.floor(random * (max - min) + min)
+      return Math.floor(random * (max - min) + min);
     };
 
     const nota1 = generarNotaConSesgoPositivo(700, 1400);
@@ -66,29 +65,29 @@ exports.createAdmision = async (req, res) => {
     const aprobacionPAA = nota1 >= carrera1.puntajeRequerido ? 'reprobó' : 'aprobó';
     let aprobacionPAM_PCCNS = 'no aplica';
 
-    if (carrera1.Facultades.nombre.toLowerCase().includes('ingeniería')|| 
-    carrera1.Facultades.nombre.toLowerCase().includes('medicina')) {
+    if (carrera1.Facultades.nombre.toLowerCase().includes('ingeniería') || 
+        carrera1.Facultades.nombre.toLowerCase().includes('medicina')) {
       aprobacionPAM_PCCNS = nota2 >= 500 ? 'aprobó' : 'reprobó';
     }
 
     const admisionData = {
       dni, primer_Nombre, segundo_Nombre, primer_Apellido, segundo_Apellido,
-      id_Centro, id_Carrera, id_Sd_Carrera, email, intentos: intentosExistentes+1, imagen: imagen_url,
-      nota1, nota2, aprobacionPAA, aprobacionPAM_PCCNS
+      id_Centro, id_Carrera, id_Sd_Carrera, email, intentos: intentosExistentes + 1, imagen: imagen_url,
+      nota1, nota2, aprobacionPAA, aprobacionPAM_PCCNS, procesado: false // Añadir el campo procesado aquí
     };
 
-    
     const newAdmision = await Admision.create(admisionData);
     
-    //aqui envia el correo 
+    // Enviar el correo de confirmación
     await sendConfirmationEmail(email, primer_Nombre);
     
     res.status(201).json(newAdmision);
   } catch (error) {
-    console.error('error en crearte Admisiones', error)
+    console.error('Error en crear Admisiones', error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 exports.sendApproved = async (req, res) => {
 
@@ -166,7 +165,7 @@ const verificarFilas = (results) => {
   const filasNoAptas = [];
 
   results.forEach((row, index) => {
-    const requiredFields = ['aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'segundo_Nombre', 'segundo_Apellido', 'matricula', 'depto', 'Codigo'];
+    const requiredFields = ['id_Admision', 'aprobacionPAA', 'aprobacionPAM_PCCNS', 'email', 'primer_Nombre', 'primer_Apellido', 'dni', 'segundo_Nombre', 'segundo_Apellido', 'matricula', 'depto', 'Codigo'];
     const cleanedRow = {};
 
     // Limpiar los campos requeridos, excepto 'Codigo'
@@ -230,7 +229,17 @@ exports.getId = async (req, res) => {
         }
       };
 
+exports.proceso = async (req, res) => {
+  try {
+    const { dni } = req.body;
+    const act = await Admision.updateProcessedStatus(dni);
+    res.json(act);
+  } catch (error) {
+    console.error('Error al actualizar el campo procesado en la tabla Admisiones', error);
+    res.status(500).json({ message: error.message });
 
+  }
+};
 
 // Nuevo endpoint para obtener las notas y determinar la carrera aprobada
 exports.getNotasByDNI = async (req, res) => {
@@ -303,6 +312,7 @@ exports.getJSON = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 exports.crearUsuariosDesdeJson = async (req, res) => {
   try {
     const { dataJson } = req.body;
@@ -322,7 +332,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
 
     try {
       for (const row of filasAptas) {
-        const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo, matricula, depto } = row;
+        const { aprobacionPAA, aprobacionPAM_PCCNS, email, primer_Nombre, primer_Apellido, dni, Codigo, matricula, depto, id_Admision } = row;
         const codigoNumerico = parseInt(row.Codigo, 10);
     
         const generatePassword = () => Math.floor(1000 + Math.random() * 9000);
@@ -367,6 +377,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
           return data.id;
         };
 
+      
         const contrasena = generatePassword();
         const hashedPassword = bcrypt.hashSync(contrasena.toString(), 10);
         const numeroCuenta = await generateUniqueStudentNumber(); 
@@ -392,6 +403,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
 
           if (usuariosExistentes && usuariosExistentes.length > 0) {
             console.log('El usuario ya existe en la base de datos');
+            await Admision.updateProcessedStatus(dni);
             continue;
           }
 
@@ -414,9 +426,10 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
           }
 
           const idUsuario = await getId(dni);
+        
 
           await sendStudentWelcomeEmail(email, `${primer_Nombre} ${primer_Apellido}`, numeroCuenta, correoInstitucional, contrasena);
-
+          await Admision.updateProcessedStatus(id_Admision);
           const { error: estudianteError } = await supabase
             .from('estudiante')
             .insert([
@@ -446,11 +459,34 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
           if (rolError) {
             console.error('Error al insertar en la tabla UsuarioRol', rolError);
             errores.push({ dni, error: rolError.message });
-          } else {
-            console.log('Datos insertados en la tabla UsuarioRol');
+            continue;
           }
+
+          // Registrar antes de actualizar
+          
+          console.log(`Actualizando procesado para Admision: ${id_Admision}`);
+          try {
+            await Admision.updateProcessedStatus(id_Admision);
+            console.log(`Procesado actualizado para DNI: ${id_Admision}`);
+          } catch (admisionesError) {
+            console.error('Error al actualizar el campo procesado en la tabla Admisiones', admisionesError);
+            errores.push({ id_Admision, error: admisionesError.message });
+            continue;
+          }
+
+          console.log('Datos insertados en la tabla UsuarioRol');
         } else {
           await sendRejectionEmail(email, `${primer_Nombre} ${primer_Apellido}`);
+          await Admision.updateProcessedStatus(id_Admision);
+          try {
+            console.log(`Actualizando procesado para Admision: ${id_Admision}`);
+            await Admision.updateProcessedStatus(id_Admision);
+            console.log(`Procesado actualizado para Admision: ${id_Admision}`);
+          } catch (admisionesError) {
+            console.error('Error al actualizar el campo procesado en la tabla Admisiones', admisionesError);
+            errores.push({ dni, error: admisionesError.message });
+            continue;
+          }
         }
 
         filasAptasProcesadas.push(row); // Almacenar las filas procesadas exitosamente
@@ -474,3 +510,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
     res.status(500).json({ message: 'Error al crear usuarios desde JSON', error });
   }
 };
+
+
+
+
