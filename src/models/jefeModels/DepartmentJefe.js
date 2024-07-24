@@ -274,25 +274,48 @@ static async getActiveDocentesByDepartment(id_Departamento) {
 // Conteo de estudiantes por departamento
 
 static async countStudentsByDepartment() {
-    const { data, error } = await supabase
+    // Paso 1: Obtener los estudiantes y contar por id_Departamento
+    const { data: studentData, error: studentError } = await supabase
         .from('estudiante')
         .select('id_Departamento');
 
-    if (error) {
-        console.error('Error al obtener los estudiantes:', error);
-        throw error;
+    if (studentError) {
+        console.error('Error al obtener los estudiantes:', studentError);
+        throw studentError;
     }
 
-    const departmentCounts = data.reduce((acc, student) => {
+    // Contar el número de estudiantes por id_Departamento
+    const departmentCounts = studentData.reduce((acc, student) => {
         acc[student.id_Departamento] = (acc[student.id_Departamento] || 0) + 1;
         return acc;
     }, {});
 
-    const totalStudents = data.length;
+    const totalStudents = studentData.length;
 
-    // Convertir el conteo por departamento en un arreglo de objetos JSON
-    const departmentArray = Object.entries(departmentCounts).map(([department, count]) => ({
-        id_Departamento: department,
+    // Obtener los IDs de los departamentos para la siguiente consulta
+    const departmentIds = Object.keys(departmentCounts);
+
+    // Paso 2: Obtener los nombres de los departamentos
+    const { data: departmentData, error: departmentError } = await supabase
+        .from('Departamentos')
+        .select('id_Departamento, Nombre') // Usa los nombres correctos aquí
+        .in('id_Departamento', departmentIds.map(Number)); // Asegúrate de que los IDs sean números
+
+    if (departmentError) {
+        console.error('Error al obtener los departamentos:', departmentError);
+        throw departmentError;
+    }
+
+    // Crear un mapa de id a nombre
+    const departmentNames = departmentData.reduce((map, department) => {
+        map[department.id_Departamento] = department.Nombre; // Usa el nombre correcto aquí
+        return map;
+    }, {});
+
+    // Paso 3: Convertir el conteo por departamento en un arreglo de objetos JSON
+    const departmentArray = Object.entries(departmentCounts).map(([id, count]) => ({
+        id_Departamento: id,
+        nombre: departmentNames[id] || 'Desconocido',
         count: count
     }));
 
