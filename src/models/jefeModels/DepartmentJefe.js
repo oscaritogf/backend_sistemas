@@ -271,9 +271,33 @@ static async getActiveDocentesByDepartment(id_Departamento) {
     return docentes;
 }
 
+// Conteo de estudiantes por departamento
 
+static async countStudentsByDepartment() {
+    const { data, error } = await supabase
+        .from('estudiante')
+        .select('id_Departamento');
 
+    if (error) {
+        console.error('Error al obtener los estudiantes:', error);
+        throw error;
+    }
 
+    const departmentCounts = data.reduce((acc, student) => {
+        acc[student.id_Departamento] = (acc[student.id_Departamento] || 0) + 1;
+        return acc;
+    }, {});
+
+    const totalStudents = data.length;
+
+    // Convertir el conteo por departamento en un arreglo de objetos JSON
+    const departmentArray = Object.entries(departmentCounts).map(([department, count]) => ({
+        id_Departamento: department,
+        count: count
+    }));
+
+    return { departmentArray, totalStudents };
+}
 
 
 };

@@ -197,6 +197,21 @@ exports.getActiveDocentesByDepartment = async (req, res) => {
   };
 
 
+
+exports.countStudentsByDepartment = async (req, res) => {
+    try {
+        const { departmentArray, totalStudents } = await Jefe.countStudentsByDepartment();
+        res.json({
+            message: 'Cantidad de estudiantes por departamento',
+            departmentCounts: departmentArray,
+            totalStudents: totalStudents
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener la cantidad de estudiantes en el departamento', error: error.message });
+    }
+}
+
+
 // exports.getData = async (req, res) => {
 //     try {
 //       // Aquí iría la lógica para obtener datos del jefe de departamento
