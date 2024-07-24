@@ -364,6 +364,32 @@ static async countStudentsByDepartment() {
     return { resultArray, totalStudents };
 }
 
+// Supongamos que tienes una instancia de supabase
+
+ static async updateSectionCupos(sectionId, newCupos) {
+    try {
+        // Actualizar el campo `Cupos` para la sección con el ID proporcionado
+        const { data, error } = await supabase
+            .from('Secciones')
+            .update({ Cupos: newCupos })
+            .eq('id_Secciones', sectionId)
+            .select();
+
+        if (error) {
+            console.error('Error al actualizar los cupos:', error);
+            throw error;
+        }
+
+        console.log('Cupos actualizados con éxito:', data);
+        return data.Cupos;
+    } catch (error) {
+        console.error('Error en la actualización:', error);
+        throw error;
+    }
+
+
+}
+
 
 
 };

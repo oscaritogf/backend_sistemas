@@ -206,6 +206,27 @@ exports.getActiveDocentesByDepartment = async (req, res) => {
     }
 };
 
+// En el módulo Jefe
+exports.updateSectionCupos = async (req, res) => {
+  try {
+    const { id_Seccion, Cupos } = req.body;
+
+    // Verificar que id_Seccion y Cupos sean números válidos
+    if (typeof id_Seccion !== 'number' || isNaN(id_Seccion) || typeof Cupos !== 'number' || isNaN(Cupos)) {
+      return res.status(400).json({ message: 'id_Seccion y Cupos deben ser números válidos' });
+    }
+
+    // Llamar a la función de actualización
+    const data = await Jefe.updateSectionCupos(id_Seccion, Cupos);
+
+    // Enviar respuesta con éxito
+    res.json({ message: 'Sección actualizada correctamente', data });
+
+  } catch (error) {
+    // Manejo de errores
+    res.status(500).json({ message: 'Error al actualizar la sección', error: error.message });
+  }
+};
 
 
 // exports.getData = async (req, res) => {

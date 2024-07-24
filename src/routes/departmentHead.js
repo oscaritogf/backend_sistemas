@@ -16,5 +16,6 @@ router.post('/docentes/activos', departmentHeadController.getActiveDocentesByDep
 router.get('/dias', departmentHeadController.getDias);
 
 router.get('/countStudents', departmentHeadController.countStudentsByDepartment);
+router.post('/cupos', departmentHeadController.updateSectionCupos);
 
 module.exports = router;
