@@ -272,7 +272,6 @@ static async getActiveDocentesByDepartment(id_Departamento) {
 }
 
 // Conteo de estudiantes por departamento
-
 static async countStudentsByDepartment() {
     // Paso 1: Obtener los estudiantes y contar por id_Departamento
     const { data: studentData, error: studentError } = await supabase
@@ -295,32 +294,76 @@ static async countStudentsByDepartment() {
     // Obtener los IDs de los departamentos para la siguiente consulta
     const departmentIds = Object.keys(departmentCounts);
 
-    // Paso 2: Obtener los nombres de los departamentos
+    // Paso 2: Obtener los nombres de los departamentos y su id_Facultad
     const { data: departmentData, error: departmentError } = await supabase
         .from('Departamentos')
-        .select('id_Departamento, Nombre') // Usa los nombres correctos aquí
-        .in('id_Departamento', departmentIds.map(Number)); // Asegúrate de que los IDs sean números
+        .select('id_Departamento, Nombre, id_Facultad')
+        .in('id_Departamento', departmentIds.map(Number));
 
     if (departmentError) {
         console.error('Error al obtener los departamentos:', departmentError);
         throw departmentError;
     }
 
-    // Crear un mapa de id a nombre
-    const departmentNames = departmentData.reduce((map, department) => {
-        map[department.id_Departamento] = department.Nombre; // Usa el nombre correcto aquí
+    // Crear un mapa de id_Departamento a nombre y id_Facultad
+    const departmentMap = departmentData.reduce((map, department) => {
+        map[department.id_Departamento] = {
+            nombre: department.Nombre,
+            id_Facultad: department.id_Facultad
+        };
         return map;
     }, {});
 
-    // Paso 3: Convertir el conteo por departamento en un arreglo de objetos JSON
-    const departmentArray = Object.entries(departmentCounts).map(([id, count]) => ({
-        id_Departamento: id,
-        nombre: departmentNames[id] || 'Desconocido',
-        count: count
+    // Obtener los IDs de las facultades para la siguiente consulta
+    const facultyIds = Array.from(new Set(departmentData.map(d => d.id_Facultad)));
+
+    // Paso 3: Obtener los nombres de las facultades
+    const { data: facultyData, error: facultyError } = await supabase
+        .from('Facultades')
+        .select('id_Facultad, nombre')
+        .in('id_Facultad', facultyIds.map(Number));
+
+    if (facultyError) {
+        console.error('Error al obtener las facultades:', facultyError);
+        throw facultyError;
+    }
+
+    // Crear un mapa de id_Facultad a nombre
+    const facultyNames = facultyData.reduce((map, faculty) => {
+        map[faculty.id_Facultad] = faculty.nombre; // Usa el nombre correcto aquí
+        return map;
+    }, {});
+
+    // Paso 4: Agrupar los departamentos por facultad
+    const facultyDepartments = departmentData.reduce((acc, department) => {
+        const facultyId = department.id_Facultad;
+        if (!acc[facultyId]) {
+            acc[facultyId] = {
+                nombre: facultyNames[facultyId] || 'Desconocido',
+                departamentos: [],
+                cantidad: 0 // Asegurarse de inicializar el campo cantidad
+            };
+        }
+        acc[facultyId].departamentos.push({
+            id_Departamento: department.id_Departamento,
+            nombre: department.Nombre,
+            cantidad: departmentCounts[department.id_Departamento] || 0 // Corregir nombre del campo
+        });
+        acc[facultyId].cantidad += departmentCounts[department.id_Departamento] || 0; // Corregir nombre del campo
+        return acc;
+    }, {});
+
+    // Convertir el resultado en un arreglo de objetos JSON
+    const resultArray = Object.entries(facultyDepartments).map(([id_Facultad, data]) => ({
+        id_Facultad: id_Facultad,
+        nombre: data.nombre,
+        cantidad: data.cantidad,
+        departamentos: data.departamentos
     }));
 
-    return { departmentArray, totalStudents };
+    return { resultArray, totalStudents };
 }
+
 
 
 };
