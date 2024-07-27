@@ -434,7 +434,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
             .from('estudiante')
             .insert([
               {
-                numeroCuenta,
+                numeroCuenta: numeroCuenta,
                 correo_Institucional: correoInstitucional,
                 usuario: parseInt(idUsuario),
                 id_Departamento: depto
@@ -447,7 +447,8 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
             continue;
           }
 
-          const { error: rolError } = await supabase
+       
+          const {data:us, error: rolError } = await supabase
             .from('UsuarioRol')
             .insert([
               {
@@ -461,6 +462,25 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
             errores.push({ dni, error: rolError.message });
             continue;
           }
+
+          const {data:per,  error: perError } = await supabase
+          .from('Perfiles')
+          .insert([
+            {
+              id_Usuario: parseInt(idUsuario),
+              indice: 0,
+              Fotografia1: "1",
+              Fotografia2: "1",
+              Fotografia3: "1"
+            },
+          ]);
+
+          if (perError) {
+            console.error('Error al insertar en la tabla Perfiles', perError);
+            errores.push({ dni, error: perError.message });
+            continue;
+          }
+
 
           // Registrar antes de actualizar
           
