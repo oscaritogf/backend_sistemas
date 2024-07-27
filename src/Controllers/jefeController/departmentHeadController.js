@@ -76,7 +76,7 @@ const supabase = require('../../config/supabase');
     try {
         const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, dias } = req.body;
 
-        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos };
+        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura };	
 
         // Verificar la existencia de los valores en la base de datos
         await Jefe.existsInTable('empleado', 'numeroEmpleado', id_Docentes);
