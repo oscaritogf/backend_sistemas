@@ -38,3 +38,5 @@ Admisiones.csv
 # Archivos temporales
 *.tmp
 *.temp
+
+package-lock.json
