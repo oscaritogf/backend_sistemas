@@ -1,10 +1,12 @@
 
 //src/controllers/matriculaController/matriculaController.js
-
+const supabase = require('../../config/supabase');
 const { getDepartamentos, getAsignaturasByDepartamento, getSeccionesByAsignatura } = require('../../models/matricula/Matricula');
 
 
-const {getDepartamentoEstudiante, getAsignaturasPorDepartamento} = require('../../models/matricula/Matricula');
+const {getDepartamentoEstudiante, getAsignaturasPorDepartamento, cancelarMatricula,
+  listarAsignaturasMatriculadas, procesarListaEspera, listarEstudiantesEnEspera,
+  listarClasesEnEspera} = require('../../models/matricula/Matricula');
 
 const {
  
@@ -57,11 +59,20 @@ exports.getAsignaturasEstudiante = async (req, res) => {
 
 
 
+
 exports.matricular = async (req, res) => {
   const { id_estudiante, id_seccion } = req.body;
   try {
     const resultado = await matricularAsignatura(id_estudiante, id_seccion);
-    res.json({ message: 'Matrícula realizada con éxito', data: resultado });
+    
+    if (resultado.message === 'Matricula con exito') {
+      res.json({ message: 'Matrícula realizada con éxito', data: resultado.data });
+    } else if (resultado.message === 'Añadido a la lista de espera') {
+      res.status(202).json({ message: 'Añadido a la lista de espera', data: resultado.data });
+    } else {
+      // En caso de que se devuelva un mensaje inesperado
+      res.status(500).json({ error: 'Resultado inesperado de la matrícula' });
+    }
   } catch (error) {
     if (error.message === 'Ya tiene esta asignatura matriculada') {
       res.status(400).json({ error: 'Ya tiene esta clase matriculada' });
@@ -74,5 +85,78 @@ exports.matricular = async (req, res) => {
     } else {
       res.status(500).json({ error: error.message });
     }
+  }
+};
+
+exports.actualizarCupos = async (req, res) => {
+  const { id_seccion } = req.params;
+  const { nuevos_cupos } = req.body;
+  
+  if (!id_seccion || !nuevos_cupos) {
+    return res.status(400).json({ error: 'Se requiere id_seccion y nuevos_cupos' });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('Secciones')
+      .update({ Cupos: parseInt(nuevos_cupos) })
+      .eq('id_Secciones', parseInt(id_seccion));
+
+    if (error) throw error;
+
+    await procesarListaEspera(parseInt(id_seccion));
+
+    res.json({ message: 'Cupos actualizados y lista de espera procesada' });
+  } catch (error) {
+    console.error('Error al actualizar cupos:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+////listar y cancelar matricula
+
+exports.cancelarMatricula = async (req, res) => {
+  const { id_estudiante, id_seccion } = req.body;
+  try {
+    const resultado = await cancelarMatricula(id_estudiante, id_seccion);
+    res.json(resultado);
+  } catch (error) {
+    if (error.message === 'Matrícula no encontrada') {
+      res.status(404).json({ error: 'No se encontró la matrícula para cancelar' });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+};
+
+exports.listarAsignaturasMatriculadas = async (req, res) => {
+  const { id_estudiante } = req.params;
+  try {
+    const asignaturas = await listarAsignaturasMatriculadas(id_estudiante);
+    res.json(asignaturas);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+///listar estudiante de lista de espera
+exports.listarEstudiantesEnEspera = async (req, res) => {
+  const { id_seccion } = req.params;
+  try {
+    const estudiantes = await listarEstudiantesEnEspera(id_seccion);
+    res.json(estudiantes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.listarClasesEnEspera = async (req, res) => {
+  const { id_estudiante } = req.params;
+  try {
+    const clases = await listarClasesEnEspera(id_estudiante);
+    res.json(clases);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
