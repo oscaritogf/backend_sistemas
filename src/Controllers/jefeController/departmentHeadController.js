@@ -44,12 +44,13 @@ const supabase = require('../../config/supabase');
   //obtener aulas
   exports.getAulas = async (req, res) => {
     try {
-      const aulas = await Jefe.getAulas();
-      res.json({ message: 'Lista de aulas', data: aulas });
+        const { idEdificio } = req.params;
+        const aulas = await Jefe.getAulas(idEdificio);
+        res.json({ message: 'Lista de aulas', data: aulas });
     } catch (error) {
-      res.status(500).json({ message: 'Error al obtener la lista de aulas', error: error.message });
+        res.status(500).json({ message: 'Error al obtener la lista de aulas', error: error.message });
     }
-  };
+};
 
   // Crear secciones
   // exports.insertSeccions = async (req, res) => {

@@ -70,7 +70,7 @@ exports.login = async (req, res) => {
         departamento: user.departamento,
         id_departamento: user.id_departamento,
         id_centro: user.id_centro,
-        centro:user.Nombre,
+        centro:user.centro,
         ...(userType === 'empleado' ? { numeroEmpleado: identifier, estado: user.estado } : { numeroCuenta: identifier })
       }
     });

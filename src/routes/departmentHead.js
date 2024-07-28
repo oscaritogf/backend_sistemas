@@ -11,7 +11,7 @@ router.get('/edificios/:id_Centro', departmentHeadController.getEdificiosByCentr
 router.post('/crear/secciones', departmentHeadController.insertSeccions);
 router.get('/secciones', departmentHeadController.getSecciones);
 router.get('/docentes', departmentHeadController.getDocentes);
-router.get('/aulas', departmentHeadController.getAulas);
+router.get('/aulas/:idEdificio', departmentHeadController.getAulas);
 router.get('/edificios', departmentHeadController.getEdificios);
 router.post('/docentes/activos', departmentHeadController.getActiveDocentesByDepartment);
 router.get('/dias', departmentHeadController.getDias);

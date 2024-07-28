@@ -191,10 +191,12 @@ static async isDuplicate(data) {
         }
 
     //Obtener aulas
-    static async getAulas() {
+    static async getAulas(idEdificio) {
         const { data: aulas, error } = await supabase
             .from('Aula')
-            .select('*');
+            .select('*')
+            .eq('id_Edificio', idEdificio); // Filtrar por id_Edificio
+        if (error) throw new Error(error.message);
         return aulas;
     }
 

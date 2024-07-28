@@ -43,7 +43,7 @@ class User {
           tipo: userType,
           departamento: data.Departamentos.Nombre,
           id_departamento: data.Departamentos.id_Departamento,
-
+          centro: data.Centros.Nombre,
           id_centro: data.Centros.id_Centros,
           //id_Departamento: data.Departamentos.id,
           ...(userType === 'empleado' 
