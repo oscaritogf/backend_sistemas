@@ -6,5 +6,6 @@ const { checkRole } = require('../middleware/roleCheck');
 
 // router.get('/data', authenticateToken, checkRole('docente'), teacherController.getData);
 router.post('/secciones', teacherController.getSecciones);
+router.post('/estudiantes', teacherController.getStudents);
 
 module.exports = router;

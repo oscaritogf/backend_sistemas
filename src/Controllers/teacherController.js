@@ -12,4 +12,15 @@
        }  
     };
 
+  exports.getStudents = async (req, res) => {
+    try {
+      const  { seccion } = req.body;
+      const students = await Teacher.getStudentsBySeccion(seccion);
+      res.json({ message: 'Estudiantes de la seccion', data: students });
+
+    }catch (error) {
+      res.status(500).json({ message: 'Error al obtener los estudiantes de la seccion', error: error.message });
+       }  
+    }
+
 
