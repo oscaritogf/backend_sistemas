@@ -8,7 +8,7 @@ const os = require('os');
 const supabase = require('../config/supabase');
 const bcrypt = require('bcrypt');
 const { get } = require('http');
-
+require('dotenv').config();
 
 
 exports.createAdmision = async (req, res) => {
@@ -489,6 +489,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
           }
         }
 
+        await crearUsuarioParaCometChat(numeroCuenta, `${primer_Nombre} ${primer_Apellido}`);
         filasAptasProcesadas.push(row); // Almacenar las filas procesadas exitosamente
       }
 
@@ -511,6 +512,26 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
   }
 };
 
+const crearUsuarioParaCometChat = async (uid, name) => {
+  try {
+    const response = await fetch(`${process.env.COMETCHAT_BASE_URL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'appId': process.env.COMETCHAT_APP_ID,
+        'apiKey': process.env.COMETCHAT_API_KEY,
+      },
+      body: JSON.stringify({ uid, name }),
+    });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Error al crear un usuario para CometChat: ${errorData.message}`);
+    }
 
-
+    const data = await response.json();
+    console.log('Usuario creado en COMETCHAT exitosamente:', data);
+  } catch (error) {
+    console.error('Error al crear un usuario para CometChat:', error.message);
+  }
+};

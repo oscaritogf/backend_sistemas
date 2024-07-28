@@ -42,6 +42,7 @@ class Admin {
           )
         )
       `)
+      .eq('id_Centros', id_Centros)
       .eq('id_Departamento', id_Departamento);
 
     if (empleadosError) {
@@ -63,13 +64,13 @@ class Admin {
       if (role === 'Coordinador') {
         const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador');
         if (existingCoordinator) {
-          throw new Error(`Ya existe un Coordinador en este departamento: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+          throw new Error(`Ya existe un Coordinador en este Centro: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
         }
       }
       if (role === 'JefeDepartamento') {
         const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento');
         if (existingJefeDepartamento) {
-          throw new Error(`Ya existe un Jefe de Departamento en este departamento: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
+          throw new Error(`Ya existe un Jefe de Departamento en este Centro: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
         }
       }
     }
@@ -177,6 +178,8 @@ class Admin {
   
     // Enviar correo con credenciales
     await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
+    
+    await this.crearUsuarioParaCometChat(numeroEmpleado, `${nombre} ${apellido}`);
   
     return { ...usuario, numeroEmpleado, roles, id_Centros, id_Departamento };
   }
@@ -257,7 +260,8 @@ class Admin {
           )
         )
       `)
-      .eq('id_Departamento', id_Departamento);
+      .eq('id_Departamento', id_Departamento)
+      .eq('id_Centros', id_Centros);
 
     if (error) {
       console.error('Error al obtener empleados:', error);
@@ -278,13 +282,13 @@ class Admin {
       if (role === 'Coordinador') {
         const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador' && r.numeroEmpleado !== numeroEmpleado);
         if (existingCoordinator) {
-          throw new Error(`Ya existe un Coordinador en este departamento: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+          throw new Error(`Ya existe un Coordinador en este Centro: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
         }
       }
       if (role === 'JefeDepartamento') {
         const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento' && r.numeroEmpleado !== numeroEmpleado);
         if (existingJefeDepartamento) {
-          throw new Error(`Ya existe un Jefe de Departamento en este departamento: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
+          throw new Error(`Ya existe un Jefe de Departamento en este Centro: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
         }
       }
     }
@@ -1025,8 +1029,34 @@ static async getCancelacionExcepcionalById(id) {
   }
   return data;
 }
+
+static async crearUsuarioParaCometChat(uid, name) {
+  try {
+    const response = await fetch(`${process.env.COMETCHAT_BASE_URL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'appId': process.env.COMETCHAT_APP_ID,
+        'apiKey': process.env.COMETCHAT_API_KEY,
+      },
+      body: JSON.stringify({ uid, name }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Error al crear un usuario para CometChat: ${errorData.message}`);
+    }
+
+    const data = await response.json();
+    console.log('Usuario creado en COMETCHAT exitosamente:', data);
+  } catch (error) {
+    console.error('Error al crear un usuario para CometChat:', error.message);
+  }
+};
+
+
 };  
 
-   
+
 
 module.exports = Admin;
