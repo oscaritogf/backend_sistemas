@@ -25,9 +25,8 @@ const getDepartamentos = async () => {
       .from('Secciones')
       .select(`
         *,
-        Usuario (
-          Nombre,
-          Apellido
+        Asignaturas (
+          codigo
         )
       `)
       .eq('codigoAsignatura', codigo);
@@ -59,6 +58,33 @@ const getDepartamentos = async () => {
     return data;
   };
 
+  const getSeccionById = async (id_seccion) => {
+    const { data, error } = await supabase
+      .from('Secciones')
+      .select(`
+        *,
+        Asignaturas (
+          nombre,
+          id_Departamento
+        ),
+        Aula (
+          id_Edificio
+        ),
+        Edificios (
+          id_Centros
+        )
+      `)
+      .eq('id_Secciones', id_seccion)
+      .single();
+  
+    if (error) throw error;
+    return data;
+  };
+
+  const verificarPertenenciaDepartamento = (seccion, id_Departamento) => {
+    return seccion.id_Departamento === id_Departamento;
+  };
+
   const verificarRequisitos = async (id_estudiante, codigo_asignatura) => {
     // Obtener los requisitos de la asignatura
     const { data: requisitos, error: reqError } = await supabase
@@ -86,34 +112,61 @@ const getDepartamentos = async () => {
   };
 
 
-  const verificarMatriculaExistente = async (id_estudiante, codigo_asignatura) => {
-    const { data, error } = await supabase
-      .from('matricula')
-      .select('*')
-      .eq('id_estudiante', id_estudiante)
-      .eq('codigo_asignatura', codigo_asignatura)
-      .single();
-  
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 es el código para "no se encontraron resultados"
-    return !!data;
-  };
+ const verificarMatriculaExistente = async (id_estudiante, codigoAsignatura) => {
+  const { data, error } = await supabase
+    .from('matricula')
+    .select('*')
+    .eq('id_estudiante', id_estudiante)
+    .eq('codigoAsignatura', codigoAsignatura)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return !!data;
+};
 
   const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura) => {
+    // Obtener información del estudiante
+    const { data: estudiante, error: errorEstudiante } = await supabase
+    .from('estudiante')
+    .select('id_Departamento')
+    .eq('id', id_estudiante)
+    .single();
+
+    if (errorEstudiante) throw errorEstudiante;
+
     const cumpleRequisitos = await verificarRequisitos(id_estudiante, codigo_asignatura);
     if (!cumpleRequisitos) {
       throw new Error('No cumple con los requisitos para matricular esta asignatura');
     }
-  
-    const yaMatriculada = await verificarMatriculaExistente(id_estudiante, codigo_asignatura);
-    if (yaMatriculada) {
-      throw new Error('Ya tiene esta asignatura matriculada');
+     // Obtener información de la sección
+    const seccion = await getSeccionById(id_seccion);
+
+    if (!seccion) {
+        throw new Error('Sección no encontrada');
     }
+
+     // Verificar que la sección pertenece al mismo departamento que el estudiante
+  if (!verificarPertenenciaDepartamento(seccion, estudiante.id_Departamento)) {
+    throw new Error('La sección no pertenece al departamento del estudiante');
+  }
+
+    // Verificar si ya está matriculado
+  const yaMatriculada = await verificarMatriculaExistente(id_estudiante, seccion.codigoAsignatura);
+  if (yaMatriculada) {
+    throw new Error('Ya tiene esta asignatura matriculada');
+  }
   
-    const { data, error } = await supabase
-      .from('matricula')
-      .insert([
-        { id_estudiante, id_seccion, codigo_asignatura, fecha: new Date() }
-      ]);
+    // Realizar la matrícula
+  const { data, error } = await supabase
+  .from('matricula')
+  .insert([
+    { 
+      id_estudiante, 
+      id_seccion, 
+      codigoAsignatura: seccion.codigoAsignatura, 
+      fecha: new Date() 
+    }
+  ]);
   
     if (error) throw error;
     return data;
@@ -133,5 +186,5 @@ const getDepartamentos = async () => {
     
     getDepartamentoEstudiante,
     getAsignaturasPorDepartamento,
-
+    getSeccionById,
   };

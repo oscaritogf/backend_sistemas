@@ -10,6 +10,8 @@ const {
  
   matricularAsignatura
 } = require('../../models/matricula/Matricula');
+
+
 exports.getDepartamentos = async (req, res) => {
   try {
     const departamentos = await getDepartamentos();
@@ -56,13 +58,17 @@ exports.getAsignaturasEstudiante = async (req, res) => {
 
 
 exports.matricular = async (req, res) => {
-  const { id_estudiante, id_seccion, codigo_asignatura } = req.body;
+  const { id_estudiante, id_seccion } = req.body;
   try {
-    const resultado = await matricularAsignatura(id_estudiante, id_seccion, codigo_asignatura);
+    const resultado = await matricularAsignatura(id_estudiante, id_seccion);
     res.json({ message: 'Matrícula realizada con éxito', data: resultado });
   } catch (error) {
     if (error.message === 'Ya tiene esta asignatura matriculada') {
       res.status(400).json({ error: 'Ya tiene esta clase matriculada' });
+    } else if (error.message === 'La sección no pertenece al departamento del estudiante') {
+      res.status(400).json({ error: 'La sección no corresponde al departamento del estudiante' });
+    } else if (error.message === 'Sección no encontrada') {
+      res.status(404).json({ error: 'Sección no encontrada' });
     } else if (error.message === 'No cumple con los requisitos para matricular esta asignatura') {
       res.status(400).json({ error: 'No cumple con los requisitos para esta asignatura' });
     } else {
