@@ -181,7 +181,14 @@ static async isDuplicate(data) {
             .select('*');
         return edificios;
     }
-    
+        //Obtener asignaturas
+        static async getEdificiosByCentro(id) {
+            const { data: edificios, error } = await supabase
+                .from('Edificios')
+                .select('*')
+                .eq('id_Centros', id);
+            return edificios;
+        }
 
     //Obtener aulas
     static async getAulas() {

@@ -32,6 +32,15 @@ const supabase = require('../../config/supabase');
     }
   };
 
+  exports.getEdificiosByCentro = async (req, res) => {
+    const { id_Centro } = req.params;
+    try {
+      const edificios = await Jefe.getEdificiosByCentro(id_Centro);
+      res.json({ message: `Lista de departamentos del centro con id ${id_Centro}`, data: edificios });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de departamentos del centro con id ${id_Centro}', error: error.message });
+    }
+  };
   //obtener aulas
   exports.getAulas = async (req, res) => {
     try {

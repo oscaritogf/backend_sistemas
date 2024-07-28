@@ -14,7 +14,8 @@ class User {
             *,
             Usuario (*),
             estado,
-            Departamentos (id_Departamento, Nombre)
+            Departamentos (id_Departamento, Nombre),
+            Centros (id_Centros, Nombre)
           `)
           .eq('numeroEmpleado', identifier)
           .single());
@@ -42,6 +43,8 @@ class User {
           tipo: userType,
           departamento: data.Departamentos.Nombre,
           id_departamento: data.Departamentos.id_Departamento,
+
+          id_centro: data.Centros.id_Centros,
           //id_Departamento: data.Departamentos.id,
           ...(userType === 'empleado' 
             ? { numeroEmpleado: data.numeroEmpleado, estado: data.estado } 
@@ -67,6 +70,18 @@ class User {
     if (error) throw error;
     return data.map(ur => ur.rol.nombre);
   }
+  static async getCentros(userId) {
+    const { data, error } = await supabase
+      .from('Centros')
+      .select(`
+        centros (id_centros, Nombre)
+      `)
+      .eq('id_centros', userId);
+
+    if (error) throw error;
+    return data.map(ur => ur.centros.Nombre);
+  }
+
 
   static async create(userData) {
     const { Contrasena, ...otherData } = userData;
