@@ -25,7 +25,8 @@ class User {
           .select(`
             *,
             Usuario (*),
-             Departamentos (id_Departamento, Nombre)
+            Departamentos (id_Departamento, Nombre),
+            Centros (id_Centros, Nombre)
           `)
           .eq('numeroCuenta', identifier)
           .single());
