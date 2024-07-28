@@ -74,9 +74,9 @@ const supabase = require('../../config/supabase');
 
   exports.insertSeccions = async (req, res) => {
     try {
-        const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, dias } = req.body;
+        const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, dias, id_Departamento } = req.body;
 
-        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura };	
+        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, id_Departamento };	
 
         // Verificar la existencia de los valores en la base de datos
         await Jefe.existsInTable('empleado', 'numeroEmpleado', id_Docentes);
