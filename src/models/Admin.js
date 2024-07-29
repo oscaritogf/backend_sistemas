@@ -254,52 +254,53 @@ class Admin {
 
 
     // Verificar si ya existe un coordinador o jefeDepartamento para el departamento
-    const { data: empleados, error: error } = await supabase
-      .from('empleado')
-      .select(`
-        numeroEmpleado,
-        Usuario (
-          id,
-          Nombre,
-          Apellido,
-          UsuarioRol (
-            rol (nombre)
+    if (id_Departamento !== undefined && id_Centros !== undefined) {
+      const { data: empleados, error: error } = await supabase
+        .from('empleado')
+        .select(`
+          numeroEmpleado,
+          Usuario (
+            id,
+            Nombre,
+            Apellido,
+            UsuarioRol (
+              rol (nombre)
+            )
           )
-        )
-      `)
-      .eq('id_Departamento', id_Departamento)
-      .eq('id_Centros', id_Centros);
+        `)
+        .eq('id_Departamento', id_Departamento)
+        .eq('id_Centros', id_Centros);
 
-    if (error) {
-      console.error('Error al obtener empleados:', error);
-      throw error;
-    }
+      if (error) {
+        console.error('Error al obtener empleados:', error);
+        throw error;
+      }
 
-    // Extraer los nombres de roles de los empleados existentes en el departamento
-    const existingRoles = empleados.flatMap(emp => emp.Usuario.UsuarioRol.map(ur => ({ 
-      numeroEmpleado: emp.numeroEmpleado,
-      role: ur.rol.nombre, 
-      userId: emp.Usuario.id, 
-      nombre: emp.Usuario.Nombre, 
-      apellido: emp.Usuario.Apellido 
-    })));
+      // Extraer los nombres de roles de los empleados existentes en el departamento
+      const existingRoles = empleados.flatMap(emp => emp.Usuario.UsuarioRol.map(ur => ({ 
+        numeroEmpleado: emp.numeroEmpleado,
+        role: ur.rol.nombre, 
+        userId: emp.Usuario.id, 
+        nombre: emp.Usuario.Nombre, 
+        apellido: emp.Usuario.Apellido 
+      })));
 
-    // Verificar si ya existen Coordinador o JefeDepartamento en el departamento, excepto para el empleado actual
-    for (const role of roles) {
-      if (role === 'Coordinador') {
-        const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador' && r.numeroEmpleado !== numeroEmpleado);
-        if (existingCoordinator) {
-          throw new Error(`Ya existe un Coordinador en este Centro: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+      // Verificar si ya existen Coordinador o JefeDepartamento en el departamento, excepto para el empleado actual
+      for (const role of roles) {
+        if (role === 'Coordinador') {
+          const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador' && r.numeroEmpleado !== numeroEmpleado);
+          if (existingCoordinator) {
+            throw new Error(`Ya existe un Coordinador en este Centro: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+          }
+        }
+        if (role === 'JefeDepartamento') {
+          const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento' && r.numeroEmpleado !== numeroEmpleado);
+          if (existingJefeDepartamento) {
+            throw new Error(`Ya existe un Jefe de Departamento en este Centro: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
+          }
         }
       }
-      if (role === 'JefeDepartamento') {
-        const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento' && r.numeroEmpleado !== numeroEmpleado);
-        if (existingJefeDepartamento) {
-          throw new Error(`Ya existe un Jefe de Departamento en este Centro: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
-        }
-      }
     }
-
 
 
     // Si se proporciona una nueva contraseña, hashearla
