@@ -11,6 +11,8 @@ const coordinatorRoutes = require('./routes/coordinator');
 const departmentHeadRoutes = require('./routes/departmentHead');
 const adminRoutes = require('./routes/admin');
 const matriculaRoutes = require('./routes/matricula');
+const solicitudesRoutes = require('./routes/solicitudes')
+
 app.use(cors());
 app.use(express.json());
 app.use('/api/auth', authRoutes);
@@ -21,6 +23,8 @@ app.use('/api/department-head', departmentHeadRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admisiones', admisionesRoutes);
 app.use('/api/matricula', matriculaRoutes)
+
+app.use('/api/solicitudes', solicitudesRoutes);
 const port = process.env.PORT || 3000;
 
 
