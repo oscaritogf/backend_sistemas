@@ -175,6 +175,13 @@ class Admin {
         throw userRolError;
       }
     }
+
+    const { data:perfil, error:perfilError } = await supabase
+    .from('Perfiles')
+    .insert({
+      id_Usuario: usuario.id,
+      Fotografia1: userData.Imagen
+    })
   
     // Enviar correo con credenciales
     await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
