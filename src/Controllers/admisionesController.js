@@ -470,9 +470,9 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
             {
               id_Usuario: parseInt(idUsuario),
               indice: 0,
-              Fotografia1: "1",
-              Fotografia2: "1",
-              Fotografia3: "1"
+              Fotografia1: "",
+              Fotografia2: "",
+              Fotografia3: ""
             },
           ]);
 

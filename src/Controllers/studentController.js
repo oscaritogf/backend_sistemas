@@ -20,3 +20,29 @@ exports.putImg = async (req, res) => {
     }
 };
 
+exports.updateProfile = async (req, res) => {
+    try {
+        const { id_Usuario } = req.params;
+        const { Fotografia1, Fotografia2, Fotografia3 } = req.files;
+
+        const usuarioData = {...req.body, Fotografia1, Fotografia2, Fotografia3, id_Usuario};
+
+        console.log('Datos de usuario:', usuarioData);
+
+        const data = await Student.updateProfile(id_Usuario, usuarioData);
+        res.json({ message: 'Perfil actualizado', data });
+        // res.json({ message: 'Perfil actualizado', usuarioData });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar perfil', error: error.message });
+    }
+};
+
+exports.getProfile = async (req, res) => {
+    try {
+        const { id_Usuario } = req.params;
+        const data = await Student.getProfile(id_Usuario);
+        res.json({ message: 'Perfil obtenido', data });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener perfil', error: error.message });
+    }
+}
