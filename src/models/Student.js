@@ -63,7 +63,7 @@ class Student {
             
             let { data, error } = await supabase
             .from('Usuario')
-            .select('*, Perfiles(*), empleado(*), estudiante(*)')
+            .select('*, Perfiles(*), empleado(*, id_Centros(*), id_Departamento(*)), estudiante(*, id_Centros(*), id_Departamento(*))')
             .eq('id', id_Usuario)
             .single();
         
