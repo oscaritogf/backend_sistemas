@@ -20,22 +20,146 @@ const getDepartamentos = async () => {
     return data;
   };
 
+///lista las secciones por asignatura
   const getSeccionesByAsignatura = async (codigo) => {
-    const { data, error } = await supabase
+    const { data: secciones, error: errorSecciones } = await supabase
       .from('Secciones')
       .select(`
-        *,
-        Asignaturas (
-          codigo
+        id_Secciones,
+        id_Aula,
+        id_Edificios,
+        Hora_inicio,
+        Hora_Final,
+        Cupos,
+        Justificacion,
+        codigoAsignatura,
+        id_Departamento,
+        seccion_dias (
+          id_dia,
+          Dias (
+            Nombre
+          )
         )
       `)
       .eq('codigoAsignatura', codigo);
-    
-    if (error) throw error;
-    return data;
+  
+    if (errorSecciones) throw errorSecciones;
+  
+    // Obtener todas las matriculas de estas secciones
+    const { data: matriculas, error: errorMatriculas } = await supabase
+      .from('matricula')
+      .select('id_seccion');
+  
+    if (errorMatriculas) throw errorMatriculas;
+  
+    // Calcular cupos disponibles
+    const matriculasPorSeccion = matriculas.reduce((acc, { id_seccion }) => {
+      acc[id_seccion] = (acc[id_seccion] || 0) + 1;
+      return acc;
+    }, {});
+  
+    const seccionesConCuposDisponibles = secciones.map(seccion => {
+      const cuposMatriculados = matriculasPorSeccion[seccion.id_Secciones] || 0;
+      return {
+        ...seccion,
+        cuposDisponibles: seccion.Cupos - cuposMatriculados
+      };
+    });
+  
+    return seccionesConCuposDisponibles;
   };
+  
 
+  ///traer los docentes por seccion para msotrar el nombre 
 
+  const getDocenteInfo = async (id_seccion) => {
+    if (!id_seccion) {
+      throw new Error('Section ID is required');
+    }
+  
+    // Obtenemos el id_Docentes de la tabla Secciones
+    const { data: seccionData, error: seccionError } = await supabase
+      .from('Secciones')
+      .select('id_Docentes')
+      .eq('id_Secciones', id_seccion)
+      .single();
+  
+    if (seccionError) {
+      throw new Error(`Error retrieving section: ${seccionError.message}`);
+    }
+  
+    if (!seccionData || !seccionData.id_Docentes) { 
+      throw new Error('Section not found or has no assigned docente');
+    }
+  
+    const idDocente = seccionData.id_Docentes;
+  
+    // Obtenemos el usuario asociado con el id_Docentes de la tabla empleado
+    const { data: empleadoData, error: empleadoError } = await supabase
+      .from('empleado')
+      .select('numeroEmpleado, usuario')
+      .eq('numeroEmpleado', idDocente);
+  
+    if (empleadoError) {
+        throw new Error(`Error retrieving empleado: ${empleadoError.message}`);
+    }
+  
+    if (!empleadoData || empleadoData.length === 0) {
+      throw new Error(`No empleado found with id: ${idDocente}`);
+    }
+  
+    const idUsuario = empleadoData[0].usuario;
+  
+    if (!idUsuario) {
+      throw new Error(`Empleado with id ${idDocente} has no associated usuario`);
+    }
+    
+    // Obtenemos el nombre y apellido del usuario de la tabla Usuario
+    const { data: usuarioData, error: usuarioError } = await supabase
+      .from('Usuario')
+      .select('Nombre, Apellido')
+      .eq('id', idUsuario)
+      .single();
+  
+    if (usuarioError) {
+      throw new Error(`Error retrieving usuario: ${usuarioError.message}`);
+    }
+  
+    if (!usuarioData) {
+      throw new Error(`No usuario found with id: ${idUsuario}`);
+    }
+  
+  
+    return {
+      nombre: usuarioData.Nombre,
+      apellido: usuarioData.Apellido
+    };
+  };
+  
+
+  const getIdEstudiante = async (id_user) => {
+    if (!id_user) {
+      throw new Error('User ID is required');
+    }
+  
+    const { data, error } = await supabase
+      .from('estudiante')
+      .select('id')
+      .eq('usuario', id_user)
+      .single();
+  
+    if (error) {
+      throw new Error(`Error retrieving student: ${error.message}`);
+    }
+  
+    if (!data) {
+      throw new Error('Student not found');
+    }
+  
+    return data.id;
+  };
+  
+  
 
   const getDepartamentoEstudiante = async (id_estudiante) => {
     const { data, error } = await supabase
@@ -363,4 +487,8 @@ const cancelarMatricula = async (id_estudiante, id_seccion) => {
 
    listarEstudiantesEnEspera,
    listarClasesEnEspera,
+
+   getIdEstudiante,
+
+   getDocenteInfo,
   };
