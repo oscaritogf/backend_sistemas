@@ -42,14 +42,31 @@ const supabase = require('../../config/supabase');
     }
   };
   //obtener aulas
-  exports.getAulas = async (req, res) => {
+  exports.getAulasByEdificio = async (req, res) => {
     try {
         const { idEdificio } = req.params;
-        const aulas = await Jefe.getAulas(idEdificio);
+        const aulas = await Jefe.getAulasByEdificio(idEdificio);
         res.json({ message: 'Lista de aulas', data: aulas });
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener la lista de aulas', error: error.message });
     }
+};
+
+exports.getTiposAulas = async (req, res) => {
+  try {
+      const aulas = await Jefe.getTiposAulas();
+      res.json({ message: 'Lista el tipo de aulas', data: aulas });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al obtener el tipo de aulas', error: error.message });
+  }
+};
+exports.getAulas = async (req, res) => {
+  try {
+      const aulas = await Jefe.getAulas();
+      res.json({ message: 'Lista de aulas', data: aulas });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de aulas', error: error.message });
+  }
 };
 
   // Crear secciones
@@ -197,6 +214,18 @@ exports.getActiveDocentesByDepartment = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener la lista de secciones', error: error.message });
     }
   };
+  //secciones por el id de la asignatura
+  exports.getSeccionesByAsignatura = async (req, res) => {
+    const {codigo} = req.params;
+    try {
+      const secciones = await Jefe.getSeccionesByAsignatura(codigo);
+      res.json({ message: `Lista de secciones de la asignatura ${codigo}`, data: secciones });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de secciones de la asignatura ${codigo}', error: error.message });
+    }
+  };
+
+
 
   exports.getDocentes = async (req, res) => {
     try {
@@ -238,6 +267,8 @@ exports.updateSectionCupos = async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar la sección', error: error.message });
   }
 };
+
+ 
 
 
 // exports.getData = async (req, res) => {

@@ -172,7 +172,15 @@ static async isDuplicate(data) {
             .select('*');
         return secciones;
     }
-
+   //Obtener secciones por el codigo de la asignatura
+   static async getSeccionesByAsignatura(codigo) {
+    const { data: secciones, error } = await supabase
+        .from('Secciones')
+        .select('*')
+        .eq('codigoAsignatura', codigo);
+        
+    return secciones;
+}
 
     //Obtener edificios
     static async getEdificios() {
@@ -191,11 +199,26 @@ static async isDuplicate(data) {
         }
 
     //Obtener aulas
-    static async getAulas(idEdificio) {
+    static async getAulasByEdificio(idEdificio) {
         const { data: aulas, error } = await supabase
             .from('Aula')
             .select('*')
             .eq('id_Edificio', idEdificio); // Filtrar por id_Edificio
+        if (error) throw new Error(error.message);
+        return aulas;
+    }
+
+    static async getAulas() {
+        const { data: aulas, error } = await supabase
+            .from('Aula')
+            .select('*')
+        if (error) throw new Error(error.message);
+        return aulas;
+    }
+    static async getTiposAulas() {
+        const { data: aulas, error } = await supabase
+            .from('TiposAula')
+            .select('*')
         if (error) throw new Error(error.message);
         return aulas;
     }
@@ -373,6 +396,7 @@ static async countStudentsByDepartment() {
     return { resultArray, totalStudents };
 }
 
+
 // Supongamos que tienes una instancia de supabase
 
  static async updateSectionCupos(sectionId, newCupos) {
@@ -399,8 +423,5 @@ static async countStudentsByDepartment() {
 
 }
 
-
-
-};
-
+}
 module.exports = Jefe;

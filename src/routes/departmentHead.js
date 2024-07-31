@@ -10,8 +10,11 @@ router.get('/asignaturas/:id_Departamento', departmentHeadController.getAsignatu
 router.get('/edificios/:id_Centro', departmentHeadController.getEdificiosByCentro);
 router.post('/crear/secciones', departmentHeadController.insertSeccions);
 router.get('/secciones', departmentHeadController.getSecciones);
+router.get('/secciones/:codigo', departmentHeadController.getSeccionesByAsignatura);
 router.get('/docentes', departmentHeadController.getDocentes);
-router.get('/aulas/:idEdificio', departmentHeadController.getAulas);
+router.get('/aulas/:idEdificio', departmentHeadController.getAulasByEdificio);
+router.get('/aulas', departmentHeadController.getAulas);
+router.get('/tipoAulas', departmentHeadController.getTiposAulas);
 router.get('/edificios', departmentHeadController.getEdificios);
 router.post('/docentes/activos', departmentHeadController.getActiveDocentesByDepartment);
 router.get('/dias', departmentHeadController.getDias);
