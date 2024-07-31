@@ -355,6 +355,33 @@ class Admin {
 
     console.log('Usuario actualizado exitosamente:', usuario);
 
+
+
+    // Actualizar la imagen en cometChat
+    const url = `https://${process.env.COMETCHAT_APP_ID}.api-us.cometchat.io/v3/users/${numeroEmpleado}`; 
+    const options = {
+      method: 'PUT',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        apikey: process.env.COMETCHAT_API_KEY 
+      },
+      body: JSON.stringify({
+        avatar: userData.Imagen
+      })
+    };
+
+    fetch(url, options)
+      .then(res => res.json())
+      .then(json => console.log(json))
+      .catch(err => console.error('error:' + err));
+
+
+
+
+
+
+
     // Actualizar roles si se proporcionan
     if (roles && roles.length > 0) {
       console.log('Actualizando roles:', roles);
