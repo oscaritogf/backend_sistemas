@@ -28,6 +28,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+*.xlsx
 
 # Archivos de bloqueo de paquetes opcionales
 Admisiones.csv

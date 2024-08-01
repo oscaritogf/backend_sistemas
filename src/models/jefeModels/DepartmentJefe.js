@@ -39,6 +39,9 @@ static async getAsignaturasByCode(codigoAsignatura) {
 
     // Insertar secciones
     static async insertSeccions(data) {
+        //numero aleatorio para la contraseña del chat
+        randomPass = (Math.floor(Math.random() * 90000) + 10000).toString();
+
         // Insertar la sección en la tabla 'Secciones'
         const { data: seccion, error } = await supabase
             .from('Secciones')
@@ -49,7 +52,9 @@ static async getAsignaturasByCode(codigoAsignatura) {
                     id_Edificios: data.id_Edificios,
                     Hora_inicio: data.Hora_inicio,
                     Hora_Final: data.Hora_Final,
-                    Cupos: data.Cupos
+                    Cupos: data.Cupos,
+                    estado: true,
+                    contrasenaChat: randomPass
                 }
             ])
             .single();
@@ -169,10 +174,19 @@ static async isDuplicate(data) {
     static async getSecciones() {
         const { data: secciones, error } = await supabase
             .from('Secciones')
-            .select('*');
+            .select('*')
+            .eq('estado', true);
         return secciones;
     }
-
+   //Obtener secciones por el codigo de la asignatura
+   static async getSeccionesByAsignatura(codigo) {
+    const { data: secciones, error } = await supabase
+        .from('Secciones')
+        .select('*')
+        .eq('codigoAsignatura', codigo);
+        
+    return secciones;
+}
 
     //Obtener edificios
     static async getEdificios() {
@@ -191,11 +205,26 @@ static async isDuplicate(data) {
         }
 
     //Obtener aulas
-    static async getAulas(idEdificio) {
+    static async getAulasByEdificio(idEdificio) {
         const { data: aulas, error } = await supabase
             .from('Aula')
             .select('*')
             .eq('id_Edificio', idEdificio); // Filtrar por id_Edificio
+        if (error) throw new Error(error.message);
+        return aulas;
+    }
+
+    static async getAulas() {
+        const { data: aulas, error } = await supabase
+            .from('Aula')
+            .select('*')
+        if (error) throw new Error(error.message);
+        return aulas;
+    }
+    static async getTiposAulas() {
+        const { data: aulas, error } = await supabase
+            .from('TiposAula')
+            .select('*')
         if (error) throw new Error(error.message);
         return aulas;
     }
@@ -373,6 +402,7 @@ static async countStudentsByDepartment() {
     return { resultArray, totalStudents };
 }
 
+
 // Supongamos que tienes una instancia de supabase
 
  static async updateSectionCupos(sectionId, newCupos) {
@@ -399,8 +429,21 @@ static async countStudentsByDepartment() {
 
 }
 
+    //Justificacion para cancelar una seccion
+    static async justificarCancelacionSeccion(id_Secciones, justificacion) {
+        // Actualizar la sección con la justificación de cancelación
+        const { data, error } = await supabase
+            .from('Secciones')
+            .update({Justificacion: justificacion, estado: false})
+            .eq('id_Secciones', id_Secciones)
+            .single();
+    
+        if (error) {
+            throw error;
+        }
+    
+        return data;
+    }
 
-
-};
-
+}
 module.exports = Jefe;

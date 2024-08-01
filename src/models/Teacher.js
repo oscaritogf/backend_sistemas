@@ -19,48 +19,48 @@ class Teacher {
         
         }
       
-      static async getStudentsBySeccion(id_Secciones) {
-        //Obtener la data de la seccion
-        const { data: dataSeccion, error : errorSeccion } = await supabase
-          .from('Secciones')
-          .select('codigoAsignatura, Asignaturas(nombre)')
-          .eq('id_Secciones', id_Secciones);
-
-        if (errorSeccion) {
-          throw errorSeccion;
-        }
-
-
-          //Obtener los estudiantes de la seccion
-        const { data, error } = await supabase
-          .from('matricula')
-          .select('id_estudiante, estudiante(usuario)')
-          .eq('id_seccion', id_Secciones);
-   
-        if (error) {
-          throw error;
-        }
-
-        if (data.length === 0) {
-          return { seccion: id_Secciones, estudiantes: [] };
+        static async getStudentsBySeccion(id_Secciones) {
+          // Obtener la data de la seccion
+          const { data: dataSeccion, error: errorSeccion } = await supabase
+            .from('Secciones')
+            .select('codigoAsignatura, Asignaturas(nombre)')
+            .eq('id_Secciones', id_Secciones);
+        
+          if (errorSeccion) {
+            throw errorSeccion;
+          }
+        
+          // Obtener los estudiantes de la seccion
+          const { data, error } = await supabase
+            .from('matricula')
+            .select('id_estudiante, estudiante(usuario)')
+            .eq('id_seccion', id_Secciones);
+        
+          if (error) {
+            throw error;
+          }
+        
+          if (data.length === 0) {
+            return { seccion: id_Secciones, estudiantes: [] };
+          }
+        
+          const students = data.map(record => record.estudiante.usuario);
+        
+          // Aquí estaba el problema. Asegurémonos de que uniqueStudent sea un array de enteros.
+          const uniqueStudent = [...new Set(students.map(id => parseInt(id, 10)))];
+        
+          let { data: dataStudents, error: errorStudents } = await supabase
+            .from('Usuario')
+            .select('Nombre, Apellido, estudiante(numeroCuenta)')
+            .in('id', uniqueStudent);  // Usamos .in() con un array de enteros.
+        
+          if (errorStudents) {
+            throw errorStudents;
+          }
+        
+          return { seccion: id_Secciones, codigo: dataSeccion, estudiantes: dataStudents };
         }
         
-        const students = data.map(record => record.estudiante.usuario);
-
-        const uniqueStudent = [...new Set(students)];
-
-
-        let { data: dataStudents, error: errorStudents } = await supabase
-          .from('Usuario')
-          .select('Nombre, Apellido, estudiante(numeroCuenta)')
-          .eq('id', uniqueStudent);
-
-        if (errorStudents) {
-          throw errorStudents;
-        }
-
-        return { seccion: id_Secciones, codigo: dataSeccion , estudiantes: dataStudents };
-      } 
    
       static async saveListStudents(data) {
         const {seccion, codigo, estudiantes} = data;

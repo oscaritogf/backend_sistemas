@@ -42,44 +42,32 @@ const supabase = require('../../config/supabase');
     }
   };
   //obtener aulas
-  exports.getAulas = async (req, res) => {
+  exports.getAulasByEdificio = async (req, res) => {
     try {
         const { idEdificio } = req.params;
-        const aulas = await Jefe.getAulas(idEdificio);
+        const aulas = await Jefe.getAulasByEdificio(idEdificio);
         res.json({ message: 'Lista de aulas', data: aulas });
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener la lista de aulas', error: error.message });
     }
 };
 
-  // Crear secciones
-  // exports.insertSeccions = async (req, res) => {
-  //     try {
-  //         const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos } = req.body;
-  //         const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, };
-  
-  //         // Verificar la existencia de los valores en la base de datos
-  //         await Jefe.existsInTable('empleado', 'numeroEmpleado', data.id_Docentes);
-  //         await Jefe.existsInTable('Aula', 'id_Aula', data.id_Aula);
-  //         await Jefe.existsInTable('Edificios', 'id_Edficios', data.id_Edificios);
-        
-  
-  //         // Verificar duplicados
-  //         await Jefe.isDuplicate(data);
-  
-  //         // Verificar traslape de horarios
-  //         await Jefe.hasTimeConflict(data);
-  
-  //         // Insertar la sección si todas las validaciones pasan
-  //         const seccion = await Jefe.insertSeccions(data);
-  
-  //         res.json({ message: 'Sección creada', data: seccion });
-  
-  //     } catch (error) {
-  //         console.error('Error al crear la sección:', error);
-  //         res.status(400).json({ message: 'Error al crear sección', error: error.message });
-  //     }
-  // };
+exports.getTiposAulas = async (req, res) => {
+  try {
+      const aulas = await Jefe.getTiposAulas();
+      res.json({ message: 'Lista el tipo de aulas', data: aulas });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al obtener el tipo de aulas', error: error.message });
+  }
+};
+exports.getAulas = async (req, res) => {
+  try {
+      const aulas = await Jefe.getAulas();
+      res.json({ message: 'Lista de aulas', data: aulas });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de aulas', error: error.message });
+  }
+};
 
 
   exports.insertSeccions = async (req, res) => {
@@ -87,7 +75,9 @@ const supabase = require('../../config/supabase');
         const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, dias, id_Departamento } = req.body;
         let matriculados = 0;
 
-        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, id_Departamento, matriculados };	
+        let estado = true;
+        let contrasenaChat  = (Math.floor(Math.random() * 90000) + 10000).toString();
+        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, id_Departamento, matriculados, estado, contrasenaChat };	
 
         // Verificar la existencia de los valores en la base de datos
         await Jefe.existsInTable('empleado', 'numeroEmpleado', id_Docentes);
@@ -122,6 +112,8 @@ const supabase = require('../../config/supabase');
         if (dias.length === 1 && horasDiferencia !== uv) {
             throw new Error(`La diferencia entre la hora de inicio y la hora de finalización (${horasDiferencia} horas) debe ser igual a las unidades valorativas (${uv} horas) cuando se asigna a un solo día.`);
         }
+
+      
 
         // Insertar la sección y obtener el ID de la nueva sección
         const { data: seccion, error: insertError } = await supabase
@@ -197,6 +189,18 @@ exports.getActiveDocentesByDepartment = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener la lista de secciones', error: error.message });
     }
   };
+  //secciones por el id de la asignatura
+  exports.getSeccionesByAsignatura = async (req, res) => {
+    const {codigo} = req.params;
+    try {
+      const secciones = await Jefe.getSeccionesByAsignatura(codigo);
+      res.json({ message: `Lista de secciones de la asignatura ${codigo}`, data: secciones });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de secciones de la asignatura ${codigo}', error: error.message });
+    }
+  };
+
+
 
   exports.getDocentes = async (req, res) => {
     try {
@@ -239,12 +243,25 @@ exports.updateSectionCupos = async (req, res) => {
   }
 };
 
+ 
 
-// exports.getData = async (req, res) => {
-//     try {
-//       // Aquí iría la lógica para obtener datos del jefe de departamento
-//       res.json({ message: 'Datos del jefe de departamento', data: { id: req.user.userId, tipo: 'jefe_departamento' } });
-//     } catch (error) {
-//       res.status(500).json({ message: 'Error al obtener datos del jefe de departamento', error: error.message });
-//     }
-//   };
+exports.cancelSection = async (req, res) => {
+  try {
+    const { id_Seccion, justificacion } = req.body;
+
+    // Verificar que id_Seccion sea un número válido
+    if (typeof id_Seccion !== 'number' || isNaN(id_Seccion)) {
+      return res.status(400).json({ message: 'id_Seccion debe ser un número válido' });
+    }
+
+    // Llamar a la función de cancelación
+    const data = await Jefe.justificarCancelacionSeccion(id_Seccion, justificacion);
+
+    // Enviar respuesta con éxito
+    res.json({ message: 'Sección cancelada correctamente', data });
+
+  } catch (error) {
+    // Manejo de errores
+    res.status(500).json({ message: 'Error al cancelar la sección', error: error.message });
+  }
+};
