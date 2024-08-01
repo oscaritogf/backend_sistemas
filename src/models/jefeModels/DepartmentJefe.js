@@ -49,7 +49,8 @@ static async getAsignaturasByCode(codigoAsignatura) {
                     id_Edificios: data.id_Edificios,
                     Hora_inicio: data.Hora_inicio,
                     Hora_Final: data.Hora_Final,
-                    Cupos: data.Cupos
+                    Cupos: data.Cupos,
+                    estado: TRUE
                 }
             ])
             .single();
@@ -169,7 +170,8 @@ static async isDuplicate(data) {
     static async getSecciones() {
         const { data: secciones, error } = await supabase
             .from('Secciones')
-            .select('*');
+            .select('*')
+            .eq('estado', true);
         return secciones;
     }
    //Obtener secciones por el codigo de la asignatura
@@ -422,6 +424,22 @@ static async countStudentsByDepartment() {
 
 
 }
+
+    //Justificacion para cancelar una seccion
+    static async justificarCancelacionSeccion(id_Secciones, justificacion) {
+        // Actualizar la sección con la justificación de cancelación
+        const { data, error } = await supabase
+            .from('Secciones')
+            .update({Justificacion: justificacion, estado: false})
+            .eq('id_Secciones', id_Secciones)
+            .single();
+    
+        if (error) {
+            throw error;
+        }
+    
+        return data;
+    }
 
 }
 module.exports = Jefe;

@@ -270,12 +270,23 @@ exports.updateSectionCupos = async (req, res) => {
 
  
 
+exports.cancelSection = async (req, res) => {
+  try {
+    const { id_Seccion, justificacion } = req.body;
 
-// exports.getData = async (req, res) => {
-//     try {
-//       // Aquí iría la lógica para obtener datos del jefe de departamento
-//       res.json({ message: 'Datos del jefe de departamento', data: { id: req.user.userId, tipo: 'jefe_departamento' } });
-//     } catch (error) {
-//       res.status(500).json({ message: 'Error al obtener datos del jefe de departamento', error: error.message });
-//     }
-//   };
+    // Verificar que id_Seccion sea un número válido
+    if (typeof id_Seccion !== 'number' || isNaN(id_Seccion)) {
+      return res.status(400).json({ message: 'id_Seccion debe ser un número válido' });
+    }
+
+    // Llamar a la función de cancelación
+    const data = await Jefe.justificarCancelacionSeccion(id_Seccion, justificacion);
+
+    // Enviar respuesta con éxito
+    res.json({ message: 'Sección cancelada correctamente', data });
+
+  } catch (error) {
+    // Manejo de errores
+    res.status(500).json({ message: 'Error al cancelar la sección', error: error.message });
+  }
+};
