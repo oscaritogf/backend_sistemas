@@ -20,7 +20,7 @@ router.post('/docentes/activos', departmentHeadController.getActiveDocentesByDep
 router.get('/dias', departmentHeadController.getDias);
 
 router.get('/countStudents', departmentHeadController.countStudentsByDepartment);
-router.post('/cupos', departmentHeadController.updateSectionCupos);
+router.put('/cupos', departmentHeadController.updateSectionCupos);
 router.post('/just', departmentHeadController.cancelSection);
 router.post('/rqspass', departmentHeadController.activateChange);
 router.post('/passCgd', departmentHeadController.changePassword);

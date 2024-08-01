@@ -1,6 +1,7 @@
 // controllers/departmentHeadController.js
 const Jefe = require ('../../models/jefeModels/DepartmentJefe');
 const supabase = require('../../config/supabase');
+const { procesarListaEspera }  = require('../../models/matricula/Matricula');
 
 //obtener asignaturas
   exports.getAsignaturas = async (req, res) => {
@@ -261,6 +262,7 @@ exports.updateSectionCupos = async (req, res) => {
 
     // Llamar a la función de actualización
     const data = await Jefe.updateSectionCupos(id_Seccion, Cupos);
+    await procesarListaEspera(id_Seccion);
 
     // Enviar respuesta con éxito
     res.json({ message: 'Sección actualizada correctamente', data });

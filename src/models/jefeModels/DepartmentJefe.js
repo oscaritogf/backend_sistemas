@@ -184,7 +184,8 @@ static async isDuplicate(data) {
     const { data: secciones, error } = await supabase
         .from('Secciones')
         .select('*')
-        .eq('codigoAsignatura', codigo);
+        .eq('codigoAsignatura', codigo)
+        .eq('estado', true);
         
     return secciones;
 }
@@ -407,29 +408,45 @@ static async countStudentsByDepartment() {
 
 // Supongamos que tienes una instancia de supabase
 
- static async updateSectionCupos(sectionId, newCupos) {
-    try {
-        // Actualizar el campo `Cupos` para la sección con el ID proporcionado
-        const { data, error } = await supabase
-            .from('Secciones')
-            .update({ Cupos: newCupos })
-            .eq('id_Secciones', sectionId)
-            .select();
 
-        if (error) {
-            console.error('Error al actualizar los cupos:', error);
+static async updateSectionCupos(sectionId, newCupos) {
+        try {
+            // Obtener el valor actual de Cupos
+            let { data: section, error: fetchError } = await supabase
+                .from('Secciones')
+                .select('Cupos')
+                .eq('id_Secciones', sectionId)
+                .single();
+
+            if (fetchError) {
+                console.error('Error al obtener el valor actual de Cupos:', fetchError);
+                throw fetchError;
+            }
+
+            // Sumar newCupos al valor actual de Cupos
+            const updatedCupos = section.Cupos + newCupos;
+
+            // Actualizar el campo Cupos con el nuevo valor
+            const { data, error } = await supabase
+                .from('Secciones')
+                .update({ Cupos: updatedCupos })
+                .eq('id_Secciones', sectionId)
+                .select();
+
+            if (error) {
+                console.error('Error al actualizar los cupos:', error);
+                throw error;
+            }
+
+            console.log('Cupos actualizados con éxito:', data);
+            return data.Cupos;
+        } catch (error) {
+            console.error('Error en la actualización:', error);
             throw error;
         }
-
-        console.log('Cupos actualizados con éxito:', data);
-        return data.Cupos;
-    } catch (error) {
-        console.error('Error en la actualización:', error);
-        throw error;
     }
 
 
-}
 
     //Justificacion para cancelar una seccion
     static async justificarCancelacionSeccion(id_Secciones, justificacion) {
