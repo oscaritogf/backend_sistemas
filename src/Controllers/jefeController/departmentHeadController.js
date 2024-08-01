@@ -69,35 +69,6 @@ exports.getAulas = async (req, res) => {
   }
 };
 
-  // Crear secciones
-  // exports.insertSeccions = async (req, res) => {
-  //     try {
-  //         const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos } = req.body;
-  //         const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, };
-  
-  //         // Verificar la existencia de los valores en la base de datos
-  //         await Jefe.existsInTable('empleado', 'numeroEmpleado', data.id_Docentes);
-  //         await Jefe.existsInTable('Aula', 'id_Aula', data.id_Aula);
-  //         await Jefe.existsInTable('Edificios', 'id_Edficios', data.id_Edificios);
-        
-  
-  //         // Verificar duplicados
-  //         await Jefe.isDuplicate(data);
-  
-  //         // Verificar traslape de horarios
-  //         await Jefe.hasTimeConflict(data);
-  
-  //         // Insertar la sección si todas las validaciones pasan
-  //         const seccion = await Jefe.insertSeccions(data);
-  
-  //         res.json({ message: 'Sección creada', data: seccion });
-  
-  //     } catch (error) {
-  //         console.error('Error al crear la sección:', error);
-  //         res.status(400).json({ message: 'Error al crear sección', error: error.message });
-  //     }
-  // };
-
 
   exports.insertSeccions = async (req, res) => {
     try {

@@ -39,6 +39,8 @@ static async getAsignaturasByCode(codigoAsignatura) {
 
     // Insertar secciones
     static async insertSeccions(data) {
+        random = Math.floor(Math.random() * 90000) + 10000;
+
         // Insertar la sección en la tabla 'Secciones'
         const { data: seccion, error } = await supabase
             .from('Secciones')
@@ -50,7 +52,8 @@ static async getAsignaturasByCode(codigoAsignatura) {
                     Hora_inicio: data.Hora_inicio,
                     Hora_Final: data.Hora_Final,
                     Cupos: data.Cupos,
-                    estado: TRUE
+                    estado: TRUE,
+                    contrasenaChat: random
                 }
             ])
             .single();
