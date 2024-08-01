@@ -1,7 +1,8 @@
 const supabase = require('../../config/supabase');
 const bcrypt = require('bcrypt');
 const cloudinary = require('../../config/cloudinary');
-const { sendEmployeeWelcomeEmail } = require('../../utils/emailService');
+const { sendEmployeeWelcomeEmail, sendResetMail } = require('../../utils/emailService');
+const crypto = require('crypto');
 
 class Jefe {
     //Obtener asignaturas
@@ -259,7 +260,7 @@ static async getActiveDocentesByDepartment(id_Departamento) {
     // Paso 1: Obtener los empleados activos del departamento
     const { data: empleados, error: empleadosError } = await supabase
         .from('empleado')
-        .select('usuario, numeroEmpleado')
+        .select('usuario, numeroEmpleado, Usuario(Correo, Nombre)')
         .eq('estado', true)
         .eq('id_Departamento', id_Departamento);
 
@@ -302,7 +303,8 @@ static async getActiveDocentesByDepartment(id_Departamento) {
             return {
                 id_Usuario: e.usuario,
                 numeroEmpleado: e.numeroEmpleado,
-                Nombre_docente: nombreDocente
+                Nombre_docente: nombreDocente,
+                correo: e.Usuario.Correo
             };
         });
 
@@ -444,6 +446,72 @@ static async countStudentsByDepartment() {
     
         return data;
     }
+
+    //generar y guardar el token de reinicio de contraseña
+
+ static async requestPasswordReset(id, email) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expirationTime = new Date();
+  expirationTime.setMinutes(expirationTime.getMinutes() + 2); // Token válido por 2 minutos
+
+  // Guardar el token y la hora de expiración en la base de datos
+  const { data, error } = await supabase
+    .from('Usuario')
+    .update({ reset_token: token, token_expiration: expirationTime.toISOString() })
+    .eq('id', id);
+
+
+
+  if (error) {
+    console.error('Error updating user with reset token:', error);
+    return;
+  }
+
+  // Enviar correo electrónico con el enlace de reinicio (implementa tu función sendResetEmail)
+  await sendResetMail(email, token);
+}
+
+static async Reset(token, newPassword) {
+    const { data, error } = await supabase
+        .from('Usuario')
+        .select('id, token_expiration')    
+        .eq('reset_token', token)
+        .single();
+
+        if (error) {
+            console.error('Error fetching user with reset token:', error);
+            return;
+        }
+
+        const expirationTime = new Date(data.token_expiration);
+
+        const currentTime = new Date().toISOString();
+
+        console.log('current UTC', currentTime);
+
+        if (currentTime > expirationTime.toISOString()) {
+            throw new Error('El token de reinicio ha expirado.');
+            return {message:'Error al cambiar la contraseña' ,error: 'El token de reinicio ha expirado.'};
+        }
+
+        // Actualizar la contraseña del usuario
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const { error: updateError } = await supabase
+            .from('Usuario')
+            .update({ Contrasena: hashedPassword, reset_token: null, token_expiration: null })
+            .eq('id', data.id);
+
+        if (updateError) {
+            console.error('Error updating user password:', updateError);
+            return;
+        }
+        console.log(currentTime);
+        console.log(expirationTime);
+        console.log('Contraseña actualizada con éxito.');
+
+
+
+}
 
 }
 module.exports = Jefe;

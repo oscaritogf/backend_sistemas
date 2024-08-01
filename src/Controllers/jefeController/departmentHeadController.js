@@ -293,3 +293,23 @@ exports.cancelSection = async (req, res) => {
     res.status(500).json({ message: 'Error al cancelar la sección', error: error.message });
   }
 };
+
+exports.activateChange = async (req, res) => {
+  try {
+    const { id, email } = req.body;
+        const data = await Jefe.requestPasswordReset(id, email);
+        res.json({ message: 'Se ha enviado un correo electrónico para restablecer la contraseña', data });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al activar la cancelación', error: error.message });
+  }
+};  
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    const data = await Jefe.Reset(token, password);
+    res.json({ message: 'Contraseña cambiada correctamente', data });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al cambiar la contraseña', error: error.message });
+  }
+};

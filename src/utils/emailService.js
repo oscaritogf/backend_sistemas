@@ -85,6 +85,41 @@ const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, correoInstituci
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const sendRejectionEmail = async (to, nombre) => {
   try {
     await transporter.sendMail({
@@ -124,6 +159,26 @@ const sendFriendRequestEmail = async (userName, userId, friendEmail, friendId) =
   }
 };
 
+const sendResetMail = async (to, token) => {
+  try {
+   await transporter.sendMail({
+    from: '"UNAH" <admisiones71@gmail.com>',
+    to: to,
+    subject: "Recuperación de contraseña",
+    html: `
+      <h1>Recuperación de contraseña</h1>
+      <p>Para recuperar tu contraseña, haz click en el siguiente enlace:</p>
+      <a href="http://localhost:3000/reset/${token}">Recuperar contraseña</a>
+    `
+    });
+    console.log('Correo de recuperación de contraseña enviado');
+  } catch (error) {
+    console.error('Error al enviar correo de recuperación de contraseña:', error);
+  }
+};
 
-module.exports = {sendFriendRequestEmail, sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail };
+
+
+
+module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail, sendResetMail, sendFriendRequestEmail };
 
