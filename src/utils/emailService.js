@@ -86,40 +86,6 @@ const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, correoInstituci
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const sendRejectionEmail = async (to, nombre) => {
   try {
     await transporter.sendMail({
@@ -176,9 +142,6 @@ const sendResetMail = async (to, token) => {
     console.error('Error al enviar correo de recuperación de contraseña:', error);
   }
 };
-
-
-
 
 module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail, sendResetMail, sendFriendRequestEmail };
 
