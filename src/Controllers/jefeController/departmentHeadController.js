@@ -75,7 +75,9 @@ exports.getAulas = async (req, res) => {
         const { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, dias, id_Departamento } = req.body;
         let matriculados = 0;
 
-        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, id_Departamento, matriculados };	
+        let estado = true;
+        let contrasenaChat  = (Math.floor(Math.random() * 90000) + 10000).toString();
+        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, id_Departamento, matriculados, estado, contrasenaChat };	
 
         // Verificar la existencia de los valores en la base de datos
         await Jefe.existsInTable('empleado', 'numeroEmpleado', id_Docentes);
@@ -110,6 +112,8 @@ exports.getAulas = async (req, res) => {
         if (dias.length === 1 && horasDiferencia !== uv) {
             throw new Error(`La diferencia entre la hora de inicio y la hora de finalización (${horasDiferencia} horas) debe ser igual a las unidades valorativas (${uv} horas) cuando se asigna a un solo día.`);
         }
+
+      
 
         // Insertar la sección y obtener el ID de la nueva sección
         const { data: seccion, error: insertError } = await supabase

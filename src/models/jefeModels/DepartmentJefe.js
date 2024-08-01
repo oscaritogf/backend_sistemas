@@ -39,7 +39,8 @@ static async getAsignaturasByCode(codigoAsignatura) {
 
     // Insertar secciones
     static async insertSeccions(data) {
-        random = Math.floor(Math.random() * 90000) + 10000;
+        //numero aleatorio para la contraseña del chat
+        randomPass = (Math.floor(Math.random() * 90000) + 10000).toString();
 
         // Insertar la sección en la tabla 'Secciones'
         const { data: seccion, error } = await supabase
@@ -52,8 +53,8 @@ static async getAsignaturasByCode(codigoAsignatura) {
                     Hora_inicio: data.Hora_inicio,
                     Hora_Final: data.Hora_Final,
                     Cupos: data.Cupos,
-                    estado: TRUE,
-                    contrasenaChat: random
+                    estado: true,
+                    contrasenaChat: randomPass
                 }
             ])
             .single();
