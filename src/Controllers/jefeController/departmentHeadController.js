@@ -140,6 +140,34 @@ exports.getAulas = async (req, res) => {
             }
         }
 
+        // crear un grupo en cometchat para la seccion
+        const url = `${process.env.COMETCHAT_BASE_URL}/groups`;
+        const options = {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json',
+            apikey: process.env.COMETCHAT_API_KEY
+          },
+          body: JSON.stringify({
+            type: 'password',
+            guid: `${codigoAsignatura}${Hora_inicio}${contrasenaChat}`,
+            name: `${codigoAsignatura}-${Hora_inicio}`,
+            password: contrasenaChat,
+            description: `Esta es el grupo de la clase ${codigoAsignatura}-${Hora_inicio}`,
+            owner: id_Docentes,
+          })
+        };
+
+        fetch(url, options)
+          .then(res => res.json())
+          .then(json => console.log(json))
+          .catch(err => console.error('error al crear el chat grupal de la seccion:' + err));
+
+
+
+
+
         res.json({ message: 'Sección creada y días asignados', data: seccion, asignatura: nombre });
 
     } catch (error) {
