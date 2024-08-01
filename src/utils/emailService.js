@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const Admin = require ('../models/Admin')
+
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',  
@@ -102,5 +104,26 @@ const sendRejectionEmail = async (to, nombre) => {
   }
 };
 
-module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail };
+const sendFriendRequestEmail = async (userName, userId, friendEmail, friendId) => {
+  try {
+    const acceptUrl = `http://localhost:3000/api/student/aceptarSolicitud?userId=${userId}&friendId=${friendId}`;
+    
+    await transporter.sendMail({
+      from: '"Solicitud Amistad Universidad" <garcia152511@gmail.com>',
+      to: friendEmail,
+      subject: "Tienes una nueva solicitud de amistad",
+      html: `
+        <h1>Nueva solicitud de amistad!</h1>
+        <p>${userName} te ha enviado una solicitud de amistad.</p>
+        <a href="${acceptUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #007bff; text-decoration: none; border-radius: 5px;">Aceptar</a>
+      `
+    });
+    console.log('Correo de solicitud de amistad enviado');
+  } catch (error) {
+    console.error('Error al enviar correo de solicitud de amistad:', error);
+  }
+};
+
+
+module.exports = {sendFriendRequestEmail, sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail };
 

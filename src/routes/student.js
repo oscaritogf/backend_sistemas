@@ -11,4 +11,9 @@ router.put('/perfil/:id_Usuario', upload.fields([{ name: 'Fotografia1' }, { name
 router.get('/perfil/:id_Usuario', studentController.getProfile);
 router.put('/:numeroCuenta',upload.single('Imagen'), studentController.updateEstudiante);
 
+router.post('/enviarSolicitud', studentController.enviarSolicitud);
+// router.post('/aceptarSolicitud', studentController.aceptarSolicitud);
+
+router.get('/aceptarSolicitud', studentController.aceptarSolicitud);
+
 module.exports = router;

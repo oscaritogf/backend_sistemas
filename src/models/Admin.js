@@ -1065,6 +1065,12 @@ static async getCancelacionExcepcionalById(id) {
   return data;
 }
 
+
+
+
+
+
+
 static async crearUsuarioParaCometChat(uid, name) {
   try {
     const response = await fetch(`${process.env.COMETCHAT_BASE_URL}/users`, {
@@ -1088,7 +1094,6 @@ static async crearUsuarioParaCometChat(uid, name) {
     console.error('Error al crear un usuario para CometChat:', error.message);
   }
 };
-
 
 };  
 

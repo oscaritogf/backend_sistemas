@@ -1,5 +1,6 @@
 const Student = require('../models/Student');
 const supabase = require('../config/supabase');
+const { sendFriendRequestEmail } = require('../utils/emailService');
 
 exports.getData = async (req, res) => {
     try {
@@ -60,3 +61,57 @@ exports.updateEstudiante = async (req, res) => {
         res.status(500).json({ message: 'Error al actualizar estudiante', error: error.message });
     };
 };
+
+exports.enviarSolicitud = async (req, res) => {
+    const { friendEmail, friendId, userName, userId } = req.body;
+
+    try {
+        await sendFriendRequestEmail(userName, userId, friendEmail, friendId);
+        res.json({ message: 'Solicitud de amistad enviada', data: { friendEmail, friendId, userName, userId } });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al enviar solicitud de amistad', error: error.message });
+    };
+}
+
+exports.aceptarSolicitud = async (req, res) => {
+    const { userId, friendId } = req.query;
+  
+    if (!userId || !friendId) {
+      return res.status(400).json({ message: 'Faltan parámetros' });
+    }
+  
+    try {
+      // Llamar a la función para agregar el amigo en CometChat
+      await newFriendCometChat(userId, friendId);
+  
+      // Enviar una respuesta de éxito
+      res.redirect('http://localhost:5173/solicitudAceptada');
+    //   res.json({ message: 'Solicitud de amistad aceptada' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al aceptar solicitud de amistad', error: error.message });
+    }
+  };
+  
+  const newFriendCometChat = async(userId, friendId) => {
+    try {
+      const response = await fetch(`${process.env.COMETCHAT_BASE_URL}/users/${userId}/friends`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          apiKey: process.env.COMETCHAT_API_KEY,
+        },
+        body: JSON.stringify({ accepted: [ friendId ] }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Error al agregar amigo en CometChat: ${errorData.message}`);
+      }
+  
+      const data = await response.json();
+      console.log('Amigo agregado en COMETCHAT exitosamente:', data);
+    } catch (error) {
+      console.error('Error al agregar amigo en CometChat:', error.message);
+    }
+  }; 
