@@ -151,8 +151,8 @@ exports.getAulas = async (req, res) => {
           },
           body: JSON.stringify({
             type: 'password',
-            guid: `${codigoAsignatura}${Hora_inicio}${contrasenaChat}`,
-            name: `${codigoAsignatura}-${Hora_inicio}`,
+            guid: `${codigoAsignatura}-${contrasenaChat}`,
+            name: `${codigoAsignatura}`,
             password: contrasenaChat,
             description: `Esta es el grupo de la clase ${codigoAsignatura}-${Hora_inicio}`,
             owner: id_Docentes,
