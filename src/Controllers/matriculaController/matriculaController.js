@@ -294,7 +294,7 @@ exports.cancelarMatricula = async (req, res) => {
 };
 
 exports.listarAsignaturasMatriculadas = async (req, res) => {
-  const { id_estudiante } = req.params;
+  const { id_estudiante} = req.params;
   try {
     const asignaturas = await listarAsignaturasMatriculadas(id_estudiante);
     res.json(asignaturas);
