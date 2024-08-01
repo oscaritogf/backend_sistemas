@@ -277,7 +277,7 @@ exports.updateSectionCupos = async (req, res) => {
 
 exports.cancelSection = async (req, res) => {
   try {
-    const { id_Seccion, justificacion } = req.body;
+    const { id_Seccion } = req.body;
 
     // Verificar que id_Seccion sea un número válido
     if (typeof id_Seccion !== 'number' || isNaN(id_Seccion)) {
@@ -285,7 +285,7 @@ exports.cancelSection = async (req, res) => {
     }
 
     // Llamar a la función de cancelación
-    const data = await Jefe.justificarCancelacionSeccion(id_Seccion, justificacion);
+    const data = await Jefe.justificarCancelacionSeccion(id_Seccion );
 
     // Enviar respuesta con éxito
     res.json({ message: 'Sección cancelada correctamente', data });

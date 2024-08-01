@@ -449,20 +449,31 @@ static async updateSectionCupos(sectionId, newCupos) {
 
 
     //Justificacion para cancelar una seccion
-    static async justificarCancelacionSeccion(id_Secciones, justificacion) {
-        // Actualizar la sección con la justificación de cancelación
-        const { data, error } = await supabase
+    static async justificarCancelacionSeccion(id_Secciones) {
+        // Primero, elimina los registros de la tabla 'seccion_dias' relacionados con 'id_Secciones'
+        const { error: errorSeccionDias } = await supabase
+            .from('seccion_dias')
+            .delete()
+            .eq('id_seccion', id_Secciones);
+    
+        if (errorSeccionDias) {
+            throw errorSeccionDias;
+        }
+    
+        // Luego, elimina el registro de la tabla 'Secciones'
+        const { data, error: errorSecciones } = await supabase
             .from('Secciones')
-            .update({Justificacion: justificacion, estado: false})
+            .delete()
             .eq('id_Secciones', id_Secciones)
             .single();
     
-        if (error) {
-            throw error;
+        if (errorSecciones) {
+            throw errorSecciones;
         }
     
         return data;
     }
+    
 
     //generar y guardar el token de reinicio de contraseña
 
