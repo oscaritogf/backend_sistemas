@@ -182,11 +182,13 @@ class Admin {
       id_Usuario: usuario.id,
       Fotografia1: userData.Imagen
     })
+
+    await this.crearUsuarioParaCometChat(numeroEmpleado, `${nombre} ${apellido}`);
+    console.log('Empleado creado en cometchat: ', nombre, apellido);
   
     // Enviar correo con credenciales
     await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
     
-    await this.crearUsuarioParaCometChat(numeroEmpleado, `${nombre} ${apellido}`);
   
     return { ...usuario, numeroEmpleado, roles, id_Centros, id_Departamento };
   }
