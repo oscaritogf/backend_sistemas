@@ -56,7 +56,7 @@ const sendEmployeeWelcomeEmail = async (to, nombre, numeroEmpleado, contrasena) 
   } catch (error) {
     console.error('Error al enviar correo de bienvenida al empleado:', error);
     throw error;
-  }
+ }
 };
 
 const sendStudentWelcomeEmail = async (to, nombre, numeroCuenta, correoInstitucional, contrasena) => {
@@ -143,5 +143,32 @@ const sendResetMail = async (to, token) => {
   }
 };
 
-module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail, sendResetMail, sendFriendRequestEmail };
+const sendEmailtoEmployee = async (to, nombre, numeroEmpleado, contrasena) => {
+  try {
+    await transporter.sendMail({
+      from: '"Departamento de  Admisiones UANH" <garcia152511@gmail.com>',
+      to: to,
+      subject: "Bienvenido - Credenciales de acceso",
+      html: `
+        <h1>¡Bienvenido ${nombre}!</h1>
+        <p>Has sido registrado exitosamente como estudiante en nuestro sistema.</p>
+        <p>Tus credenciales de acceso son:</p>
+        <ul>
+          <li>Número de cuenta: ${numeroCuenta}</li>
+          <li>Contraseña: ${contrasena}</li>
+          <li>Correo Institucional: ${correoInstitucional}</li>
+        </ul>
+        <p>Por favor, cambia tu contraseña después del primer inicio de sesión.</p>
+        <p>Si tienes alguna pregunta, no dudes en contactar al departamento de Admisiones.</p>
+      `
+    });
+    console.log('Correo de bienvenida enviado al nuevo estudiante');
+  } catch (error) {
+    console.error('Error al enviar correo de bienvenida al estudiante:', error);
+    throw error;
+  }
+};
+
+
+module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail, sendResetMail, sendFriendRequestEmail, sendEmailtoEmployee };
 
