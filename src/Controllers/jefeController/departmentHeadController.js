@@ -82,8 +82,23 @@ exports.getAulas = async (req, res) => {
 
         // Verificar la existencia de los valores en la base de datos
         await Jefe.existsInTable('empleado', 'numeroEmpleado', id_Docentes);
+        await Jefe.existsInTable('Edificios', 'id_Edficios', id_Edificios); // no modificar esta linea, por la...
         await Jefe.existsInTable('Aula', 'id_Aula', id_Aula);
-        await Jefe.existsInTable('Edificios', 'id_Edficios', id_Edificios);
+        
+        const { data: aula, error: aulaError } = await supabase
+            .from('Aula')
+            .select('Capacidad')
+            .eq('id_Aula', id_Aula)
+            .single();
+
+        if (Cupos === '') {
+            throw new Error('El número de cupos es requerido.');
+        }
+
+        if(Cupos < 1 || Cupos > aula.Capacidad){
+          throw new Error(`El número de cupos debe ser mayor a 0 y menor o igual a la capacidad del aula: ${aula.Capacidad}.`);
+        }
+     
 
         // Verificar duplicados
         await Jefe.isDuplicate(data);
@@ -334,3 +349,14 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: 'Error al cambiar la contraseña', error: error.message });
   }
 };
+
+exports.updateSection = async (req, res) => {
+  try {
+    const data =  {  id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, dias } = req.body;
+    const seccion = await Jefe.updateSeccion(data);
+    res.json({ message: 'Seccion actualizada correctamente', data: seccion });
+  }catch (error) {
+    res.status(500).json({ message: 'Error al actualizar seccion', error: error.message });
+  }
+
+};  
