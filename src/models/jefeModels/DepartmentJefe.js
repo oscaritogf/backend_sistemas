@@ -102,7 +102,7 @@ static async getAsignaturasByCode(codigoAsignatura) {
             .eq(column, value)
             .single();
         if (error || !data) {
-            throw new Error(`El valor ${value} no existe en la tabla ${table}.`);
+            throw new Error(`Ingresa un valor en el campo para ${table}.`);
         }
     }
 
@@ -134,40 +134,49 @@ static async isDuplicate(data) {
     }
 }
 
-    // Verificar si hay traslape de horarios
-    static async hasTimeConflict(data) {
-        const { id_Docentes, Hora_inicio, Hora_Final, id_Aula, id_Edificios } = data;
-    
-        // Convertir las horas a objetos Date para una comparación más precisa
-        const horaInicio = new Date(`1970-01-01T${Hora_inicio}Z`);
-        const horaFinal = new Date(`1970-01-01T${Hora_Final}Z`);
-    
-        // Obtener las secciones existentes del docente que se solapan en tiempo
-        const { data: secciones, error } = await supabase
-            .from('Secciones')
-            .select('id_Secciones, Hora_inicio, Hora_Final, id_Aula, id_Edificios')
-            .eq('id_Docentes', id_Docentes)
-            .neq('id_Aula', id_Aula) // Opcional, si no deseas considerar secciones en el mismo aula
-            .neq('id_Edificios', id_Edificios) // Opcional, si no deseas considerar secciones en el mismo edificio
-            .filter('Hora_inicio', 'lte', Hora_Final)
-            .filter('Hora_Final', 'gte', Hora_inicio);
-    
-        if (error) {
-            throw error;
-        }
-    
-        // Verificar si hay conflictos en los horarios
-        const conflict = secciones.some(sec => {
-            const secInicio = new Date(`1970-01-01T${sec.Hora_inicio}Z`);
-            const secFinal = new Date(`1970-01-01T${sec.Hora_Final}Z`);
-    
-            return horaInicio < secFinal && horaFinal > secInicio;
-        });
-    
-        if (conflict) {
-            throw new Error('El docente tiene un conflicto de horario.');
-        }
+   // Verificar si hay traslape de horarios
+static async hasTimeConflict(data) {
+    const { id_Docentes, Hora_inicio, Hora_Final, id_Aula, id_Edificios } = data;
+
+    // Validar que los campos Hora_inicio y Hora_Final no estén vacíos
+    if (!Hora_inicio || !Hora_Final) {
+        throw new Error('Los campos de Hora Inicio y Hora Final son obligatorios.');
     }
+
+    // Validar que Hora_Final sea mayor que Hora_inicio
+    const horaInicio = new Date(`1970-01-01T${Hora_inicio}Z`);
+    const horaFinal = new Date(`1970-01-01T${Hora_Final}Z`);
+    if (horaFinal <= horaInicio) {
+        throw new Error('La Hora Final debe ser mayor que la Hora Inicio.');
+    }
+
+    // Obtener las secciones existentes del docente que se solapan en tiempo
+    const { data: secciones, error } = await supabase
+        .from('Secciones')
+        .select('id_Secciones, Hora_inicio, Hora_Final, id_Aula, id_Edificios')
+        .eq('id_Docentes', id_Docentes)
+        .neq('id_Edificios', id_Edificios) // Opcional, si no deseas considerar secciones en el mismo edificio
+        .neq('id_Aula', id_Aula) // Opcional, si no deseas considerar secciones en el mismo aula
+        .filter('Hora_inicio', 'lte', Hora_Final)
+        .filter('Hora_Final', 'gte', Hora_inicio);
+
+    if (error) {
+        throw error;
+    }
+
+    // Verificar si hay conflictos en los horarios
+    const conflict = secciones.some(sec => {
+        const secInicio = new Date(`1970-01-01T${sec.Hora_inicio}Z`);
+        const secFinal = new Date(`1970-01-01T${sec.Hora_Final}Z`);
+
+        return horaInicio < secFinal && horaFinal > secInicio;
+    });
+
+    if (conflict) {
+        throw new Error('El docente tiene un conflicto de horario.');
+    }
+}
+
     
 
 

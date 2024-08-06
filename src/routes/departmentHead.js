@@ -8,7 +8,7 @@ const { checkRole } = require('../middleware/roleCheck');
 router.get('/asignaturas', departmentHeadController.getAsignaturas);
 router.get('/asignaturas/:id_Departamento', departmentHeadController.getAsignaturasByDepartamento);
 router.get('/edificios/:id_Centro', departmentHeadController.getEdificiosByCentro);
-router.post('/crear/secciones', departmentHeadController.insertSeccions);
+router.post('/Nsecciones', departmentHeadController.insertSeccions);
 router.get('/secciones', departmentHeadController.getSecciones);
 router.get('/secciones/:codigo', departmentHeadController.getSeccionesByAsignatura);
 router.get('/docentes', departmentHeadController.getDocentes);
