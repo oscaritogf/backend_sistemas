@@ -1,6 +1,6 @@
 
 //src/controllers/matriculaController/matriculaController.js
-const supabase = require('../../config/supabase');
+// const supabase = require('../../config/supabase');
 /*const supabase = require('../../config/supabase');
 const { getDepartamentos, getAsignaturasByDepartamento, getSeccionesByAsignatura } = require('../../models/matricula/Matricula');
 
@@ -263,7 +263,6 @@ exports.getAsignaturasEstudiante = async (req, res) => {
 };
 
 exports.matricular = async (req, res) => {
-  const { id_estudiante, id_seccion } = req.body;
   const { id_estudiante, id_seccion } = req.body;
   try {
     const resultado = await matricularAsignatura(id_estudiante, id_seccion);

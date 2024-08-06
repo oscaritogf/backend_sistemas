@@ -438,7 +438,7 @@ exports.crearUsuariosDesdeJson = async (req, res) => {
                 correo_Institucional: correoInstitucional,
                 usuario: parseInt(idUsuario),
                 id_Departamento: depto,
-                id_Centro: Codigo
+                id_Centros: Codigo
               },
             ]);
 
