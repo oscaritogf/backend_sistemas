@@ -541,5 +541,113 @@ static async Reset(token, newPassword) {
 
 }
 
+static async updateSeccion(data) {
+    const { id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, dias } = data;
+
+    // Validar que la Hora_Final sea mayor que la Hora_inicio
+    const newStartTime = new Date(`1970-01-01T${Hora_inicio}`);
+    const newEndTime = new Date(`1970-01-01T${Hora_Final}`);
+    if (newEndTime <= newStartTime) {
+        throw new Error("La Hora_Final debe ser mayor que la Hora_inicio");
+    }
+
+    // Obtener los datos de la sección existente
+    const { data: existingSection, error: existingSectionError } = await supabase
+        .from('Secciones')
+        .select('Hora_inicio, Hora_Final')
+        .eq('id_Secciones', id_Secciones)
+        .single();
+
+    if (existingSectionError) {
+        throw existingSectionError;
+    }
+
+    // Calcular la diferencia de horas original
+    const originalStartTime = new Date(`1970-01-01T${existingSection.Hora_inicio}`);
+    const originalEndTime = new Date(`1970-01-01T${existingSection.Hora_Final}`);
+    const originalHourDifference = (originalEndTime - originalStartTime) / (1000 * 60 * 60); // Diferencia en horas original
+
+    // Calcular la diferencia de horas nueva
+    const newHourDifference = (newEndTime - newStartTime) / (1000 * 60 * 60); // Diferencia en horas nueva
+
+    // Obtener la cantidad de días existentes para la sección
+    const { data: existingDays, error: existingDaysError } = await supabase
+        .from('seccion_dias')
+        .select('id_dia')
+        .eq('id_seccion', id_Secciones);
+
+    if (existingDaysError) {
+        throw existingDaysError;
+    }
+
+    const numExistingDays = existingDays.length;
+
+    // Verificar si la cantidad de días es diferente
+    if (dias.length !== numExistingDays) {
+        if (numExistingDays === 1 && dias.length > 1) {
+            // Cambiar de un día a varios días
+            if (dias.length !== originalHourDifference) {
+                throw new Error(`La cantidad de días nuevos (${dias.length}) debe ser igual a la diferencia de horas original (${originalHourDifference}).`);
+            }
+
+            const newHourPerDay = originalHourDifference / dias.length;
+            if (newHourPerDay * dias.length !== originalHourDifference) {
+                throw new Error(`La nueva diferencia de horas por día (${newHourPerDay}) multiplicada por la cantidad de días nuevos (${dias.length}) debe ser igual a la diferencia de horas original (${originalHourDifference}).`);
+            }
+        } else if (dias.length !== numExistingDays) {
+            // Cambiar de varios días a uno o diferente cantidad de días
+            if (!(dias.length === 1 && newHourDifference >= numExistingDays)) {
+                throw new Error(`La cantidad de días no coincide con la cantidad original y la diferencia de horas no es suficiente para compensar. Se requiere una diferencia de al menos ${numExistingDays} horas.`);
+            }
+        }
+    }
+
+    // Verificar si hay traslape de horarios
+    await Jefe.hasTimeConflict(data);
+
+    // Actualizar la sección con los nuevos datos
+    const { data: seccion, error } = await supabase
+        .from('Secciones')
+        .update({
+            id_Docentes,
+            id_Aula,
+            id_Edificios,
+            Hora_inicio,
+            Hora_Final
+        })
+        .eq('id_Secciones', id_Secciones)
+        .single();
+
+    if (error) {
+        throw error;
+    }
+
+    // Eliminar los días existentes para la sección
+    const { error: deleteError } = await supabase
+        .from('seccion_dias')
+        .delete()
+        .eq('id_seccion', id_Secciones);
+
+    if (deleteError) {
+        throw deleteError;
+    }
+
+    // Insertar los nuevos días
+    const insertData = dias.map(dia => ({
+        id_seccion: id_Secciones,
+        id_dia: dia
+    }));
+
+    const { error: insertError } = await supabase
+        .from('seccion_dias')
+        .insert(insertData);
+
+    if (insertError) {
+        throw insertError;
+    }
+
+    return seccion;
+}
+
 }
 module.exports = Jefe;

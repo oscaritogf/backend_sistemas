@@ -326,3 +326,14 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: 'Error al cambiar la contraseña', error: error.message });
   }
 };
+
+exports.updateSection = async (req, res) => {
+  try {
+    const data =  {  id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, dias } = req.body;
+    const seccion = await Jefe.updateSeccion(data);
+    res.json({ message: 'Seccion actualizada correctamente', data: seccion });
+  }catch (error) {
+    res.status(500).json({ message: 'Error al actualizar seccion', error: error.message });
+  }
+
+};  

@@ -24,5 +24,6 @@ router.put('/cupos', departmentHeadController.updateSectionCupos);
 router.delete('/just', departmentHeadController.cancelSection);
 router.post('/rqspass', departmentHeadController.activateChange);
 router.post('/passCgd', departmentHeadController.changePassword);
+router.post('/useccion', departmentHeadController.updateSection);
 
 module.exports = router;
