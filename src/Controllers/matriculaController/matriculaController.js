@@ -1,9 +1,13 @@
 
 //src/controllers/matriculaController/matriculaController.js
+const supabase = require('../../config/supabase');
 /*const supabase = require('../../config/supabase');
 const { getDepartamentos, getAsignaturasByDepartamento, getSeccionesByAsignatura } = require('../../models/matricula/Matricula');
 
 
+const {getDepartamentoEstudiante, getAsignaturasPorDepartamento, cancelarMatricula,
+  listarAsignaturasMatriculadas, procesarListaEspera, listarEstudiantesEnEspera,
+  listarClasesEnEspera} = require('../../models/matricula/Matricula');
 const {getDepartamentoEstudiante, getAsignaturasPorDepartamento, cancelarMatricula,
   listarAsignaturasMatriculadas, procesarListaEspera, listarEstudiantesEnEspera,
   listarClasesEnEspera} = require('../../models/matricula/Matricula');
@@ -12,6 +16,8 @@ const {
  
   matricularAsignatura
 } = require('../../models/matricula/Matricula');
+
+
 
 
 exports.getDepartamentos = async (req, res) => {
@@ -258,6 +264,7 @@ exports.getAsignaturasEstudiante = async (req, res) => {
 
 exports.matricular = async (req, res) => {
   const { id_estudiante, id_seccion } = req.body;
+  const { id_estudiante, id_seccion } = req.body;
   try {
     const resultado = await matricularAsignatura(id_estudiante, id_seccion);
     
@@ -271,6 +278,10 @@ exports.matricular = async (req, res) => {
   } catch (error) {
     if (error.message === 'Ya tiene esta asignatura matriculada') {
       res.status(400).json({ error: 'Ya tiene esta clase matriculada' });
+    } else if (error.message === 'La sección no pertenece al departamento del estudiante') {
+      res.status(400).json({ error: 'La sección no corresponde al departamento del estudiante' });
+    } else if (error.message === 'Sección no encontrada') {
+      res.status(404).json({ error: 'Sección no encontrada' });
     } else if (error.message === 'La sección no pertenece al departamento del estudiante') {
       res.status(400).json({ error: 'La sección no corresponde al departamento del estudiante' });
     } else if (error.message === 'Sección no encontrada') {
