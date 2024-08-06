@@ -190,6 +190,17 @@ static async isDuplicate(data) {
     return secciones;
 }
 
+static async getSeccionesFiltro(id_Secciones) {
+    const { data: secciones, error } = await supabase
+        .from('Secciones')
+        .select('*')
+        .eq('id_Secciones', id_Secciones)
+        .eq('estado', true);
+        
+    return secciones;
+}
+
+
     //Obtener edificios
     static async getEdificios() {
         const { data: edificios, error } = await supabase

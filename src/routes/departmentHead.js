@@ -11,6 +11,9 @@ router.get('/edificios/:id_Centro', departmentHeadController.getEdificiosByCentr
 router.post('/crear/secciones', departmentHeadController.insertSeccions);
 router.get('/secciones', departmentHeadController.getSecciones);
 router.get('/secciones/:codigo', departmentHeadController.getSeccionesByAsignatura);
+//traer la seccion para modificar
+router.get('/seccionesFiltro/:id_Secciones', departmentHeadController.getSeccionesFiltro);
+
 router.get('/docentes', departmentHeadController.getDocentes);
 router.get('/aulas/:idEdificio', departmentHeadController.getAulasByEdificio);
 router.get('/aulas', departmentHeadController.getAulas);
