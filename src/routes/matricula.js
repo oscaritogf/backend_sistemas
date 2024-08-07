@@ -14,6 +14,7 @@ router.post('/proceder-matricula', matriculaController.matricular);
 
 // Ruta para cancelar matrícula
 router.post('/cancelar', matriculaController.cancelarMatricula);
+router.post('/lista-espera/cancelar', matriculaController.cancelarMatriculaEnEspera);
 
 // Ruta para listar asignaturas matriculadas
 router.get('/estudiantes/:id_estudiante/asignatura', matriculaController.listarAsignaturasMatriculadas);

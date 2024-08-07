@@ -462,6 +462,20 @@ const cancelarMatricula = async (id_estudiante, id_seccion) => {
     return { message: 'Matrícula cancelada con éxito' };
   };
  
+  const cancelarMatriculaEnEspera = async (id_estudiante, id_seccion) => {
+    const { data, error } = await supabase
+      .from('lista_espera')
+      .delete()
+      .eq('id_estudiante', id_estudiante)
+      .eq('id_seccion', id_seccion);
+
+    if (error) throw error;
+    if (data && data.length === 0) {
+      throw new Error('No estás en la lista de espera para esta sección');
+    }
+    return { message: 'Matrícula cancelada con éxito' };
+  };
+
 
 const listarAsignaturasMatriculadas = async (id_usuario) => {
   // Obtén el id_estudiante a partir del id_usuario
@@ -580,6 +594,7 @@ exports.listarAsignaturasMatriculadas = async (req, res) => {
     getSeccionById,
 
     cancelarMatricula,
+    cancelarMatriculaEnEspera,
     listarAsignaturasMatriculadas,
 
    

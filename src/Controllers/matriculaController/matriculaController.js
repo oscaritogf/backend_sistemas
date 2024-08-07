@@ -7,6 +7,7 @@ const {
   getDepartamentoEstudiante, 
   getAsignaturasPorDepartamento, 
   cancelarMatricula, 
+  cancelarMatriculaEnEspera,
   listarAsignaturasMatriculadas, 
   procesarListaEspera, 
   listarEstudiantesEnEspera, 
@@ -130,6 +131,16 @@ exports.cancelarMatricula = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.cancelarMatriculaEnEspera = async (req, res) => {
+  const { id_estudiante, id_seccion } = req.body;
+  try {
+    const resultado = await cancelarMatriculaEnEspera(id_estudiante, id_seccion);
+    res.json(resultado);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
 
 exports.listarAsignaturasMatriculadas = async (req, res) => {
   const { id_estudiante} = req.params;
