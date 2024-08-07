@@ -267,7 +267,7 @@ exports.matricular = async (req, res) => {
   try {
     const resultado = await matricularAsignatura(id_estudiante, id_seccion);
     
-    if (resultado.message === 'Matricula con exito') {
+    if (resultado.message === 'Matricula con éxito') {
       res.json({ message: 'Matrícula realizada con éxito', data: resultado.data });
     } else if (resultado.message === 'Añadido a la lista de espera') {
       res.status(202).json({ message: 'Añadido a la lista de espera', data: resultado.data });
