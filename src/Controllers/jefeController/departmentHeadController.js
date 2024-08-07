@@ -244,6 +244,17 @@ exports.getActiveDocentesByDepartment = async (req, res) => {
     }
   };
 
+  exports.getDiasBySeccion = async (req, res) => {
+    const {id_seccion} = req.params;
+    try {
+      const diasSeccion = await Jefe.getDiasBySeccion(id_seccion);
+      res.json({ message: `Lista de secciones de la asignatura ${id_seccion}`, data: diasSeccion });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de secciones de la asignatura ${id_seccion}', error: error.message });
+    }
+  };
+
+
   exports.getSeccionesFiltro = async (req, res) => {
     const {id_Secciones} = req.params;
     try {

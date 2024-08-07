@@ -199,6 +199,15 @@ static async hasTimeConflict(data) {
     return secciones;
 }
 
+static async getDiasBySeccion(id_seccion) {
+    const { data: diasSeccion, error } = await supabase
+        .from('seccion_dias')
+        .select('id_dia')
+        .eq('id_seccion', id_seccion)
+        
+    return diasSeccion;
+}
+
 static async getSeccionesFiltro(id_Secciones) {
     const { data: secciones, error } = await supabase
         .from('Secciones')

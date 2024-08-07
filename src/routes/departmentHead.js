@@ -14,6 +14,8 @@ router.get('/secciones/:codigo', departmentHeadController.getSeccionesByAsignatu
 //traer la seccion para modificar
 router.get('/seccionesFiltro/:id_Secciones', departmentHeadController.getSeccionesFiltro);
 
+router.get('/dias/:id_seccion', departmentHeadController.getDiasBySeccion);
+
 router.get('/docentes', departmentHeadController.getDocentes);
 router.get('/aulas/:idEdificio', departmentHeadController.getAulasByEdificio);
 router.get('/aulas', departmentHeadController.getAulas);
