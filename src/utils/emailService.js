@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
-const Admin = require ('../models/Admin')
+const Admin = require ('../models/Admin');
+const supabase = require('../config/supabase');
 
 
 const transporter = nodemailer.createTransport({
@@ -169,6 +170,75 @@ const sendEmailtoEmployee = async (to, nombre, numeroEmpleado, contrasena) => {
   }
 };
 
+const sendNotesNtfy = async (id_Secciones, numeroCuenta, id_Asignaturas) => {
+  try {
+    // Obtener datos de la asignatura
+    const { data: dataAsignatura, error: errorAsignatura } = await supabase
+      .from('Asignaturas')
+      .select('nombre')
+      .eq('codigo', id_Asignaturas)
+      .single();
 
-module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail, sendResetMail, sendFriendRequestEmail, sendEmailtoEmployee };
+    if (errorAsignatura) {
+      throw errorAsignatura;
+    }
+
+    const nombreAsignatura = dataAsignatura ? dataAsignatura.nombre : 'Asignatura desconocida';
+
+    // Obtener datos del estudiante
+    const { data: dataEstudiante, error: errorEstudiante } = await supabase
+      .from('estudiante')
+      .select('usuario')
+      .eq('numeroCuenta', numeroCuenta)
+      .single();
+
+    if (errorEstudiante) {
+      throw errorEstudiante;
+    }
+
+    if (!dataEstudiante) {
+      throw new Error(`No se encontró estudiante con número de cuenta ${numeroCuenta}`);
+    }
+
+    // Obtener datos del usuario
+    const { data: dataUsuario, error: errorUsuario } = await supabase
+      .from('Usuario')
+      .select('Nombre, Correo')
+      .eq('id', dataEstudiante.usuario)
+      .single();
+
+    if (errorUsuario) {
+      throw errorUsuario;
+    }
+
+    if (!dataUsuario) {
+      throw new Error(`No se encontró usuario para el estudiante con número de cuenta ${numeroCuenta}`);
+    }
+
+    const nombre = dataUsuario.Nombre;
+    const correo = dataUsuario.Correo;
+
+    // Enviar el correo
+    await transporter.sendMail({
+      from: '"UANH" <garcia152511@gmail.com>',
+      to: correo,
+      subject: "Notas de la sección",
+      html: `
+        <h1>¡Hola ${nombre}!</h1>
+        <p>Ya se han ingresado las calificaciones de la asignatura ${nombreAsignatura}, sección: ${id_Secciones}.</p>
+        <p>Por favor, revisa tu historial académico para ver tus calificaciones.</p>
+        <p>Si tienes alguna pregunta, no dudes en contactar al departamento de soporte.</p>
+      `
+    });
+
+    console.log('Correo de notificación de calificaciones enviado al estudiante');
+  } catch (error) {
+    console.error('Error al enviar correo de notificación de calificaciones:', error);
+    console.error('Detalles:', { numeroCuenta, id_Secciones, id_Asignaturas });
+    throw error;
+  }
+};
+
+
+module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail, sendResetMail, sendFriendRequestEmail, sendEmailtoEmployee, sendNotesNtfy };
 

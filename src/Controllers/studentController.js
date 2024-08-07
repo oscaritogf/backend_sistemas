@@ -120,7 +120,8 @@ exports.getAllUsers = async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('Usuario')
-            .select('id, Nombre, Apellido, Imagen, empleado(numeroEmpleado), estudiante(numeroCuenta)');
+            .select('id, Nombre, Apellido, Imagen, empleado(numeroEmpleado), estudiante(numeroCuenta), UsuarioRol(id_Rol)');
+            
 
         if (error) {
             throw new Error(error.message);

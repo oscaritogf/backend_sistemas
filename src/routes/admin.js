@@ -40,6 +40,7 @@ router.put('/configuraciones/:id', adminController.actualizarConfiguracion);
 
 router.delete('/configuraciones/:id', adminController.eliminarConfiguracion);
 
+router.post('/proceson', adminController.activateNotas);
 module.exports = router;
 
 //put: http://localhost:3000/api/admin/empleados/1 

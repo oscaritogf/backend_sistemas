@@ -161,7 +161,6 @@ const getDepartamentos = async () => {
   };
   
   
-
   const getDepartamentoEstudiante = async (id_estudiante) => {
     const { data, error } = await supabase
       .from('estudiante')
@@ -287,85 +286,32 @@ const agregarAListaEspera = async (id_estudiante, id_seccion) => {
   return data;
 };
 
-/*
-const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura) => {
-  // Obtener información del estudiante
-  const { data: estudiante, error: errorEstudiante } = await supabase
-    .from('estudiante')
-    .select('id_Departamento')
-    .eq('id', id_estudiante)
-    .single();
 
-  if (errorEstudiante) throw errorEstudiante;
+const verificarRequisitos = async (id_estudiante, codigo_asignatura) => {
+  const { data: requisitos, error: errorRequisitos } = await supabase
+    .from('requisitos_asignaturas')
+    .select('requisito_codigo')
+    .eq('asignatura_codigo', codigo_asignatura);
 
-  const cumpleRequisitos = await verificarRequisitos(id_estudiante, codigo_asignatura);
-  if (!cumpleRequisitos) {
-    throw new Error('No cumple con los requisitos para matricular esta asignatura');
-  }
+  if (errorRequisitos) throw errorRequisitos;
 
-  // Obtener información de la sección
-  const seccion = await getSeccionById(id_seccion);
-  if (!seccion) {
-    throw new Error('Sección no encontrada');
-  }
+  for (let requisito of requisitos) {
+    const { data: matricula, error: errorMatricula } = await supabase
+      .from('matricula')
+      .select('codigoAsignatura')
+      .eq('id_estudiante', id_estudiante)
+      .eq('codigoAsignatura', requisito.requisito_codigo);
 
-  // Verificar que la sección pertenece al mismo departamento que el estudiante
-  if (!verificarPertenenciaDepartamento(seccion, estudiante.id_Departamento)) {
-    throw new Error('La sección no pertenece a tu departamento');
-  }
+    if (errorMatricula) throw errorMatricula;
 
-  // Verificar si ya está matriculado
-  const yaMatriculada = await verificarMatriculaExistente(id_estudiante, seccion.codigoAsignatura);
-  if (yaMatriculada) {
-    throw new Error('Ya tiene esta asignatura matriculada');
-  }
-
-  // Verificar cupos disponibles
-  const hayCupos = await verificarCuposDisponibles(id_seccion);
-  if (!hayCupos) {
-    return await agregarAListaEspera(id_estudiante, id_seccion);
-  }
-
-  // Obtener las secciones en las que el estudiante ya está matriculado
-  const { data: seccionesMatriculadas, error: errorSeccionesMatriculadas } = await supabase
-    .from('matricula')
-    .select(`
-      Secciones (
-        Hora_inicio,
-        Hora_Final
-      )
-    `)
-    .eq('id_estudiante', id_estudiante);
-
-  if (errorSeccionesMatriculadas) throw errorSeccionesMatriculadas;
-
-  // Verificar si hay traslape de horarios
-  for (let seccionMatriculada of seccionesMatriculadas) {
-    if (
-      (seccion.Hora_inicio < seccionMatriculada.Secciones.Hora_Final && seccion.Hora_inicio >= seccionMatriculada.Secciones.Hora_inicio) ||
-      (seccion.Hora_Final > seccionMatriculada.Secciones.Hora_inicio && seccion.Hora_Final <= seccionMatriculada.Secciones.Hora_Final)
-    ) {
-      throw new Error('Hay un traslape de horarios con otra asignatura ya matriculada');
+    if (matricula.length === 0) {
+      return false; // No cumple con un requisito
     }
   }
 
-  // Realizar la matrícula
-  const { data, error } = await supabase
-    .from('matricula')
-    .insert([
-      {
-        id_estudiante,
-        id_seccion,
-        codigoAsignatura: seccion.codigoAsignatura,
-        fecha: new Date()
-      }
-    ])
-    .select();
-
-  if (error) throw error;
-  return { message: 'Matrícula con éxito', data: data[0] };
+  return true; // Cumple con todos los requisitos
 };
-*/
+
 
 const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura) => {
   // Obtener información del estudiante
@@ -388,9 +334,19 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
     throw new Error('Sección no encontrada');
   }
 
-  // Verificar que la sección pertenece al mismo departamento que el estudiante
-  if (!verificarPertenenciaDepartamento(seccion, estudiante.id_Departamento)) {
-    throw new Error('La sección no pertenece a tu departamento');
+  // Permitir matriculación en asignaturas de servicios de otros departamentos
+  if (seccion.id_Departamento !== estudiante.id_Departamento) {
+    const { data: esServicio, error: errorServicio } = await supabase
+      .from('asignaturas_servicio')
+      .select('codigo_asignatura')
+      .eq('codigo_asignatura', codigo_asignatura)
+      .single();
+
+    if (errorServicio) throw errorServicio;
+
+    if (!esServicio) {
+      throw new Error('La sección no pertenece a tu departamento y no es un servicio permitido');
+    }
   }
 
   // Verificar si ya está matriculado
@@ -468,33 +424,6 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
 };
 
 
-const verificarRequisitos = async (id_estudiante, codigo_asignatura) => {
-  const { data: requisitos, error: errorRequisitos } = await supabase
-    .from('requisitos_asignaturas')
-    .select('requisito_codigo')
-    .eq('asignatura_codigo', codigo_asignatura);
-
-  if (errorRequisitos) throw errorRequisitos;
-
-  for (let requisito of requisitos) {
-    const { data: matricula, error: errorMatricula } = await supabase
-      .from('matricula')
-      .select('codigoAsignatura')
-      .eq('id_estudiante', id_estudiante)
-      .eq('codigoAsignatura', requisito.requisito_codigo);
-
-    if (errorMatricula) throw errorMatricula;
-    if (matricula.length === 0) {
-      return false; // No cumple con un requisito
-    }
-  }
-
-  return true; // Cumple con todos los requisitos
-};
-
-
-
-
   const procesarListaEspera = async (id_seccion) => {
     const hayQuapos = await verificarCuposDisponibles(id_seccion);
     if (!hayQuapos) return;
@@ -519,15 +448,7 @@ const verificarRequisitos = async (id_estudiante, codigo_asignatura) => {
   };
   
 
-
-
-
-
-
-
-
-
-///listar y cancelar asignaturas 
+  ///listar y cancelar asignaturas 
 const cancelarMatricula = async (id_estudiante, id_seccion) => {
     const { data, error } = await supabase
       .from('matricula')
@@ -541,6 +462,20 @@ const cancelarMatricula = async (id_estudiante, id_seccion) => {
     return { message: 'Matrícula cancelada con éxito' };
   };
  
+  const cancelarMatriculaEnEspera = async (id_estudiante, id_seccion) => {
+    const { data, error } = await supabase
+      .from('lista_espera')
+      .delete()
+      .eq('id_estudiante', id_estudiante)
+      .eq('id_seccion', id_seccion);
+
+    if (error) throw error;
+    if (data && data.length === 0) {
+      throw new Error('No estás en la lista de espera para esta sección');
+    }
+    return { message: 'Matrícula cancelada con éxito' };
+  };
+
 
 const listarAsignaturasMatriculadas = async (id_usuario) => {
   // Obtén el id_estudiante a partir del id_usuario
@@ -659,6 +594,7 @@ exports.listarAsignaturasMatriculadas = async (req, res) => {
     getSeccionById,
 
     cancelarMatricula,
+    cancelarMatriculaEnEspera,
     listarAsignaturasMatriculadas,
 
    
