@@ -96,9 +96,9 @@ exports.getAsignaturasEstudiante = async (req, res) => {
 
 
 exports.matricular = async (req, res) => {
-  const { id_estudiante, id_seccion } = req.body;
+  const { id_estudiante, id_seccion, codigo_asignatura } = req.body;
   try {
-    const resultado = await matricularAsignatura(id_estudiante, id_seccion);
+    const resultado = await matricularAsignatura(id_estudiante, id_seccion, codigo_asignatura);
 
     if (resultado.message === 'Matrícula con éxito') {
       res.json({ message: 'Matrícula realizada con éxito', data: resultado.data });
@@ -115,9 +115,13 @@ exports.matricular = async (req, res) => {
     } else if (error.message === 'Sección no encontrada') {
       res.status(404).json({ error: 'Sección no encontrada' });
     } else if (error.message === 'No cumple con los requisitos para matricular esta asignatura') {
-      res.status(400).json({ error: 'No cumple con los requisitos para esta asignatura' });
+      res.status(400).json({ error: 'El estudiante no cumple con los requisitos para matricular esta asignatura' });
+    } else if (error.message === 'Ya en lista de espera') {
+      res.status(400).json({ error: 'Ya está en la lista de espera para esta sección' });
+    } else if (error.message === 'Hay un traslape de horarios con otra asignatura ya matriculada') {
+      res.status(400).json({ error: 'Hay un traslape de horarios con otra asignatura ya matriculada' });
     } else {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: 'Error inesperado en la matrícula', details: error.message });
     }
   }
 };
