@@ -2,6 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
 
+
 exports.login = async (req, res) => {
   try {
     const { numeroEmpleado, numeroCuenta, Contrasena } = req.body;
@@ -61,19 +62,35 @@ exports.login = async (req, res) => {
       token,
       user: {
         id: user.id,
-        nombre: user.nombre,
-        apellido: user.apellido,
+        nombre: user.Nombre,
+        apellido: user.Apellido,
         tipo: userType,
         roles: roles,
+        imagen: user.Imagen,
+        departamento: user.departamento,
+        id_departamento: user.id_departamento,
+        id_centro: user.id_centro,
+        centro:user.centro,
         ...(userType === 'empleado' ? { numeroEmpleado: identifier, estado: user.estado } : { numeroCuenta: identifier })
       }
     });
-
   } catch (error) {
     console.error('Error detallado:', error);
     res.status(500).json({ message: 'Error en el servidor', error: error.message });
   }
 };
+
+exports.logout = async (req, res) => {
+  try {
+    
+    // Envía una respuesta exitosa
+    res.status(200).json({ message: 'Sesión cerrada exitosamente' });
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    res.status(500).json({ message: 'Error en el servidor', error: error.message });
+  }
+};
+
 
 exports.register = async (req, res) => {
   try {

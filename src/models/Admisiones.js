@@ -100,10 +100,52 @@ static async getCarreras() {
   return data;
 }
 
+static async updateProcessedStatus(admisionIds) {
+  console.log(`Intentando actualizar procesado para DNI: ${admisionIds}`);
+  
+  // Verificar si el registro existe antes de actualizar
+  const { data: existingData, error: selectError } = await supabase
+    .from('Admisiones')
+    .select('*')
+    .eq('id_Admision', admisionIds)
+    .single();
+
+  if (selectError) {
+    console.error('Error al seleccionar el estado de procesado de Admisiones', selectError);
+    throw selectError;
+  }
+
+  if (!existingData) {
+    console.log(`No se encontraron registros para DNI: ${admisionIds}`);
+    return;
+  }
+
+  console.log(`Registro encontrado: ${JSON.stringify(existingData)}`);
+
+  const { data, error } = await supabase
+    .from('Admisiones')
+    .update({ procesado: true })
+    .eq('id_Admision', admisionIds);
+
+  if (error) {
+    console.error('Error al actualizar el estado de procesado de Admisiones', error);
+    throw error;
+  }
+
+  if (data) {
+    console.log(`Admisiones actualizadas: ${JSON.stringify(data)}`);
+  } else {
+    console.log(`No se encontraron registros para DNI: ${admisionIds} durante la actualización`);
+  }
+}
+
+
+
 static async getCSV() {
   const { data, error } = await supabase
     .from('Admisiones')
-    .select('*');
+    .select('*')
+    .eq('procesado', false); // Filtrar por el campo procesado que sea false
 
   if (error) {
     console.error('Error al obtener datos de Admisiones', error);
@@ -185,6 +227,7 @@ static async getCSV() {
   
   return csv;
 }
+
 
 
   static async readCsv(csvFilePath) {

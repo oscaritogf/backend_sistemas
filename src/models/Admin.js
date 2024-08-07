@@ -1,9 +1,24 @@
 
-
 const supabase = require('../config/supabase');
 const bcrypt = require('bcrypt');
 const cloudinary = require('../config/cloudinary');
-const { sendEmployeeWelcomeEmail } = require('../utils/emailService');
+// const { sendEmployeeWelcomeEmail, sendEmailtoEmployee } = require('../utils/emailService');
+
+const nodemailer = require('nodemailer');
+require('dotenv').config();
+
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',  
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  debug: true,
+  logger: true
+});
 
 class Admin {
   
@@ -42,6 +57,7 @@ class Admin {
           )
         )
       `)
+      .eq('id_Centros', id_Centros)
       .eq('id_Departamento', id_Departamento);
 
     if (empleadosError) {
@@ -63,13 +79,13 @@ class Admin {
       if (role === 'Coordinador') {
         const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador');
         if (existingCoordinator) {
-          throw new Error(`Ya existe un Coordinador en este departamento: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+          throw new Error(`Ya existe un Coordinador en este Centro: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
         }
       }
       if (role === 'JefeDepartamento') {
         const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento');
         if (existingJefeDepartamento) {
-          throw new Error(`Ya existe un Jefe de Departamento en este departamento: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
+          throw new Error(`Ya existe un Jefe de Departamento en este Centro: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
         }
       }
     }
@@ -174,10 +190,52 @@ class Admin {
         throw userRolError;
       }
     }
-  
+
+    const { data:perfil, error:perfilError } = await supabase
+    .from('Perfiles')
+    .insert({
+      id_Usuario: usuario.id,
+      Fotografia1: userData.Imagen
+    })
+
+    await this.crearUsuarioParaCometChat(numeroEmpleado, `${nombre} ${apellido}`);
+    console.log('Empleado creado en cometchat: ', nombre, apellido);
+
+   
+
+    const sendEmployeeWelcomeEmail = async (to, nombre, numeroEmpleado, contrasena) => {
+      try {
+        await transporter.sendMail({
+          from: '"Recursos Humanos Universidad" <garcia152511@gmail.com>',
+          to: to,
+          subject: "Bienvenido - Credenciales de acceso",
+          html: `
+            <h1>¡Bienvenido ${nombre}!</h1>
+            <p>Has sido registrado exitosamente como empleado en nuestro sistema.</p>
+            <p>Tus credenciales de acceso son:</p>
+            <ul>
+              <li>Número de empleado: ${numeroEmpleado}</li>
+              <li>Contraseña: ${contrasena}</li>
+            </ul>
+            <p>Por favor, cambia tu contraseña después del primer inicio de sesión.</p>
+            <p>Si tienes alguna pregunta, no dudes en contactar al departamento de Recursos Humanos.</p>
+          `
+        });
+        console.log('Correo de bienvenida enviado al nuevo empleado');
+      } catch (error) {
+        console.error('Error al enviar correo de bienvenida al empleado:', error);
+        throw error;
+     }
+    };
+    
+
+    try{
     // Enviar correo con credenciales
-    await sendEmployeeWelcomeEmail(correo, nombre, numeroEmpleado, contrasena);
-  
+    await sendEmployeeWelcomeEmail(correo, `${nombre} ${apellido}`, numeroEmpleado, contrasena);
+    } catch (error) {
+      console.log('Error al enviar correo de bienvenida:', error);
+      throw error;
+    }
     return { ...usuario, numeroEmpleado, roles, id_Centros, id_Departamento };
   }
 
@@ -244,52 +302,53 @@ class Admin {
 
 
     // Verificar si ya existe un coordinador o jefeDepartamento para el departamento
-    const { data: empleados, error: error } = await supabase
-      .from('empleado')
-      .select(`
-        numeroEmpleado,
-        Usuario (
-          id,
-          Nombre,
-          Apellido,
-          UsuarioRol (
-            rol (nombre)
+    if (id_Departamento !== undefined && id_Centros !== undefined) {
+      const { data: empleados, error: error } = await supabase
+        .from('empleado')
+        .select(`
+          numeroEmpleado,
+          Usuario (
+            id,
+            Nombre,
+            Apellido,
+            UsuarioRol (
+              rol (nombre)
+            )
           )
-        )
-      `)
-      .eq('id_Departamento', id_Departamento);
+        `)
+        .eq('id_Departamento', id_Departamento)
+        .eq('id_Centros', id_Centros);
 
-    if (error) {
-      console.error('Error al obtener empleados:', error);
-      throw error;
-    }
+      if (error) {
+        console.error('Error al obtener empleados:', error);
+        throw error;
+      }
 
-    // Extraer los nombres de roles de los empleados existentes en el departamento
-    const existingRoles = empleados.flatMap(emp => emp.Usuario.UsuarioRol.map(ur => ({ 
-      numeroEmpleado: emp.numeroEmpleado,
-      role: ur.rol.nombre, 
-      userId: emp.Usuario.id, 
-      nombre: emp.Usuario.Nombre, 
-      apellido: emp.Usuario.Apellido 
-    })));
+      // Extraer los nombres de roles de los empleados existentes en el departamento
+      const existingRoles = empleados.flatMap(emp => emp.Usuario.UsuarioRol.map(ur => ({ 
+        numeroEmpleado: emp.numeroEmpleado,
+        role: ur.rol.nombre, 
+        userId: emp.Usuario.id, 
+        nombre: emp.Usuario.Nombre, 
+        apellido: emp.Usuario.Apellido 
+      })));
 
-    // Verificar si ya existen Coordinador o JefeDepartamento en el departamento
-    for (const role of roles) {
-      if (role === 'Coordinador') {
-        const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador');
-        if (existingCoordinator) {
-          throw new Error(`Ya existe un Coordinador en este departamento: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+      // Verificar si ya existen Coordinador o JefeDepartamento en el departamento, excepto para el empleado actual
+      for (const role of roles) {
+        if (role === 'Coordinador') {
+          const existingCoordinator = existingRoles.find(r => r.role === 'Coordinador' && r.numeroEmpleado !== numeroEmpleado);
+          if (existingCoordinator) {
+            throw new Error(`Ya existe un Coordinador en este Centro: ${existingCoordinator.numeroEmpleado} ${existingCoordinator.nombre} ${existingCoordinator.apellido}`);
+          }
+        }
+        if (role === 'JefeDepartamento') {
+          const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento' && r.numeroEmpleado !== numeroEmpleado);
+          if (existingJefeDepartamento) {
+            throw new Error(`Ya existe un Jefe de Departamento en este Centro: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
+          }
         }
       }
-      if (role === 'JefeDepartamento') {
-        const existingJefeDepartamento = existingRoles.find(r => r.role === 'JefeDepartamento');
-        if (existingJefeDepartamento) {
-          throw new Error(`Ya existe un Jefe de Departamento en este departamento: ${existingJefeDepartamento.numeroEmpleado} ${existingJefeDepartamento.nombre} ${existingJefeDepartamento.apellido}`);
-        }
-      }
     }
-
-
 
 
     // Si se proporciona una nueva contraseña, hashearla
@@ -343,6 +402,33 @@ class Admin {
     }
 
     console.log('Usuario actualizado exitosamente:', usuario);
+
+
+
+    // Actualizar la imagen en cometChat
+    const url = `https://${process.env.COMETCHAT_APP_ID}.api-us.cometchat.io/v3/users/${numeroEmpleado}`; 
+    const options = {
+      method: 'PUT',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        apikey: process.env.COMETCHAT_API_KEY 
+      },
+      body: JSON.stringify({
+        avatar: userData.Imagen
+      })
+    };
+
+    fetch(url, options)
+      .then(res => res.json())
+      .then(json => console.log(json))
+      .catch(err => console.error('error:' + err));
+
+
+
+
+
+
 
     // Actualizar roles si se proporcionan
     if (roles && roles.length > 0) {
@@ -1026,8 +1112,80 @@ static async getCancelacionExcepcionalById(id) {
   }
   return data;
 }
-};  
 
-   
+
+
+
+
+
+
+static async crearUsuarioParaCometChat(uid, name) {
+  try {
+    const response = await fetch(`${process.env.COMETCHAT_BASE_URL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'appId': process.env.COMETCHAT_APP_ID,
+        'apiKey': process.env.COMETCHAT_API_KEY,
+      },
+      body: JSON.stringify({ uid, name }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Error al crear un usuario para CometChat: ${errorData.message}`);
+    }
+
+    const data = await response.json();
+    console.log('Usuario creado en COMETCHAT exitosamente:', data);
+  } catch (error) {
+    console.error('Error al crear un usuario para CometChat:', error.message);
+  }
+};
+
+static async notasProceso(fecha_inicio, fecha_fin, id_ConfMatri, estado) {
+  // Verificar que ningún dato requerido sea null o undefined
+  if (!fecha_inicio || !fecha_fin || !id_ConfMatri || !estado) {
+      throw new Error('Todos los campos son obligatorios.');
+  }
+
+  // Verificar que fecha_inicio y fecha_fin sean del tipo Date
+  // if (!(fecha_inicio instanceof Date) || !(fecha_fin instanceof Date)) {
+  //     throw new Error('Las fechas deben ser objetos Date.');
+  // }
+
+  // Verificar que fecha_inicio sea menor que fecha_fin
+  if (fecha_inicio >= fecha_fin) {
+      throw new Error('La fecha de inicio debe ser menor que la fecha de fin.');
+  }
+
+  // Verificar que id_ConfMatri sea un número
+  if (typeof id_ConfMatri !== 'number') {
+      throw new Error('El Codigo de matricula debe ser un número.');
+  }
+
+  // Verificar que estado sea una cadena (o el tipo adecuado que esperes)
+  if (typeof estado !== 'boolean') {
+      throw new Error('El estado debe ser un booleano.');
+  }
+
+  // Insertar los datos en la base de datos
+  const { data, error } = await supabase
+      .from('ProcesoNotas')
+      .insert({
+          fecha_inicio: fecha_inicio,
+          fecha_final: fecha_fin,
+          id_ConfMatri: id_ConfMatri,
+          estado: estado
+      });
+  
+  if (error) {
+      throw error;
+  }
+
+  return data;
+  }
+};
+
 
 module.exports = Admin;
