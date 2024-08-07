@@ -1143,8 +1143,49 @@ static async crearUsuarioParaCometChat(uid, name) {
   }
 };
 
-};  
+static async notasProceso(fecha_inicio, fecha_fin, id_ConfMatri, estado) {
+  // Verificar que ningún dato requerido sea null o undefined
+  if (!fecha_inicio || !fecha_fin || !id_ConfMatri || !estado) {
+      throw new Error('Todos los campos son obligatorios.');
+  }
 
+  // Verificar que fecha_inicio y fecha_fin sean del tipo Date
+  // if (!(fecha_inicio instanceof Date) || !(fecha_fin instanceof Date)) {
+  //     throw new Error('Las fechas deben ser objetos Date.');
+  // }
+
+  // Verificar que fecha_inicio sea menor que fecha_fin
+  if (fecha_inicio >= fecha_fin) {
+      throw new Error('La fecha de inicio debe ser menor que la fecha de fin.');
+  }
+
+  // Verificar que id_ConfMatri sea un número
+  if (typeof id_ConfMatri !== 'number') {
+      throw new Error('El Codigo de matricula debe ser un número.');
+  }
+
+  // Verificar que estado sea una cadena (o el tipo adecuado que esperes)
+  if (typeof estado !== 'boolean') {
+      throw new Error('El estado debe ser un booleano.');
+  }
+
+  // Insertar los datos en la base de datos
+  const { data, error } = await supabase
+      .from('ProcesoNotas')
+      .insert({
+          fecha_inicio: fecha_inicio,
+          fecha_final: fecha_fin,
+          id_ConfMatri: id_ConfMatri,
+          estado: estado
+      });
+  
+  if (error) {
+      throw error;
+  }
+
+  return data;
+  }
+};
 
 
 module.exports = Admin;

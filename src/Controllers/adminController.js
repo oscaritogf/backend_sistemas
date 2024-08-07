@@ -390,3 +390,16 @@ exports.eliminarCancelacionExcepcional = async (req, res) => {
   }
 };
 
+exports.activateNotas = async (req, res) => {
+  try{
+      const { fecha_inicio, fecha_fin, id_ConfMatri, estado } = req.body;
+      const notasActivadas = await Admin.notasProceso(fecha_inicio, fecha_fin, id_ConfMatri, estado);
+      res.status(201).json({message: 'Proceso de notas activado exitosamente', notas: notasActivadas});
+  }catch(error){
+    console.error('Error al activar notas:', error);
+    res.status(500).json({ message: 'Error al activar proceso de notas', error: error.message });
+
+  }
+
+};  
+
