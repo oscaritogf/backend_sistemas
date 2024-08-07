@@ -201,6 +201,28 @@ class Admin {
     await this.crearUsuarioParaCometChat(numeroEmpleado, `${nombre} ${apellido}`);
     console.log('Empleado creado en cometchat: ', nombre, apellido);
 
+
+
+    
+       // Actualizar la imagen en cometChat
+       const url = `https://${process.env.COMETCHAT_APP_ID}.api-us.cometchat.io/v3/users/${numeroEmpleado}`; 
+       const options = {
+         method: 'PUT',
+         headers: {
+           accept: 'application/json',
+           'content-type': 'application/json',
+           apikey: process.env.COMETCHAT_API_KEY 
+         },
+         body: JSON.stringify({
+           avatar: userData.Imagen
+         })
+       };
+   
+       fetch(url, options)
+         .then(res => res.json())
+         .then(json => console.log(json))
+         .catch(err => console.error('error:' + err));
+   
    
 
     const sendEmployeeWelcomeEmail = async (to, nombre, numeroEmpleado, contrasena) => {
