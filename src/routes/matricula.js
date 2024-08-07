@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const matriculaController= require('../Controllers/matriculaController/matriculaController');
+
+
 router.get('/departamentos', matriculaController.getDepartamentos);
 router.get('/asignaturas/:id_Departamento', matriculaController.getAsignaturasByDepartamento);
 router.get('/secciones/:codigo', matriculaController.getSeccionesByAsignatura);

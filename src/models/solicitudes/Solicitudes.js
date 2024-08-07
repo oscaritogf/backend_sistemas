@@ -131,6 +131,8 @@ const responderSolicitud = async (id_solicitud, id_coordinador, respuesta, nuevo
   return data[0];
 };
 
+
+
 module.exports = {
   crearSolicitud,
   obtenerSolicitudesEstudiante,

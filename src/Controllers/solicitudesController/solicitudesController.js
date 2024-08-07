@@ -25,27 +25,7 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // Limita el tamaño del archivo a 5MB
   }
 }).single('documento_respaldo');
-/*
-  exports.crearNuevaSolicitud = async (req, res) => {
-    try {
-      const { id_estudiante, id_tipo_solicitud, detalles, motivo_cancelacion, secciones_a_cancelar } = req.body;
-      const documento_respaldo = req.file; // Asumiendo que estás usando multer para manejar la carga de archivos
-  
-      const solicitud = await crearSolicitud(
-        id_estudiante, 
-        id_tipo_solicitud, 
-        detalles, 
-        motivo_cancelacion, 
-        secciones_a_cancelar, 
-        documento_respaldo
-      );
-  
-      res.status(201).json(solicitud);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  };
-*/
+
 
 exports.crearNuevaSolicitud = async (req, res) => {
     upload(req, res, async (err) => {
