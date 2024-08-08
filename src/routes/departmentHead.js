@@ -13,11 +13,14 @@ router.get('/secciones', departmentHeadController.getSecciones);
 router.get('/secciones/:codigo', departmentHeadController.getSeccionesByAsignatura);
 //traer la seccion para modificar
 router.get('/seccionesFiltro/:id_Secciones', departmentHeadController.getSeccionesFiltro);
+router.get('/notas/:id_Seccion', departmentHeadController.getNotasBySeccion);
+router.get('/notasByStudent/:id_Estudiante', departmentHeadController.getNotasByNoCuenta);
 
 router.get('/dias/:id_seccion', departmentHeadController.getDiasBySeccion);
 
 router.get('/docentes', departmentHeadController.getDocentes);
 router.get('/aulas/:idEdificio', departmentHeadController.getAulasByEdificio);
+router.get('/student/:id_Departamento', departmentHeadController.getEstudiantesByDepartamento);
 router.get('/aulas', departmentHeadController.getAulas);
 router.get('/tipoAulas', departmentHeadController.getTiposAulas);
 router.get('/edificios', departmentHeadController.getEdificios);

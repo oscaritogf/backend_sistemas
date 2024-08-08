@@ -217,7 +217,76 @@ static async getSeccionesFiltro(id_Secciones) {
         
     return secciones;
 }
+static async getNotasBySeccion(id_Seccion) {
+    const { data: notasSeccion, error: notasError } = await supabase
+        .from('Calificaciones_Registro')
+        .select(`
+            id_Estudiante,
+            nota,
+            obs,
+            estudiante(
+                usuario(
+                    Nombre,
+                    Apellido
+                )
+            )
+        `)
+        .eq('id_Seccion', id_Seccion);
 
+    if (notasError) {
+        throw new Error(notasError.message);
+    }
+
+    return notasSeccion.map(nota => ({
+        id_Estudiante: nota.id_Estudiante,
+        nombreEstudiante: `${nota.estudiante.usuario.Nombre} ${nota.estudiante.usuario.Apellido}`, // Extrae nombre y apellido del estudiante
+        nota: nota.nota,
+        obs: nota.obs
+    }));
+}
+
+static async getNotasByNoCuenta(id_Estudiante) {
+    const { data: notasSeccion, error: notasError } = await supabase
+        .from('Calificaciones_Registro')
+        .select(`
+            id_Estudiante,
+            nota,
+            obs,
+            id_Seccion,
+            id_Docente,
+            empleado(
+            usuario(
+                    Nombre,
+                    Apellido
+                )
+            ),
+            Secciones(
+            codigoAsignatura,
+            Hora_inicio
+            ),
+            estudiante(
+                usuario(
+                    Nombre,
+                    Apellido
+                )
+            )
+        `)
+        .eq('id_Estudiante', id_Estudiante);
+
+    if (notasError) {
+        throw new Error(notasError.message);
+    }
+
+    return notasSeccion.map(nota => ({
+        id_Estudiante: nota.id_Estudiante,
+        nombreEstudiante: `${nota.estudiante.usuario.Nombre} ${nota.estudiante.usuario.Apellido}`, // Extrae nombre y apellido del estudiante
+        nombreDocente: `${nota.empleado.usuario.Nombre} ${nota.empleado.usuario.Apellido}`,
+        nota: nota.nota,
+        obs: nota.obs,
+        seccionHora:nota.Secciones.Hora_inicio,
+        codigoAsignatura: `${nota.Secciones.codigoAsignatura}`
+    }));
+}
 
     //Obtener edificios
     static async getEdificios() {
@@ -243,6 +312,38 @@ static async getSeccionesFiltro(id_Secciones) {
             .eq('id_Edificio', idEdificio); // Filtrar por id_Edificio
         if (error) throw new Error(error.message);
         return aulas;
+    }
+
+    static async getEstudiantesByDepartamento(id_Departamento) {
+        const { data: estudiantesDep, error } = await supabase
+            .from('estudiante')
+            .select(`
+                id,
+                numeroCuenta,
+                usuario,
+                correo_Institucional,
+                id_Departamento,
+                id_Centros,
+                indice_periodo,
+                indice_global,
+                usuario(
+                    Nombre,
+                    Apellido
+                )
+                `)
+            .eq('id_Departamento', id_Departamento); // Filtrar por id_Edificio
+        if (error) throw new Error(error.message);
+        return estudiantesDep.map(estu => ({
+            id: estu.id,
+            numeroCuenta: estu.numeroCuenta,
+            correo_Institucional: estu.correo_Institucional,
+            id_Departamento:estu.id_Departamento,
+            id_Centros:estu.id_Centros,
+            indice_periodo: estu.indice_periodo,
+            indice_global:estu.indice_global,
+            nombreEstudiante: `${estu.usuario.Nombre} ${estu.usuario.Apellido}`, // Extrae nombre y apellido del estudiante
+            
+        }));
     }
 
     static async getAulas() {

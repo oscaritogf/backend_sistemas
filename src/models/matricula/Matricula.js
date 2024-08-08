@@ -537,7 +537,7 @@ exports.listarAsignaturasMatriculadas = async (req, res) => {
       .select(`
         id,
         id_estudiante,
-        fecha_solicitud,
+        fecha,
         estudiante:id_estudiante (
           id,
           usuario(Nombre,
@@ -547,7 +547,7 @@ exports.listarAsignaturasMatriculadas = async (req, res) => {
         )
       `)
       .eq('id_seccion', id_seccion)
-      .order('fecha_solicitud', { ascending: true });
+      .order('fecha', { ascending: true });
   
     if (error) throw error;
     return data;

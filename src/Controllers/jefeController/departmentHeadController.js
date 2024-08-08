@@ -53,6 +53,16 @@ const { procesarListaEspera }  = require('../../models/matricula/Matricula');
     }
 };
 
+exports.getEstudiantesByDepartamento = async (req, res) => {
+  try {
+      const { id_Departamento } = req.params;
+      const estudiantesDep = await Jefe.getEstudiantesByDepartamento(id_Departamento);
+      res.json({ message: 'Lista de estudiantes', data: estudiantesDep });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de estudiantes', error: error.message });
+  }
+};
+
 exports.getTiposAulas = async (req, res) => {
   try {
       const aulas = await Jefe.getTiposAulas();
@@ -264,6 +274,26 @@ exports.getActiveDocentesByDepartment = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener la lista de secciones de la asignatura ${id_Secciones}', error: error.message });
     }
   };
+
+  exports.getNotasBySeccion = async (req, res) => {
+    const { id_Seccion } = req.params;
+    try {
+        const notasSeccion = await Jefe.getNotasBySeccion(id_Seccion);
+        res.json({ message: `Notas de la sección ${id_Seccion}`, data: notasSeccion });
+    } catch (error) {
+        res.status(500).json({ message: `Error al obtener las notas de la sección ${id_Seccion}`, error: error.message });
+    }
+};
+
+exports.getNotasByNoCuenta = async (req, res) => {
+  const { id_Estudiante } = req.params;
+  try {
+      const notasEstudiante = await Jefe.getNotasByNoCuenta(id_Estudiante);
+      res.json({ message: `Notas de la sección ${id_Estudiante}`, data: notasEstudiante });
+  } catch (error) {
+      res.status(500).json({ message: `Error al obtener las notas de la sección ${numeroCuenta}`, error: error.message });
+  }
+};
 
   exports.getDocentes = async (req, res) => {
     try {
