@@ -109,8 +109,9 @@ const supabase = require('../../config/supabase');
 const obtenerSolicitudesEstudiante = async (id_estudiante) => {
   const { data, error } = await supabase
     .from('solicitudes_estudiantes')
-    .select('*')
-    .eq('id_estudiante', id_estudiante);
+    .select('*, tipo_solicitud(nombre)')
+    .eq('id_estudiante', id_estudiante)
+    .order('fecha_solicitud', { ascending: false });
 
   if (error) throw error;
   return data;
