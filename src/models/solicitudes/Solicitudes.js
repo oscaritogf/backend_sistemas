@@ -3,9 +3,22 @@
 const supabase = require('../../config/supabase');
 
 
+  const obtenerDepartamentos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('Departamentos')
+        .select('id_Departamento, Nombre')
+        .order('Nombre');
+  
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error al obtener departamentos:', error);
+      throw error;
+    }
+  };
 
-
-const crearSolicitud = async (id_estudiante, id_tipo_solicitud, detalles, motivo_cancelacion = null, secciones_a_cancelar = null, documento_respaldo = null) => {
+  const crearSolicitud = async (id_estudiante, id_tipo_solicitud, detalles, motivo_cancelacion = null, secciones_a_cancelar = null, documento_respaldo = null) => {
     try {
       // Obtener el departamento del estudiante
       const { data: estudianteData, error: estudianteError } = await supabase
@@ -15,7 +28,7 @@ const crearSolicitud = async (id_estudiante, id_tipo_solicitud, detalles, motivo
         .single();
   
       if (estudianteError) throw estudianteError;
-      const id_departamento = estudianteData.id_Departamento;
+      const id_departamento_actual = estudianteData.id_Departamento;
   
       // Obtener el ID del rol de coordinador
       const { data: rolData, error: rolError } = await supabase
@@ -37,11 +50,11 @@ const crearSolicitud = async (id_estudiante, id_tipo_solicitud, detalles, motivo
   
       const ids_coordinadores = usuarioRolData.map(rol => rol.id_Usuario);
   
-      // Obtener el coordinador del departamento
+      // Obtener el coordinador del departamento actual del estudiante
       const { data: coordinadorData, error: coordinadorError } = await supabase
         .from('empleado')
         .select('numeroEmpleado')
-        .eq('id_Departamento', id_departamento)
+        .eq('id_Departamento', id_departamento_actual)
         .in('usuario', ids_coordinadores)
         .limit(1)
         .single();
@@ -88,6 +101,11 @@ const crearSolicitud = async (id_estudiante, id_tipo_solicitud, detalles, motivo
   };
   
   
+  
+  
+
+
+
 const obtenerSolicitudesEstudiante = async (id_estudiante) => {
   const { data, error } = await supabase
     .from('solicitudes_estudiantes')
@@ -137,5 +155,6 @@ module.exports = {
   crearSolicitud,
   obtenerSolicitudesEstudiante,
   obtenerSolicitudesPendientes,
-  responderSolicitud
+  responderSolicitud,
+  obtenerDepartamentos,
 };
