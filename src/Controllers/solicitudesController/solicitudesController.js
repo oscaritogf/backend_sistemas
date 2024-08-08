@@ -71,7 +71,8 @@ exports.crearNuevaSolicitud = async (req, res) => {
     });
   };
 
-  
+
+
   exports.obtenerSolicitudesDeEstudiante = async (req, res) => {
     const { id_estudiante } = req.params;
     try {

@@ -328,15 +328,19 @@ exports.updateSectionCupos = async (req, res) => {
     const data = await Jefe.updateSectionCupos(id_Seccion, Cupos);
     
     const { data: list, error: listError } = await supabase
-    .from('lista_espera')
-    .select('*')
-    .eq('id_eeccion', id_Seccion);    
+      .from('lista_espera')
+      .select('*')
+      .eq('id_seccion', id_Seccion);  
 
-    
-    if (list != null) {
-      await procesarListaEspera(id_Seccion);
+    // Verificar si hay registros en la lista de espera
+    if (listError) {
+      throw listError;
     }
-   
+
+    if (list && list.length > 0) {
+      await procesarListaEspera(id_Seccion);
+      console.log('Lista de espera procesada');
+    }
 
     // Enviar respuesta con éxito
     res.json({ message: 'Sección actualizada correctamente', data });
@@ -346,6 +350,8 @@ exports.updateSectionCupos = async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar la sección', error: error.message });
   }
 };
+
+
 
  
 
@@ -401,3 +407,14 @@ exports.updateSection = async (req, res) => {
   }
 
 };  
+
+exports.getEncuestasByDocente = async (req, res) => {
+    try {
+        const { id_Departamento } = req.body;
+        const encuestas = await Jefe.getEvaluacionesDocente(id_Departamento);
+        res.json({ message: 'Lista de encuestas', data: encuestas });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener la lista de encuestas', error: error.message });
+    }
+
+};

@@ -211,32 +211,6 @@ const getDepartamentos = async () => {
 
   ///
 
-  /*const verificarRequisitos = async (id_estudiante, codigo_asignatura) => {
-    // Obtener los requisitos de la asignatura
-    const { data: requisitos, error: reqError } = await supabase
-      .from('requisitos_asignaturas')
-      .select('requisito_codigo')
-      .eq('asignatura_codigo', codigo_asignatura);
-  
-    if (reqError) throw reqError;
-  
-    // Verificar si el estudiante ha aprobado todos los requisitos
-    for (const req of requisitos) {
-      const { data: aprobado, error: aprobadoError } = await supabase
-        .from('historial_academico') // Asume que existe una tabla con el historial académico
-        .select('*')
-        .eq('id_estudiante', id_estudiante)
-        .eq('codigo_asignatura', req.requisito_codigo)
-        .gte('nota', 65) // Asume que 65 es la nota mínima para aprobar
-        .single();
-  
-      if (aprobadoError) throw aprobadoError;
-      if (!aprobado) return false;
-    }
-  
-    return true;
-  };*/
-
  const verificarMatriculaExistente = async (id_estudiante, codigoAsignatura) => {
   const { data, error } = await supabase
     .from('matricula')
@@ -269,21 +243,63 @@ const verificarCuposDisponibles = async (id_seccion) => {
 
   return data.Cupos > count;
 };
+/*
+// Verificar si ya está en la lista de espera y agregar si no
+const agregarAListaEspera = async (id_estudiante, id_seccion, fecha) => {
+  // Verificar si ya está en la lista de espera
+  const { data: listaEsperaExistente, error: errorListaEsperaExistente } = await supabase
+    .from('lista_espera')
+    .select('*')
+    .eq('id_estudiante', id_estudiante)
+    .eq('id_seccion', id_seccion)
+    .eq('fecha', fecha);
 
-const agregarAListaEspera = async (id_estudiante, id_seccion) => {
+  if (errorListaEsperaExistente) throw errorListaEsperaExistente;
+
+  if (listaEsperaExistente && listaEsperaExistente.length > 0) {
+    return { message: 'Ya en lista de espera', data: listaEsperaExistente[0] };
+  }
+
   const { data, error } = await supabase
     .from('lista_espera')
-    .insert([{ id_estudiante, id_seccion }])
+    .insert([{ id_estudiante, id_seccion, fecha }])
     .select();
 
   if (error) {
-    if (error.code === '23505') { // Código de error para violación de unicidad
-      throw new Error('Ya estás en la lista de espera para esta sección');
-    }
     throw error;
   }
 
-  return data;
+  return { message: 'Añadido a la lista de espera', data: data[0] };
+};
+*/
+
+const agregarAListaEspera = async (id_estudiante, id_seccion, fecha) => {
+  // Verificar si ya está en la lista de espera
+  const { data: listaEsperaExistente, error: errorListaEsperaExistente } = await supabase
+    .from('lista_espera')
+    .select('*')
+    .eq('id_estudiante', id_estudiante)
+    .eq('id_seccion', id_seccion)
+    .single(); // Usamos single() en lugar de eq('fecha', fecha)
+
+  if (errorListaEsperaExistente && errorListaEsperaExistente.code !== 'PGRST116') {
+    throw errorListaEsperaExistente;
+  }
+
+  if (listaEsperaExistente) {
+    return { message: 'Ya en lista de espera', data: listaEsperaExistente };
+  }
+
+  const { data, error } = await supabase
+    .from('lista_espera')
+    .insert([{ id_estudiante, id_seccion, fecha }])
+    .select();
+
+  if (error) {
+    throw error;
+  }
+
+  return { message: 'Añadido a la lista de espera', data: data[0] };
 };
 
 
@@ -312,6 +328,7 @@ const verificarRequisitos = async (id_estudiante, codigo_asignatura) => {
   return true; // Cumple con todos los requisitos
 };
 
+//////////////////////////////////
 
 const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura) => {
   // Obtener información del estudiante
@@ -322,31 +339,52 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
     .single();
 
   if (errorEstudiante) throw errorEstudiante;
+  if (!estudiante) throw new Error('Estudiante no encontrado');
 
   const cumpleRequisitos = await verificarRequisitos(id_estudiante, codigo_asignatura);
   if (!cumpleRequisitos) {
     throw new Error('No cumple con los requisitos para matricular esta asignatura');
   }
 
-  // Obtener información de la sección
-  const seccion = await getSeccionById(id_seccion);
-  if (!seccion) {
-    throw new Error('Sección no encontrada');
-  }
+  // Obtener información de la sección y la asignatura
+  const { data: seccion, error: errorSeccion } = await supabase
+    .from('Secciones')
+    .select(`
+      *,
+      Asignatura:codigoAsignatura (
+        id_Departamento
+      )
+    `)
+    .eq('id_Secciones', id_seccion)
+    .single();
+
+  if (errorSeccion) throw errorSeccion;
+  if (!seccion) throw new Error('Sección no encontrada');
+
+  const asignatura_id_Departamento = seccion.Asignatura.id_Departamento;
 
   // Permitir matriculación en asignaturas de servicios de otros departamentos
-  if (seccion.id_Departamento !== estudiante.id_Departamento) {
+  let esAsignaturaValida = false;
+
+  if (asignatura_id_Departamento !== estudiante.id_Departamento) {
     const { data: esServicio, error: errorServicio } = await supabase
       .from('asignaturas_servicio')
       .select('codigo_asignatura')
-      .eq('codigo_asignatura', codigo_asignatura)
-      .single();
+      .eq('codigo_asignatura', seccion.codigoAsignatura)
+      .eq('id_departamento', asignatura_id_Departamento)
+      .maybeSingle();
 
     if (errorServicio) throw errorServicio;
 
-    if (!esServicio) {
-      throw new Error('La sección no pertenece a tu departamento y no es un servicio permitido');
+    if (esServicio) {
+      esAsignaturaValida = true;
     }
+  } else {
+    esAsignaturaValida = true;
+  }
+
+  if (!esAsignaturaValida) {
+    throw new Error('La sección no pertenece a tu departamento y no es una clase de servicio permitido');
   }
 
   // Verificar si ya está matriculado
@@ -358,7 +396,12 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
   // Verificar cupos disponibles
   const hayCupos = await verificarCuposDisponibles(id_seccion);
   if (!hayCupos) {
-    return await agregarAListaEspera(id_estudiante, id_seccion);
+    const fechaActual = new Date().toISOString();
+    const resultadoListaEspera = await agregarAListaEspera(id_estudiante, id_seccion, fechaActual);
+    if (resultadoListaEspera.message === 'Ya en lista de espera') {
+      throw new Error('Ya estás en la lista de espera para esta sección');
+    }
+    return { message: 'Añadido a la lista de espera', data: resultadoListaEspera.data };
   }
 
   // Obtener los días de la semana de la nueva sección
@@ -419,11 +462,15 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
     ])
     .select();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error al realizar la matrícula:', error);
+    throw error;
+  }
+
   return { message: 'Matrícula con éxito', data: data[0] };
 };
 
-
+///////////////////////////////////////////////////
   const procesarListaEspera = async (id_seccion) => {
     const hayQuapos = await verificarCuposDisponibles(id_seccion);
     if (!hayQuapos) return;
@@ -432,7 +479,7 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
       .from('lista_espera')
       .select('*')
       .eq('id_seccion', id_seccion)
-      .order('fecha_solicitud', { ascending: true })
+      .order('fecha', { ascending: true })
       .limit(1)
       .single();
   
@@ -461,6 +508,10 @@ const cancelarMatricula = async (id_estudiante, id_seccion) => {
     }
     return { message: 'Matrícula cancelada con éxito' };
   };
+
+///concelar matricula
+
+
  
   const cancelarMatriculaEnEspera = async (id_estudiante, id_seccion) => {
     const { data, error } = await supabase
@@ -561,7 +612,7 @@ exports.listarAsignaturasMatriculadas = async (req, res) => {
       .select(`
         id,
         id_seccion,
-        fecha_solicitud,
+        fecha,
         Secciones:id_seccion (
           id_Secciones,
           Hora_inicio,
@@ -574,7 +625,7 @@ exports.listarAsignaturasMatriculadas = async (req, res) => {
         )
       `)
       .eq('id_estudiante', id_estudiante)
-      .order('fecha_solicitud', { ascending: true });
+      .order('fecha', { ascending: true });
   
     if (error) throw error;
     return data;

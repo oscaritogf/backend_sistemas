@@ -239,6 +239,41 @@ class Student {
         }
       }
 
+
+  static async encuestaDocente(id_Seccion, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5) {
+      try {
+
+          const { data: seccion, error: seccionError } = await supabase
+            .from('Secciones')
+            .select('codigoAsignatura, id_Departamento, id_Docentes')
+            .eq('id_Secciones', id_Seccion)
+            .single();
+
+          const { data: encuesta, error: encuestaError } = await supabase
+            .from('evaluacion_docente')
+            .insert({
+              id_Docente: seccion.id_Docentes,
+              id_Seccion: id_Seccion,
+              pregunta1: pregunta1,
+              pregunta2: pregunta2,
+              pregunta3: pregunta3,
+              pregunta4: pregunta4,
+              pregunta5: pregunta5,
+              codigo_Asignatura: seccion.codigoAsignatura,
+              id_Departamento: seccion.id_Departamento
+            })
+            .single();
+
+          if (encuestaError) {
+            console.error('Error al insertar encuesta:', encuestaError);
+            throw encuestaError;
+          }
+      }catch (error) {
+        console.error('Error en encuestaDocente:', error);
+        throw error;
+      }
+    }
+
 }
 
 module.exports = Student;

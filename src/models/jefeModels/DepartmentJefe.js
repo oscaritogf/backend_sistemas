@@ -399,7 +399,7 @@ static async getActiveDocentesByDepartment(id_Departamento) {
         throw empleadosError;
     }
 
-    // Paso 2: Obtener los roles de los usuarios y filtrar los docentes
+    // Paso 2: Obtener los roles de los usuarios
     const usuarios = empleados.map(e => e.usuario);
     const { data: roles, error: rolesError } = await supabase
         .from('UsuarioRol')
@@ -410,22 +410,24 @@ static async getActiveDocentesByDepartment(id_Departamento) {
         throw rolesError;
     }
 
-    // Paso 3: Obtener la información de Nombre y Apellido de los usuarios
-    const idsUsuarios = usuarios;
+    // Paso 3: Filtrar los usuarios que tienen roles 2 o 4
+    const usuariosConRolesExcluidos = roles
+        .filter(r => [2, 5].includes(r.id_Rol))
+        .map(r => r.id_Usuario);
+
+    // Paso 4: Obtener la información de Nombre y Apellido de los usuarios
     const { data: usuariosInfo, error: usuariosInfoError } = await supabase
         .from('Usuario')
         .select('id, Nombre, Apellido')
-        .in('id', idsUsuarios);
+        .in('id', usuarios);
 
     if (usuariosInfoError) {
         throw usuariosInfoError;
     }
 
-    // Paso 4: Filtrar docentes que no tienen roles 2 o 4 y combinar nombres
+    // Paso 5: Filtrar los docentes que no tienen roles 2 o 4 y combinar nombres
     const docentes = empleados
-        .filter(e => 
-            !roles.some(r => r.id_Usuario === e.usuario && [2, 4].includes(r.id_Rol))
-        )
+        .filter(e => !usuariosConRolesExcluidos.includes(e.usuario))
         .map(e => {
             // Buscar el nombre y apellido del usuario
             const usuarioInfo = usuariosInfo.find(ui => ui.id === e.usuario);
@@ -441,6 +443,7 @@ static async getActiveDocentesByDepartment(id_Departamento) {
 
     return docentes;
 }
+
 
 // Conteo de estudiantes por departamento
 static async countStudentsByDepartment() {
@@ -681,6 +684,24 @@ static async updateSeccion(data) {
         throw new Error("La Hora_Final debe ser mayor que la Hora_inicio");
     }
 
+    // Verificar si hay traslape de horarios con el mismo aula, edificio y hora inicial
+    const { data: conflict, error: conflictError } = await supabase
+        .from('Secciones')
+        .select('id_Secciones')
+        .eq('id_Aula', id_Aula)
+        .eq('id_Edificios', id_Edificios)
+        .eq('Hora_inicio', Hora_inicio)
+        .neq('id_Secciones', id_Secciones)
+        .single();
+
+    if (conflictError && conflictError.code !== 'PGRST116') { // Ignorar error si no se encuentran registros
+        throw conflictError;
+    }
+
+    if (conflict) {
+        throw new Error("Existe un traslape de horarios con otra sección en el mismo aula y edificio.");
+    }
+
     // Obtener los datos de la sección existente
     const { data: existingSection, error: existingSectionError } = await supabase
         .from('Secciones')
@@ -778,6 +799,166 @@ static async updateSeccion(data) {
 
     return seccion;
 }
+
+// DAtos de las encuestas por departamento
+static async getEvaluacionesDocente(id_Departamento) {
+    try {
+        console.log("Iniciando consulta con id_Departamento:", id_Departamento);
+
+        // Realiza la consulta directamente usando Supabase para obtener las evaluaciones del departamento
+        const { data: evaluaciones, error } = await supabase
+            .from('evaluacion_docente')
+            .select('id_Docente, id_Seccion, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5')
+            .eq('id_Departamento', id_Departamento);
+
+        if (error) {
+            console.error("Error al realizar la consulta:", error.message);
+            throw error;
+        }
+
+        console.log("Evaluaciones obtenidas:", evaluaciones);
+
+        // Crear un conjunto de docentes únicos a partir de las evaluaciones
+        const docentesIds = [...new Set(evaluaciones.map(evaluacion => evaluacion.id_Docente))];
+
+        // Obtener la información de los docentes basándonos en los ids obtenidos
+        const { data: docentes, error: docentesError } = await supabase
+            .from('empleado')
+            .select('numeroEmpleado, Usuario(Correo, Nombre, Apellido)')
+            .in('numeroEmpleado', docentesIds);
+
+        if (docentesError) {
+            console.error("Error al obtener información de los docentes:", docentesError.message);
+            throw docentesError;
+        }
+
+        // Crear un mapa para acceder rápidamente a los datos de los docentes
+        const docentesMap = docentes.reduce((acc, docente) => {
+            acc[docente.numeroEmpleado] = {
+                nombre: docente.Usuario.Nombre,
+                apellido: docente.Usuario.Apellido,
+                numeroEmpleado: docente.numeroEmpleado
+            };
+            return acc;
+        }, {});
+
+        // Agrupar evaluaciones por docente y sección, calcular promedios por sección y promedio total
+        const evaluacionesAgrupadas = evaluaciones.reduce((acc, evaluacion) => {
+            const docenteId = evaluacion.id_Docente;
+            const docenteNombre = docentesMap[docenteId]?.nombre || 'Desconocido';
+            const docenteApellido = docentesMap[docenteId]?.apellido || '';
+            const nombreCompleto = `${docenteNombre} ${docenteApellido}`.trim();
+
+
+            if (!acc[docenteId]) {
+                acc[docenteId] = {
+                    numeroEmpleado: docenteId,
+                    nombreCompleto: nombreCompleto,
+                    totalEvaluaciones: 0,
+                    sumaPregunta1: 0,
+                    sumaPregunta2: 0,
+                    sumaPregunta3: 0,
+                    sumaPregunta4: 0,
+                    sumaPregunta5: 0,
+                    secciones: {}
+                };
+            }
+
+            // Acumular los valores de las preguntas para el promedio total
+            acc[docenteId].totalEvaluaciones += 1;
+            acc[docenteId].sumaPregunta1 += evaluacion.pregunta1;
+            acc[docenteId].sumaPregunta2 += evaluacion.pregunta2;
+            acc[docenteId].sumaPregunta3 += evaluacion.pregunta3;
+            acc[docenteId].sumaPregunta4 += evaluacion.pregunta4;
+            acc[docenteId].sumaPregunta5 += evaluacion.pregunta5;
+
+            // Agrupar por sección
+            const seccionId = evaluacion.id_Seccion;
+            if (!acc[docenteId].secciones[seccionId]) {
+                acc[docenteId].secciones[seccionId] = {
+                    totalEvaluaciones: 0,
+                    sumaPregunta1: 0,
+                    sumaPregunta2: 0,
+                    sumaPregunta3: 0,
+                    sumaPregunta4: 0,
+                    sumaPregunta5: 0,
+                    evaluacionesIndividuales: []
+                };
+            }
+
+            acc[docenteId].secciones[seccionId].totalEvaluaciones += 1;
+            acc[docenteId].secciones[seccionId].sumaPregunta1 += evaluacion.pregunta1;
+            acc[docenteId].secciones[seccionId].sumaPregunta2 += evaluacion.pregunta2;
+            acc[docenteId].secciones[seccionId].sumaPregunta3 += evaluacion.pregunta3;
+            acc[docenteId].secciones[seccionId].sumaPregunta4 += evaluacion.pregunta4;
+            acc[docenteId].secciones[seccionId].sumaPregunta5 += evaluacion.pregunta5;
+
+            // Agregar evaluación individual a la sección
+            acc[docenteId].secciones[seccionId].evaluacionesIndividuales.push({
+                pregunta1: evaluacion.pregunta1,
+                pregunta2: evaluacion.pregunta2,
+                pregunta3: evaluacion.pregunta3,
+                pregunta4: evaluacion.pregunta4,
+                pregunta5: evaluacion.pregunta5,
+            });
+
+            return acc;
+        }, {});
+
+        // Preparar los resultados finales
+        const resultadosFinales = Object.keys(evaluacionesAgrupadas).map(docenteId => {
+            const docente = evaluacionesAgrupadas[docenteId];
+
+            // Calcular el promedio por sección
+            const secciones = Object.keys(docente.secciones).map(seccionId => {
+                const seccion = docente.secciones[seccionId];
+                return {
+                    seccion: seccionId,
+                    promedioPregunta1: seccion.sumaPregunta1 / seccion.totalEvaluaciones,
+                    promedioPregunta2: seccion.sumaPregunta2 / seccion.totalEvaluaciones,
+                    promedioPregunta3: seccion.sumaPregunta3 / seccion.totalEvaluaciones,
+                    promedioPregunta4: seccion.sumaPregunta4 / seccion.totalEvaluaciones,
+                    promedioPregunta5: seccion.sumaPregunta5 / seccion.totalEvaluaciones,
+                    evaluacionesIndividuales: seccion.evaluacionesIndividuales,
+                };
+            });
+
+            // Calcular el promedio total para todas las secciones del docente
+            const promedioTotal = {
+                promedioPregunta1: docente.sumaPregunta1 / docente.totalEvaluaciones,
+                promedioPregunta2: docente.sumaPregunta2 / docente.totalEvaluaciones,
+                promedioPregunta3: docente.sumaPregunta3 / docente.totalEvaluaciones,
+                promedioPregunta4: docente.sumaPregunta4 / docente.totalEvaluaciones,
+                promedioPregunta5: docente.sumaPregunta5 / docente.totalEvaluaciones,
+            };
+
+            return {
+                numeroEmpleado: docente.numeroEmpleado,
+                nombreCompleto: docente.nombreCompleto,
+                secciones: secciones,
+                promedioTotal: promedioTotal
+            };
+        });
+
+        console.log("Resultados finales:", resultadosFinales);
+
+        return {
+            message: "Lista de encuestas agrupadas, con evaluaciones individuales y promedios",
+            data: resultadosFinales
+        };
+
+    } catch (error) {
+        console.error("Error al obtener la lista de encuestas:", error.message);
+        return {
+            message: "Error al obtener la lista de encuestas",
+            error: error.message
+        };
+    }
+}
+
+
+
+
 
 }
 module.exports = Jefe;
