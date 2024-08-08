@@ -215,6 +215,17 @@ const sendNotesNtfy = async (id_Secciones, numeroCuenta, id_Asignaturas) => {
       throw new Error(`No se encontró usuario para el estudiante con número de cuenta ${numeroCuenta}`);
     }
 
+    const { data:dataS, error:errorS } = await supabase
+    .from('Secciones')
+    .select('Hora_inicio')
+    .eq('id_Secciones', id_Secciones)
+    .single();
+
+    if (errorS) {
+      throw errorS;
+    }
+    
+    const horaInicio = dataS.Hora_inicio;
     const nombre = dataUsuario.Nombre;
     const correo = dataUsuario.Correo;
 
@@ -225,7 +236,7 @@ const sendNotesNtfy = async (id_Secciones, numeroCuenta, id_Asignaturas) => {
       subject: "Notas de la sección",
       html: `
         <h1>¡Hola ${nombre}!</h1>
-        <p>Ya se han ingresado las calificaciones de la asignatura ${nombreAsignatura}, sección: ${id_Secciones}.</p>
+        <p>Ya se han ingresado las calificaciones de la asignatura ${nombreAsignatura}, sección: ${horaInicio}.</p>
         <p>Por favor, revisa tu historial académico para ver tus calificaciones.</p>
         <p>Si tienes alguna pregunta, no dudes en contactar al departamento de soporte.</p>
       `

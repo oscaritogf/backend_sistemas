@@ -744,7 +744,7 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
       .from('lista_espera')
       .select('*')
       .eq('id_seccion', id_seccion)
-      .order('fecha_solicitud', { ascending: true })
+      .order('fecha', { ascending: true })
       .limit(1)
       .single();
   

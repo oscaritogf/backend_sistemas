@@ -298,7 +298,7 @@ static async getActiveDocentesByDepartment(id_Departamento) {
         throw empleadosError;
     }
 
-    // Paso 2: Obtener los roles de los usuarios y filtrar los docentes
+    // Paso 2: Obtener los roles de los usuarios
     const usuarios = empleados.map(e => e.usuario);
     const { data: roles, error: rolesError } = await supabase
         .from('UsuarioRol')
@@ -309,22 +309,24 @@ static async getActiveDocentesByDepartment(id_Departamento) {
         throw rolesError;
     }
 
-    // Paso 3: Obtener la información de Nombre y Apellido de los usuarios
-    const idsUsuarios = usuarios;
+    // Paso 3: Filtrar los usuarios que tienen roles 2 o 4
+    const usuariosConRolesExcluidos = roles
+        .filter(r => [2, 5].includes(r.id_Rol))
+        .map(r => r.id_Usuario);
+
+    // Paso 4: Obtener la información de Nombre y Apellido de los usuarios
     const { data: usuariosInfo, error: usuariosInfoError } = await supabase
         .from('Usuario')
         .select('id, Nombre, Apellido')
-        .in('id', idsUsuarios);
+        .in('id', usuarios);
 
     if (usuariosInfoError) {
         throw usuariosInfoError;
     }
 
-    // Paso 4: Filtrar docentes que no tienen roles 2 o 4 y combinar nombres
+    // Paso 5: Filtrar los docentes que no tienen roles 2 o 4 y combinar nombres
     const docentes = empleados
-        .filter(e => 
-            !roles.some(r => r.id_Usuario === e.usuario && [2, 4].includes(r.id_Rol))
-        )
+        .filter(e => !usuariosConRolesExcluidos.includes(e.usuario))
         .map(e => {
             // Buscar el nombre y apellido del usuario
             const usuarioInfo = usuariosInfo.find(ui => ui.id === e.usuario);
@@ -340,6 +342,7 @@ static async getActiveDocentesByDepartment(id_Departamento) {
 
     return docentes;
 }
+
 
 // Conteo de estudiantes por departamento
 static async countStudentsByDepartment() {
