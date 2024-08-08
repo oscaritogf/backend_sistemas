@@ -100,31 +100,34 @@ exports.matricular = async (req, res) => {
   try {
     const resultado = await matricularAsignatura(id_estudiante, id_seccion, codigo_asignatura);
 
-    if (resultado.message === 'Matrícula con éxito') {
+    if (resultado) {
       res.json({ message: 'Matrícula realizada con éxito', data: resultado.data });
-    } else if (resultado.message === 'Añadido a la lista de espera') {
+    } else if (resultado) {
       res.status(202).json({ message: 'Añadido a la lista de espera', data: resultado.data });
     } else {
       res.status(500).json({ error: 'Resultado inesperado de la matrícula' });
     }
   } catch (error) {
-    if (error.message === 'Ya tiene esta asignatura matriculada') {
+    if (error) {
       res.status(400).json({ error: 'Ya tiene esta clase matriculada' });
-    } else if (error.message === 'La sección no pertenece a tu departamento y no es un servicio permitido') {
+    } else if (error) {
       res.status(400).json({ error: 'La sección no corresponde al departamento del estudiante ni es un servicio permitido' });
-    } else if (error.message === 'Sección no encontrada') {
+    } else if (error) {
       res.status(404).json({ error: 'Sección no encontrada' });
-    } else if (error.message === 'No cumple con los requisitos para matricular esta asignatura') {
+    } else if (error) {
       res.status(400).json({ error: 'El estudiante no cumple con los requisitos para matricular esta asignatura' });
-    } else if (error.message === 'Ya en lista de espera') {
+    } else if (error) {
       res.status(400).json({ error: 'Ya está en la lista de espera para esta sección' });
-    } else if (error.message === 'Hay un traslape de horarios con otra asignatura ya matriculada') {
+    } else if (error) {
       res.status(400).json({ error: 'Hay un traslape de horarios con otra asignatura ya matriculada' });
     } else {
       res.status(500).json({ error: 'Error inesperado en la matrícula', details: error.message });
     }
   }
 };
+
+
+
 
 exports.cancelarMatricula = async (req, res) => {
   const { id_estudiante, id_seccion } = req.body;
@@ -135,6 +138,7 @@ exports.cancelarMatricula = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 exports.cancelarMatriculaEnEspera = async (req, res) => {
   const { id_estudiante, id_seccion } = req.body;
