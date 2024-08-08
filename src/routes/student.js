@@ -17,4 +17,6 @@ router.post('/enviarSolicitud', studentController.enviarSolicitud);
 router.get('/aceptarSolicitud', studentController.aceptarSolicitud);
 router.get('/usuarios', studentController.getAllUsers);
 
+router.post('/encuesta', studentController.enviarEncuesta);
+
 module.exports = router;

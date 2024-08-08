@@ -377,3 +377,14 @@ exports.updateSection = async (req, res) => {
   }
 
 };  
+
+exports.getEncuestasByDocente = async (req, res) => {
+    try {
+        const { id_Departamento } = req.body;
+        const encuestas = await Jefe.getEvaluacionesDocente(id_Departamento);
+        res.json({ message: 'Lista de encuestas', data: encuestas });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener la lista de encuestas', error: error.message });
+    }
+
+};

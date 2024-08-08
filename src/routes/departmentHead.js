@@ -31,4 +31,6 @@ router.post('/rqspass', departmentHeadController.activateChange);
 router.post('/passCgd', departmentHeadController.changePassword);
 router.put('/useccion', departmentHeadController.updateSection);
 
+router.post('/encuestas', departmentHeadController.getEncuestasByDocente);
+
 module.exports = router;

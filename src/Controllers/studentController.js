@@ -131,4 +131,14 @@ exports.getAllUsers = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error al obtener todos los usuarios', error: error.message });
     }
-}
+};
+
+exports.enviarEncuesta = async (req, res) => {
+      try{
+          const { id_Seccion, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5 } = req.body;
+          const data = await Student.encuestaDocente( id_Seccion, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5);
+          res.json({ message: 'Encuesta enviada', data });
+      }catch(error){
+          res.status(500).json({ message: 'Error al enviar encuesta', error: error.message });
+      }
+};  
