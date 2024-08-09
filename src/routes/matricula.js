@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const matriculaController= require('../Controllers/matriculaController/matriculaController');
+const  validarMatriculaController  = require('../Controllers/matriculaController/validarMatriculaController');
+
+//para adicionar le da error
+router.get('/validar-adicion/:id_estudiante', validarMatriculaController.validarAdicionAsignatura);
 
 
 router.get('/departamentos', matriculaController.getDepartamentos);
