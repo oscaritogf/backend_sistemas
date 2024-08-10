@@ -31,6 +31,7 @@ router.get('/countStudents', departmentHeadController.countStudentsByDepartment)
 router.put('/cupos', departmentHeadController.updateSectionCupos);
 router.delete('/just', departmentHeadController.cancelSection);
 router.post('/rqspass', departmentHeadController.activateChange);
+router.post('/validateToken', departmentHeadController.validateToken);
 router.post('/passCgd', departmentHeadController.changePassword);
 router.put('/useccion', departmentHeadController.updateSection);
 

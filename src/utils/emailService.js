@@ -135,7 +135,7 @@ const sendResetMail = async (to, token) => {
     html: `
       <h1>Recuperación de contraseña</h1>
       <p>Para recuperar tu contraseña, haz click en el siguiente enlace:</p>
-      <a href="http://localhost:3000/reset/${token}">Recuperar contraseña</a>
+      <a href="http://localhost:5173/reinicioClave/${token}">Recuperar contraseña</a>
     `
     });
     console.log('Correo de recuperación de contraseña enviado');

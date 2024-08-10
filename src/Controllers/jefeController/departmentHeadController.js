@@ -387,6 +387,30 @@ exports.activateChange = async (req, res) => {
   }
 };  
 
+exports.validateToken = async (req, res) => {
+  const { reset_token } = req.body;
+
+  if (!reset_token) {
+      return res.status(400).json({ message: 'Token no proporcionado.' });
+  }
+
+  try {
+      const user = await Jefe.getUserByToken(reset_token);
+      if (!user) {
+          return res.status(400).json({ message: 'Token no válido.' });
+      }
+
+      const expirationTime = new Date(user.token_expiration);
+      if (new Date() > expirationTime) {
+          return res.status(400).json({ message: 'Token expirado.' });
+      }
+
+      res.json({ message: 'Token válido.' });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al validar el token', error: error.message });
+  }
+};
+
 exports.changePassword = async (req, res) => {
   try {
     const { token, password } = req.body;

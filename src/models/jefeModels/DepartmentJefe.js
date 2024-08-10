@@ -632,6 +632,28 @@ static async updateSectionCupos(sectionId, newCupos) {
   await sendResetMail(email, token);
 }
 
+static async getUserByToken  (resetToken)  {
+    try {
+        // Consulta a la base de datos para encontrar un usuario con el token de reinicio proporcionado
+        const { data, error } = await supabase
+            .from('Usuario') // Nombre de la tabla en Supabase
+            .select('id, token_expiration')
+            .eq('reset_token', resetToken)
+            .single(); // Obtiene un único registro
+
+        if (error) {
+            console.error('Error al obtener el usuario con el token:', error);
+            throw new Error('Error en la consulta de la base de datos.');
+        }
+
+        return data; // Devuelve el usuario si se encuentra; de lo contrario, devuelve null
+
+    } catch (err) {
+        console.error('Error en getUserByToken:', err);
+        throw err;
+    }
+};
+
 static async Reset(token, newPassword) {
     const { data, error } = await supabase
         .from('Usuario')
