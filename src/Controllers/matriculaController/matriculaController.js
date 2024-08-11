@@ -15,6 +15,7 @@ const {
   matricularAsignatura,
   getIdEstudiante,
   getDocenteInfo,
+  getSeccionById
 } = require('../../models/matricula/Matricula');
 
 exports.getDepartamentos = async (req, res) => {
@@ -126,6 +127,15 @@ exports.matricular = async (req, res) => {
   }
 };
 
+exports.getSeccionById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const seccion = await getSeccionById(id);
+    res.json(seccion);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 
 

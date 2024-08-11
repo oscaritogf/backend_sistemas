@@ -31,6 +31,8 @@ router.put('/secciones/:id_seccion/cupos', matriculaController.actualizarCupos);
 router.get('/lista-espera/seccion/:id_seccion', matriculaController.listarEstudiantesEnEspera);
 router.get('/lista-espera/estudiante/:id_estudiante', matriculaController.listarClasesEnEspera);
 
+
 ////trae el docente 
+router.get('/seccion/:id', matriculaController.getSeccionById);
 router.get('/seccion/:id_seccion', matriculaController.getDocenteInfo);
 module.exports = router;
