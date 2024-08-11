@@ -88,7 +88,8 @@ exports.getAulas = async (req, res) => {
 
         let estado = true;
         let contrasenaChat  = (Math.floor(Math.random() * 90000) + 10000).toString();
-        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, id_Departamento, matriculados, estado, contrasenaChat };	
+        let nombreChat = `${codigoAsignatura.toLowerCase() }-${contrasenaChat}`
+        const data = { id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, codigoAsignatura, id_Departamento, matriculados, estado, contrasenaChat, nombreChat };	
 
         // Verificar la existencia de los valores en la base de datos
         await Jefe.existsInTable('empleado', 'numeroEmpleado', id_Docentes);
@@ -176,10 +177,10 @@ exports.getAulas = async (req, res) => {
             apikey: process.env.COMETCHAT_API_KEY
           },
           body: JSON.stringify({
-            type: 'password',
+            type: 'private',
             guid: `${codigoAsignatura}-${contrasenaChat}`,
-            name: `${codigoAsignatura}`,
-            password: contrasenaChat,
+            name: `${codigoAsignatura.toLowerCase() }-${contrasenaChat}`,
+            // password: contrasenaChat,
             description: `Esta es el grupo de la clase ${codigoAsignatura}-${Hora_inicio}`,
             owner: id_Docentes,
           })

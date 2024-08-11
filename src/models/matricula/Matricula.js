@@ -334,9 +334,11 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
   // Obtener información del estudiante
   const { data: estudiante, error: errorEstudiante } = await supabase
     .from('estudiante')
-    .select('id_Departamento')
+    .select('id_Departamento, numeroCuenta, usuario(*)')
     .eq('id', id_estudiante)
     .single();
+
+    console.log(estudiante);
 
   if (errorEstudiante) throw errorEstudiante;
   if (!estudiante) throw new Error('Estudiante no encontrado');
@@ -358,8 +360,36 @@ const matricularAsignatura = async (id_estudiante, id_seccion, codigo_asignatura
     .eq('id_Secciones', id_seccion)
     .single();
 
+    console.log(seccion);
+    console.log('Este es el UID DEL ESTUDIANTE PARA PONER EN EL COMETCHAT: ' , estudiante.numeroCuenta);
+    console.log('Este es el UID DEL GRUPO PARA PONER EN EL COMETCHAT: ' ,seccion.nombreChat);
+
   if (errorSeccion) throw errorSeccion;
   if (!seccion) throw new Error('Sección no encontrada');
+
+
+
+
+
+
+
+    const url = `${process.env.COMETCHAT_BASE_URL}/groups/${seccion.nombreChat}/members`;
+    const options = {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        apikey: process.env.COMETCHAT_API_KEY
+      },
+      body: JSON.stringify({participants: [estudiante.numeroCuenta]})
+    };
+    
+    fetch(url, options)
+      .then(res => res.json())
+      .then(json => console.log(json))
+      .catch(err => console.error('error:' + err));
+
+
 
   const asignatura_id_Departamento = seccion.Asignatura.id_Departamento;
 
@@ -506,6 +536,59 @@ const cancelarMatricula = async (id_estudiante, id_seccion) => {
     if (data && data.length === 0) {
       throw new Error('Matrícula no encontrada');
     }
+
+
+
+
+
+    const { data: estudiante, error: errorEstudiante } = await supabase
+    .from('estudiante')
+    .select('numeroCuenta')
+    .eq('id', id_estudiante)
+    .single();
+
+    console.log(estudiante);
+
+  if (errorEstudiante) throw errorEstudiante;
+  if (!estudiante) throw new Error('Estudiante no encontrado');
+
+  // Obtener información de la sección y la asignatura
+  const { data: seccion, error: errorSeccion } = await supabase
+    .from('Secciones')
+    .select('*')
+    .eq('id_Secciones', id_seccion)
+    .single();
+
+    console.log(seccion);
+    console.log('Este es el UID DEL ESTUDIANTE PARA PONER EN EL COMETCHAT: ' , estudiante.numeroCuenta);
+    console.log('Este es el UID DEL GRUPO PARA PONER EN EL COMETCHAT: ' ,seccion.nombreChat);
+
+  if (errorSeccion) throw errorSeccion;
+  if (!seccion) throw new Error('Sección no encontrada');
+
+
+
+
+
+
+
+
+    const url = `${process.env.COMETCHAT_BASE_URL}/groups/${seccion.nombreChat}/members/${estudiante.numeroCuenta}`;
+    const options = {
+      method: 'DELETE',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        apikey: process.env.COMETCHAT_API_KEY
+      },
+    };
+    
+    fetch(url, options)
+      .then(res => res.json())
+      .then(json => console.log(json))
+      .catch(err => console.error('error:' + err));
+
+
     return { message: 'Matrícula cancelada con éxito' };
   };
 
