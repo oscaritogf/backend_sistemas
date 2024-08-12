@@ -118,22 +118,53 @@ const obtenerSolicitudesEstudiante = async (id_estudiante) => {
 };
 
 const obtenerSolicitudesPendientes = async (id_coordinador) => {
-    console.log('Buscando solicitudes pendientes para coordinador:', id_coordinador);
-    const { data, error } = await supabase
-      .from('solicitudes_estudiantes')
-      .select('*')
-      .eq('estado', 'pendiente')
-      .eq('id_coordinador', id_coordinador);
+  console.log('Buscando solicitudes pendientes para coordinador:', id_coordinador);
   
-    if (error) {
-      console.error('Error al obtener solicitudes pendientes:', error);
-      throw error;
-    }
+  // Obtener las solicitudes desde la base de datos
+  const { data, error } = await supabase
+    .from('solicitudes_estudiantes')
+    .select(`
+      *, documento_respaldo,
+      tipo_solicitud(*),
+      estudiante (
+        *,
+        Usuario (
+          Nombre,
+          Apellido,
+          Imagen
+        )
+      )
+    `)
+    .eq('estado', 'pendiente')
+    .eq('id_coordinador', id_coordinador);
     
-    console.log('Solicitudes pendientes encontradas:', data);
-    return data;
-  };
+  if (error) {
+    console.error('Error al obtener solicitudes pendientes:', error);
+    throw error;
+  }
   
+  // Base URL del bucket de Supabase
+  const baseUrl = 'https://yzmqunfvavysldxrfaij.supabase.co/storage/v1/object/public/documentos/';
+  
+  // Añadir la URL de descarga a cada solicitud
+  const solicitudesConUrls = data.map(solicitud => {
+    const documentoRespaldo = solicitud.documento_respaldo;
+    let urlDescarga = null;
+
+    if (documentoRespaldo) {
+      urlDescarga = `${baseUrl}${documentoRespaldo}?download`;
+    }
+
+    return {
+      ...solicitud,
+      urlDescarga
+    };
+  });
+
+  console.log('Solicitudes pendientes encontradas con URL de descarga:', solicitudesConUrls);
+  return solicitudesConUrls;
+};
+
 const responderSolicitud = async (id_solicitud, id_coordinador, respuesta, nuevo_estado) => {
   const { data, error } = await supabase
     .from('solicitudes_estudiantes')
