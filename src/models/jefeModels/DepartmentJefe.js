@@ -699,95 +699,64 @@ static async Reset(token, newPassword) {
 static async updateSeccion(data) {
     const { id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, dias } = data;
 
-    // Validar que la Hora_Final sea mayor que la Hora_inicio
-    const newStartTime = new Date(`1970-01-01T${Hora_inicio}`);
-    const newEndTime = new Date(`1970-01-01T${Hora_Final}`);
-    if (newEndTime <= newStartTime) {
-        throw new Error("La Hora_Final debe ser mayor que la Hora_inicio");
-    }
-
-    // Verificar si hay traslape de horarios con el mismo aula, edificio y hora inicial
-    const { data: conflict, error: conflictError } = await supabase
-        .from('Secciones')
-        .select('id_Secciones')
-        .eq('id_Aula', id_Aula)
-        .eq('id_Edificios', id_Edificios)
-        .eq('Hora_inicio', Hora_inicio)
-        .neq('id_Secciones', id_Secciones)
-        .single();
-
-    if (conflictError && conflictError.code !== 'PGRST116') { // Ignorar error si no se encuentran registros
-        throw conflictError;
-    }
-
-    if (conflict) {
-        throw new Error("Existe un traslape de horarios con otra sección en el mismo aula y edificio.");
-    }
-
-    // Obtener los datos de la sección existente
-    const { data: existingSection, error: existingSectionError } = await supabase
-        .from('Secciones')
-        .select('Hora_inicio, Hora_Final')
-        .eq('id_Secciones', id_Secciones)
-        .single();
-
-    if (existingSectionError) {
-        throw existingSectionError;
-    }
-
-    // Calcular la diferencia de horas original
-    const originalStartTime = new Date(`1970-01-01T${existingSection.Hora_inicio}`);
-    const originalEndTime = new Date(`1970-01-01T${existingSection.Hora_Final}`);
-    const originalHourDifference = (originalEndTime - originalStartTime) / (1000 * 60 * 60); // Diferencia en horas original
-
-    // Calcular la diferencia de horas nueva
-    const newHourDifference = (newEndTime - newStartTime) / (1000 * 60 * 60); // Diferencia en horas nueva
-
-    // Obtener la cantidad de días existentes para la sección
-    const { data: existingDays, error: existingDaysError } = await supabase
-        .from('seccion_dias')
-        .select('id_dia')
+    // Verificar si hay registros en la tabla matricula para la sección
+    const { data: matriculaRecords, error: matriculaError } = await supabase
+        .from('matricula')
+        .select('id_matricula')
         .eq('id_seccion', id_Secciones);
 
-    if (existingDaysError) {
-        throw existingDaysError;
+    if (matriculaError) {
+        throw matriculaError;
     }
 
-    const numExistingDays = existingDays.length;
+    // Si existen registros en la tabla matricula, no permitir la actualización de Hora_inicio ni Hora_Final
+    const canUpdateTime = matriculaRecords.length === 0;
 
-    // Verificar si la cantidad de días es diferente
-    if (dias.length !== numExistingDays) {
-        if (numExistingDays === 1 && dias.length > 1) {
-            // Cambiar de un día a varios días
-            if (dias.length !== originalHourDifference) {
-                throw new Error(`La cantidad de días nuevos (${dias.length}) debe ser igual a la diferencia de horas original (${originalHourDifference}).`);
-            }
+    if (!canUpdateTime && (Hora_inicio || Hora_Final)) {
+        console.log("No se puede modificar la hora de inicio o fin debido a que hay estudiantes matriculados en esta sección.");
+    }
 
-            const newHourPerDay = originalHourDifference / dias.length;
-            if (newHourPerDay * dias.length !== originalHourDifference) {
-                throw new Error(`La nueva diferencia de horas por día (${newHourPerDay}) multiplicada por la cantidad de días nuevos (${dias.length}) debe ser igual a la diferencia de horas original (${originalHourDifference}).`);
-            }
-        } else if (dias.length !== numExistingDays) {
-            // Cambiar de varios días a uno o diferente cantidad de días
-            if (!(dias.length === 1 && newHourDifference >= numExistingDays)) {
-                throw new Error(`La cantidad de días no coincide con la cantidad original y la diferencia de horas no es suficiente para compensar. Se requiere una diferencia de al menos ${numExistingDays} horas.`);
-            }
+    // Construir el objeto de actualización
+    const updateData = {
+        id_Docentes,
+        id_Aula,
+        id_Edificios,
+    };
+
+    if (canUpdateTime) {
+        updateData.Hora_inicio = Hora_inicio;
+        updateData.Hora_Final = Hora_Final;
+
+        // Validar que la Hora_Final sea mayor que la Hora_inicio
+        const newStartTime = new Date(`1970-01-01T${Hora_inicio}`);
+        const newEndTime = new Date(`1970-01-01T${Hora_Final}`);
+        if (newEndTime <= newStartTime) {
+            throw new Error("La Hora_Final debe ser mayor que la Hora_inicio");
+        }
+
+        // Verificar si hay traslape de horarios con el mismo aula, edificio y hora inicial
+        const { data: conflict, error: conflictError } = await supabase
+            .from('Secciones')
+            .select('id_Secciones')
+            .eq('id_Aula', id_Aula)
+            .eq('id_Edificios', id_Edificios)
+            .eq('Hora_inicio', Hora_inicio)
+            .neq('id_Secciones', id_Secciones)
+            .single();
+
+        if (conflictError && conflictError.code !== 'PGRST116') { // Ignorar error si no se encuentran registros
+            throw conflictError;
+        }
+
+        if (conflict) {
+            throw new Error("Existe un traslape de horarios con otra sección en el mismo aula y edificio.");
         }
     }
-
-    // Verificar si hay traslape de horarios
-    await Jefe.hasTimeConflict(data);
 
     // Actualizar la sección con los nuevos datos
     const { data: seccion, error } = await supabase
         .from('Secciones')
-        .update({
-            id_Docentes,
-            id_Aula,
-            id_Edificios,
-            Hora_inicio,
-            Hora_Final
-        })
+        .update(updateData)
         .eq('id_Secciones', id_Secciones)
         .single();
 
@@ -821,6 +790,8 @@ static async updateSeccion(data) {
 
     return seccion;
 }
+
+
 
 // DAtos de las encuestas por departamento
 static async getEvaluacionesDocente(id_Departamento) {
@@ -977,6 +948,115 @@ static async getEvaluacionesDocente(id_Departamento) {
         };
     }
 }
+
+//obtener notas de docentes por departamento
+static async getCalificacionesPorDepartamento(id_Departamento) {
+    try {
+        console.log("Iniciando consulta con id_Departamento:", id_Departamento);
+
+        // Realiza la consulta para obtener las calificaciones del departamento
+        const { data: calificaciones, error } = await supabase
+            .from('Calificaciones_Registro')
+            .select('id_Docente, id_Seccion, nota')
+            .eq('id_Departamento', id_Departamento);
+
+        if (error) {
+            console.error("Error al realizar la consulta:", error.message);
+            throw error;
+        }
+
+        console.log("Calificaciones obtenidas:", calificaciones);
+
+        // Crear un conjunto de docentes únicos a partir de las calificaciones
+        const docentesIds = [...new Set(calificaciones.map(calificacion => calificacion.id_Docente))];
+
+        // Obtener la información de los docentes basándonos en los ids obtenidos
+        const { data: docentes, error: docentesError } = await supabase
+            .from('empleado')
+            .select('numeroEmpleado, Usuario(Correo, Nombre, Apellido)')
+            .in('numeroEmpleado', docentesIds);
+
+        if (docentesError) {
+            console.error("Error al obtener información de los docentes:", docentesError.message);
+            throw docentesError;
+        }
+
+        // Crear un mapa para acceder rápidamente a los datos de los docentes
+        const docentesMap = docentes.reduce((acc, docente) => {
+            acc[docente.numeroEmpleado] = {
+                nombre: docente.Usuario.Nombre,
+                apellido: docente.Usuario.Apellido,
+                numeroEmpleado: docente.numeroEmpleado
+            };
+            return acc;
+        }, {});
+
+        // Agrupar calificaciones por docente y sección
+        const calificacionesAgrupadas = calificaciones.reduce((acc, calificacion) => {
+            const docenteId = calificacion.id_Docente;
+            const docenteNombre = docentesMap[docenteId]?.nombre || 'Desconocido';
+            const docenteApellido = docentesMap[docenteId]?.apellido || '';
+            const nombreCompleto = `${docenteNombre} ${docenteApellido}`.trim();
+
+            if (!acc[docenteId]) {
+                acc[docenteId] = {
+                    numeroEmpleado: docenteId,
+                    nombreCompleto: nombreCompleto,
+                    secciones: {}
+                };
+            }
+
+            // Agrupar por sección
+            const seccionId = calificacion.id_Seccion;
+            if (!acc[docenteId].secciones[seccionId]) {
+                acc[docenteId].secciones[seccionId] = {
+                    calificaciones: []
+                };
+            }
+
+            acc[docenteId].secciones[seccionId].calificaciones.push({
+                nota: calificacion.nota
+            });
+
+            return acc;
+        }, {});
+
+        // Preparar los resultados finales
+        const resultadosFinales = Object.keys(calificacionesAgrupadas).map(docenteId => {
+            const docente = calificacionesAgrupadas[docenteId];
+
+            // Obtener todas las secciones del docente
+            const secciones = Object.keys(docente.secciones).map(seccionId => {
+                const seccion = docente.secciones[seccionId];
+                return {
+                    seccion: seccionId,
+                    calificaciones: seccion.calificaciones
+                };
+            });
+
+            return {
+                numeroEmpleado: docente.numeroEmpleado,
+                nombreCompleto: docente.nombreCompleto,
+                secciones: secciones
+            };
+        });
+
+        console.log("Resultados finales:", resultadosFinales);
+
+        return {
+            message: "Lista de calificaciones agrupadas por docente y sección",
+            data: resultadosFinales
+        };
+
+    } catch (error) {
+        console.error("Error al obtener la lista de calificaciones:", error.message);
+        return {
+            message: "Error al obtener la lista de calificaciones",
+            error: error.message
+        };
+    }
+}
+
 
 
 

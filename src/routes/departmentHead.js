@@ -36,5 +36,6 @@ router.post('/passCgd', departmentHeadController.changePassword);
 router.put('/useccion', departmentHeadController.updateSection);
 
 router.post('/encuestas', departmentHeadController.getEncuestasByDocente);
+router.get('/notasdpt/:id_Departamento', departmentHeadController.getNotasByDepartment);
 
 module.exports = router;

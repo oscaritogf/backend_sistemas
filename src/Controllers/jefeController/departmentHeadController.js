@@ -443,3 +443,14 @@ exports.getEncuestasByDocente = async (req, res) => {
     }
 
 };
+
+exports.getNotasByDepartment = async (req, res) => {
+  try {
+      const { id_Departamento } = req.params;
+      const notas = await Jefe.getCalificacionesPorDepartamento(id_Departamento);
+      res.json({ message: 'Lista de notas', data: notas });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al obtener la lista de notas', error: error.message });
+  }
+
+}

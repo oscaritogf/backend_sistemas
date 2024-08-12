@@ -25,6 +25,9 @@ router.post('/encuesta', studentController.enviarEncuesta);
 router.get('/certificacion/:id_estudiante', certifcacioController.getCertificacion);
 
 router.get('/indice-global/:id_estudiante', certifcacioController.getIndiceGlobal);
-router.get('/indice-periodo/:id_estudiante/:id_cunfigMatricula', certifcacioController.getIndicePorPeriodo);
+router.get('/indice-periodo/:id_estudiante/:periodo/:id_cunfigMatricula', certifcacioController.getIndicePorPeriodo);
+
+router.put('/indice-globalu/:id_estudiante', certifcacioController.putIndiceGlobal);
+router.put('/indice-periodou/:id_estudiante/:periodo', certifcacioController.putIndicePorPeriodo);
 
 module.exports = router;
