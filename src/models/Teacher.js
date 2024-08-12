@@ -5,12 +5,35 @@ const fs = require('fs');
 class Teacher {
 
         static async getSeccionesByDocente(id_Docentes) {
-       
             const { data, error } = await supabase
-              .from('Secciones')
-              .select('*')
-              .eq('id_Docentes', id_Docentes);
-      
+            .from('matricula')
+            .select(`
+              *,
+              Secciones (
+                id_Secciones,
+                Hora_inicio,
+                Hora_Final,
+                id_Docentes,
+                Cupos,
+                Asignaturas (
+                  nombre,
+                  codigo,
+                  uv
+                ), 
+                Edificios(
+                  Nombre
+                ),
+                Aula(
+                  Nombre
+                ),
+                Dias:seccion_dias!inner(
+                  Dia:Dias (
+                    Nombre
+                  )
+                )
+              )
+            `)
+            .eq('Secciones.id_Docentes', id_Docentes);       
             if (error) {
               throw error;
             }
