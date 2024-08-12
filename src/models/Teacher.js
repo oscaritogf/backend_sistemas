@@ -6,10 +6,8 @@ class Teacher {
 
         static async getSeccionesByDocente(id_Docentes) {
             const { data, error } = await supabase
-            .from('matricula')
+            .from('Secciones')
             .select(`
-              *,
-              Secciones (
                 id_Secciones,
                 Hora_inicio,
                 Hora_Final,
@@ -31,9 +29,8 @@ class Teacher {
                     Nombre
                   )
                 )
-              )
             `)
-            .eq('Secciones.id_Docentes', id_Docentes);       
+            .eq('id_Docentes', id_Docentes);       
             if (error) {
               throw error;
             }
