@@ -84,40 +84,43 @@ class Teacher {
           return { seccion: id_Secciones, codigo: dataSeccion, estudiantes: dataStudents };
         }
         
-   
-      static async saveListStudents(data) {
-        const {seccion, codigo, estudiantes} = data;
+   // Método para generar el archivo Excel
+static async saveListStudents(data, res) {
+  const { seccion, codigo, estudiantes } = data;
 
-        const ws_data = [
-          [`Asignatura: ${codigo[0].Asignaturas.nombre} - Seccion: ${seccion} - Codigo: ${codigo[0].codigoAsignatura}`],
-          [],
-          ['No.','Nombre', 'Apellido', 'Numero de Cuenta'],
-        ];
+  const ws_data = [
+      [`Asignatura: ${codigo[0].Asignaturas.nombre} - Sección: ${seccion} - Código: ${codigo[0].codigoAsignatura}`],
+      [],
+      ['No.', 'Nombre', 'Apellido', 'Número de Cuenta'],
+  ];
 
-        estudiantes.forEach((student, index) => {
-          ws_data.push([
-            index + 1,
-             student.Nombre,
-              student.Apellido, 
-              student.estudiante[0].numeroCuenta.toString(10)
-            ]);
-        });
+  estudiantes.forEach((student, index) => {
+      ws_data.push([
+          index + 1,
+          student.Nombre,
+          student.Apellido,
+          student.estudiante[0].numeroCuenta.toString(10)
+      ]);
+  });
 
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
-        ws['!merges'] = [
-          { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
-        ws['A1'].s = { alignment: { horizontal: 'center' } }; 
+  // Centrar el título de la sección
+  ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }];
+  ws['A1'].s = { alignment: { horizontal: 'center' } };
 
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, `Seccion_${seccion}`);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, `Seccion_${seccion}`);
 
+  // Escribe el archivo en un buffer
+  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
 
-        const fileName = `Seccion_${seccion}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-
-      }
-
+  // Establecer encabezados y enviar el archivo como respuesta
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=Seccion_${seccion}.xlsx`);
+  res.send(excelBuffer);
+}
+     
       static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso) {
         try {
           // Obtener el estado del proceso
