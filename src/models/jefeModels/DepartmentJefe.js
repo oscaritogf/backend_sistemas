@@ -584,6 +584,11 @@ static async updateSectionCupos(sectionId, newCupos) {
     //Justificacion para cancelar una seccion
     static async justificarCancelacionSeccion(id_Secciones) {
         // Primero, elimina los registros de la tabla 'seccion_dias' relacionados con 'id_Secciones'
+        const { data: secevent, error: errorSecc } = await supabase
+        .from('evaluacion_docente')
+        .delete()
+        .eq('id_Seccion', id_Secciones)
+
         const { error: errorSeccionDias } = await supabase
             .from('seccion_dias')
             .delete()
