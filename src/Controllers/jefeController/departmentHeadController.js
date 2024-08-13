@@ -424,7 +424,19 @@ exports.changePassword = async (req, res) => {
 
 exports.updateSection = async (req, res) => {
   try {
-    const data =  {  id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, dias } = req.body;
+    const { id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, dias } = req.body;
+    
+    // Construir el objeto data
+    const data = {
+      id_Secciones,
+      id_Docentes,
+      id_Aula,
+      id_Edificios,
+      Hora_inicio,
+      Hora_Final,
+      Cupos,
+      dias
+    };
     const seccion = await Jefe.updateSeccion(data);
     res.json({ message: 'Seccion actualizada correctamente', data: seccion });
   }catch (error) {

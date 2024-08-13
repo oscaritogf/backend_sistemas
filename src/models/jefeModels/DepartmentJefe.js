@@ -697,7 +697,7 @@ static async Reset(token, newPassword) {
 }
 
 static async updateSeccion(data) {
-    const { id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, dias } = data;
+    const { id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, dias } = data;
 
     // Verificar si hay registros en la tabla matricula para la sección
     const { data: matriculaRecords, error: matriculaError } = await supabase
@@ -720,8 +720,13 @@ static async updateSeccion(data) {
     const updateData = {
         id_Docentes,
         id_Aula,
-        id_Edificios,
+        id_Edificios
     };
+
+    // Solo incluir Cupos si no es undefined
+    if (Cupos !== undefined) {
+        updateData.Cupos = Cupos;
+    }
 
     if (canUpdateTime) {
         updateData.Hora_inicio = Hora_inicio;
@@ -752,6 +757,9 @@ static async updateSeccion(data) {
             throw new Error("Existe un traslape de horarios con otra sección en el mismo aula y edificio.");
         }
     }
+
+    // Registrar el objeto updateData antes de hacer la actualización
+    console.log("Datos de actualización:", updateData);
 
     // Actualizar la sección con los nuevos datos
     const { data: seccion, error } = await supabase
