@@ -15,8 +15,29 @@ const {
   matricularAsignatura,
   getIdEstudiante,
   getDocenteInfo,
-  getSeccionById
+  getSeccionById,
+  getAsignaturasPendientes,
+  getDepartamentosParaEstudiante,
 } = require('../../models/matricula/Matricula');
+
+exports.getDepartamentosParaEstudiante = async (req, res) => {
+  const { numeroCuenta } = req.params;
+  try {
+    const departamentos = await getDepartamentosParaEstudiante(numeroCuenta);
+    res.json(departamentos);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+exports.getAsignaturasPendientes = async (req, res) => {
+  const { numeroCuenta, id_departamento } = req.params;
+  try {
+    const asignaturas = await getAsignaturasPendientes(numeroCuenta, id_departamento);
+    res.json(asignaturas);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 exports.getDepartamentos = async (req, res) => {
   try {
@@ -26,6 +47,8 @@ exports.getDepartamentos = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 exports.getAsignaturasByDepartamento = async (req, res) => {
   const { id_Departamento } = req.params;
@@ -95,7 +118,7 @@ exports.getAsignaturasEstudiante = async (req, res) => {
   }
 };
 
-
+/*
 exports.matricular = async (req, res) => {
   const { id_estudiante, id_seccion, codigo_asignatura } = req.body;
   try {
@@ -125,7 +148,53 @@ exports.matricular = async (req, res) => {
       res.status(500).json({ error: 'Error inesperado en la matrícula', details: error.message });
     }
   }
+};*/
+
+exports.matricular = async (req, res) => {
+  const { id_estudiante, id_seccion, codigo_asignatura } = req.body;
+  try {
+    const resultado = await matricularAsignatura(id_estudiante, id_seccion, codigo_asignatura);
+
+    if (resultado.message === 'Matrícula realizada con éxito') {
+      res.json({ message: resultado.message, data: resultado.data });
+    } else if (resultado.message === 'Añadido a la lista de espera') {
+      res.status(202).json({ message: resultado.message, data: resultado.data });
+    } else {
+      res.status(500).json({ error: 'Resultado inesperado de la matrícula' });
+    }
+  } catch (error) {
+    console.error('Error en la matrícula:', error);
+
+    switch(error.message) {
+      case 'Ya has aprobado esta asignatura':
+      case 'Ya tienes esta asignatura matriculada':
+      case 'Ya tienes esta asignatura matriculada (verificación final)':
+        res.status(400).json({ error: error.message });
+        break;
+      case 'No cumples con los requisitos para esta asignatura':
+        res.status(400).json({ error: error.message });
+        break;
+      case 'Estudiante no encontrado':
+        res.status(404).json({ error: error.message });
+        break;
+      case 'Sección no encontrada':
+        res.status(404).json({ error: error.message });
+        break;
+      case 'La sección no pertenece a tu departamento y no es una clase de servicio permitido':
+        res.status(400).json({ error: error.message });
+        break;
+      case 'Ya estás en la lista de espera para esta sección':
+        res.status(400).json({ error: error.message });
+        break;
+      case 'Hay un traslape de horarios con otra asignatura ya matriculada':
+        res.status(400).json({ error: error.message });
+        break;
+      default:
+        res.status(500).json({ error: 'Error inesperado en la matrícula', details: error.message });
+    }
+  }
 };
+
 
 exports.getSeccionById = async (req, res) => {
   const { id } = req.params;

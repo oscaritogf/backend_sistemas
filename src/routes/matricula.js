@@ -6,6 +6,11 @@ const  validarMatriculaController  = require('../Controllers/matriculaController
 //para adicionar le da error
 router.get('/validar-adicion/:id_estudiante', validarMatriculaController.validarAdicionAsignatura);
 
+//nuevas rutas para matri
+router.get('/departamentos/:numeroCuenta', matriculaController.getDepartamentosParaEstudiante);
+router.get('/asignaturas/:numeroCuenta/:id_departamento', matriculaController.getAsignaturasPendientes);
+//router.get('asignaturas/:id_estudiante/:id_departamento', matriculaController.getAsignaturasPendientes);
+
 
 router.get('/departamentos', matriculaController.getDepartamentos);
 router.get('/asignaturas/:id_Departamento', matriculaController.getAsignaturasByDepartamento);
