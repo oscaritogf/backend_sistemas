@@ -1,6 +1,16 @@
   const Teacher = require('../models/Teacher');
   const supabase = require('../config/supabase');
   const  { sendNotesNtfy }= require('../utils/emailService');
+
+  exports.updateVideo = async (req, res) => {
+    try {
+      const { id_Secciones, urlVideo } = req.body;
+      const response = await Teacher.updateVideo(id_Secciones, urlVideo);
+      res.json({ message: 'Video actualizado' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al actualizar el video', error: error.message });
+    }
+  };
   
   exports.getSecciones = async (req, res) => {
     try {

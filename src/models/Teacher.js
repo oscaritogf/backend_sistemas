@@ -4,6 +4,16 @@ const fs = require('fs');
 
 class Teacher {
 
+    static async updateVideo(id_Secciones, urlVideo) {
+        const { data, error } = await supabase
+            .from('Secciones')
+            .update({ urlVideo: urlVideo })
+            .eq('id_Secciones', id_Secciones);
+        if (error) {
+            throw error;
+        }
+    }
+
         static async getSeccionesByDocente(id_Docentes) {
             const { data, error } = await supabase
             .from('Secciones')
