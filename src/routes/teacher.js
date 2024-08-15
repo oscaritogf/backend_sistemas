@@ -11,7 +11,7 @@ router.get('/students/:Seccion', teacherController.getStudents);
 
 router.post('/fcourse', teacherController.finishCourse);
 router.post('/notas', teacherController.uploadNotes);
-router.put('/notas', teacherController.updateNotes);
+router.put('/notasU', teacherController.updateNotes);
 router.put('/video', teacherController.updateVideo);
 
 module.exports = router;

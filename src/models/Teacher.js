@@ -129,96 +129,92 @@ static async saveListStudents(data, res) {
   res.send(excelBuffer);
 }
      
-      static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso, detail) {
-        try {
-          // Obtener el estado del proceso
-          const { data: dataNota, error: errorNota } = await supabase
-            .from('ProcesoNotas')
-            .select('estado')
-            .eq('id', proceso)
-            .single(); // Asegúrate de obtener un solo registro
-          
-          if (errorNota) {
-            throw errorNota;
-          }
-      
-          // Verificar que el estado del proceso es un booleano
-          if (typeof dataNota.estado !== 'boolean') {
-            throw new Error('El estado del proceso no es un valor booleano');
-          }
-      
-          // Verificar si el proceso está cerrado
-          if (!dataNota.estado) {
-            return { message: 'El proceso de notas está cerrado' };
-          }
-      
-          // Obtener el código de asignatura
-          const { data: dS, error: eS } = await supabase
-            .from('Secciones')
-            .select('codigoAsignatura')
-            .eq('id_Secciones', id_Secciones) // Cambia 'id' por el nombre correcto de la columna
-            .single(); // Asegúrate de obtener un solo registro
-      
-          if (eS) {
-            throw eS;
-          }
-      
-          // Validar nota
-          if (nota === '' || nota < 0 || nota > 100) {
-            return { message: 'La nota debe estar entre 0 y 100 y no puede estar vacía' };
-          }
-      
-          // Determinar observación
-          let obs = 'NSP';
-          if (nota >= 65) {
-            obs = 'APB';
-          } else if (nota < 65 && nota !== 0) {
-            obs = 'RPB';
-          }
+static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso, detail) {
+  try {
+      const { data: dataNota, error: errorNota } = await supabase
+          .from('ProcesoNotas')
+          .select('estado')
+          .eq('id', proceso)
+          .single();
 
-          if (detail !== null){
-            obs = 'ABD';
-          }
-      
-          // Verificar si ya existe una nota para el estudiante en la sección
-          const { data: existingNote, error: errorExistingNote } = await supabase
-            .from('Calificaciones_Registro')
-            .select('id_CR') // Selecciona un campo que siempre existe, por ejemplo, 'id'
-            .eq('id_Seccion', id_Secciones)
-            .eq('id_Estudiante', id_Estudiante)
-            .single(); // Obtener un solo registro
-      
-          if (errorExistingNote) {
-            throw errorExistingNote;
-          }
-      
-          // Si ya existe una nota, evita la inserción
-          if (existingNote) {
-            return { message: 'Ya existe una nota para este estudiante en esta sección' };
-          }
-      
-          // Insertar la nota
-          const { data: dataNotaEstudiante, error: errorNotaEstudiante } = await supabase
-            .from('Calificaciones_Registro')
-            .insert([{
+      if (errorNota) {
+          throw errorNota;
+      }
+
+      if (typeof dataNota.estado !== 'boolean') {
+          throw new Error('El estado del proceso no es un valor booleano');
+      }
+
+      if (!dataNota.estado) {
+          return { message: 'El proceso de notas está cerrado' };
+      }
+
+      const { data: dS, error: eS } = await supabase
+          .from('Secciones')
+          .select('codigoAsignatura')
+          .eq('id_Secciones', id_Secciones)
+          .maybeSingle();
+
+      if (eS) {
+          throw eS;
+      }
+
+      if (!dS) {
+          return { message: 'No se encontró la sección o se encontraron múltiples secciones' };
+      }
+
+      if (nota === '' || nota < 0 || nota > 100) {
+          return { message: 'La nota debe estar entre 0 y 100 y no puede estar vacía' };
+      }
+
+      let obs = 'NSP';
+      if (nota >= 65) {
+          obs = 'APB';
+      } else if (nota < 65 && nota !== 0) {
+          obs = 'RPB';
+      }
+
+      if (detail !== null){
+          obs = 'ABD';
+      }
+
+      const { data: existingNote, error: errorExistingNote } = await supabase
+          .from('Calificaciones_Registro')
+          .select('id_CR')
+          .eq('id_Seccion', id_Secciones)
+          .eq('id_Estudiante', id_Estudiante)
+          .maybeSingle();
+
+      if (errorExistingNote) {
+          throw errorExistingNote;
+      }
+
+      if (existingNote) {
+          return { message: 'Ya existe una nota para este estudiante en esta sección' };
+      }
+
+      const { data: dataNotaEstudiante, error: errorNotaEstudiante } = await supabase
+          .from('Calificaciones_Registro')
+          .insert([{
               id_Seccion: id_Secciones,
               id_Docente: id_Docentes,
               id_Estudiante: id_Estudiante,
               codigo_Asignatura: dS.codigoAsignatura,
               nota: nota,
               obs: obs
-            }]);
-      
-          if (errorNotaEstudiante) {
-            throw errorNotaEstudiante;
-          }
-      
-          return { message: 'Nota actualizada' };
-        } catch (error) {
-          console.error('Error en uploadNotes:', error.message);
-          return { message: 'Error al subir notas', error: error.message };
-        }
+          }]);
+
+      if (errorNotaEstudiante) {
+          throw errorNotaEstudiante;
       }
+
+      return { message: 'Nota actualizada' };
+  } catch (error) {
+      console.error('Error en uploadNotes:', error.message);
+      return { message: 'Error al subir notas', error: error.message };
+  }
+}
+ 
       
       
   static async getNotesByDocent(id_Secciones, id_Docentes) {

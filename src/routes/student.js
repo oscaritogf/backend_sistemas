@@ -18,8 +18,9 @@ router.post('/enviarSolicitud', studentController.enviarSolicitud);
 router.get('/aceptarSolicitud', studentController.aceptarSolicitud);
 router.get('/usuarios', studentController.getAllUsers);
 
-router.post('/encuesta', studentController.enviarEncuesta);
-
+//encuesta y vista de notas
+router.post('/encuesta', studentController.Encuesta);
+router.get('/notas/:seccion/:estudiante', studentController.getNotas);
 
 ///Enpoindt de certificacion de notas y indices
 router.get('/certificacion/:id_estudiante', certifcacioController.getCertificacion);
