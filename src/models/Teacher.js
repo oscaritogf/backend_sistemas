@@ -40,7 +40,8 @@ class Teacher {
                   )
                 )
             `)
-            .eq('id_Docentes', id_Docentes);       
+            .eq('id_Docentes', id_Docentes)
+            .eq('estado', true);       
             if (error) {
               throw error;
             }
@@ -128,7 +129,7 @@ static async saveListStudents(data, res) {
   res.send(excelBuffer);
 }
      
-      static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso) {
+      static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso, detail) {
         try {
           // Obtener el estado del proceso
           const { data: dataNota, error: errorNota } = await supabase
@@ -173,6 +174,10 @@ static async saveListStudents(data, res) {
             obs = 'APB';
           } else if (nota < 65 && nota !== 0) {
             obs = 'RPB';
+          }
+
+          if (detail !== null){
+            obs = 'ABD';
           }
       
           // Verificar si ya existe una nota para el estudiante en la sección

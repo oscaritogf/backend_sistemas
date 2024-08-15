@@ -91,8 +91,8 @@ exports.getStudents = async (req, res) => {
 
 exports.uploadNotes = async (req, res) => {
   try{
-    const {id_Secciones, id_Docentes, id_Estudiante ,nota, proceso} = req.body;
-    const notas = await Teacher.uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso);
+    const {id_Secciones, id_Docentes, id_Estudiante ,nota, proceso, detail} = req.body;
+    const notas = await Teacher.uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso, detail);
     res.json({ message: 'Notas subidas', data: notas});        
 
   }catch (error) {

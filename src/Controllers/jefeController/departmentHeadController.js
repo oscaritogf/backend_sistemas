@@ -447,7 +447,7 @@ exports.updateSection = async (req, res) => {
 
 exports.getEncuestasByDocente = async (req, res) => {
     try {
-        const { id_Departamento } = req.body;
+        const { id_Departamento } = req.params;
         const encuestas = await Jefe.getEvaluacionesDocente(id_Departamento);
         res.json({ message: 'Lista de encuestas', data: encuestas });
     } catch (error) {
