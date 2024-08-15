@@ -1070,6 +1070,80 @@ static async getCalificacionesPorDepartamento(id_Departamento) {
     }
 }
 
+// * funcion para obtener las estadisticas de los estudiantes por departamento y asignatura
+static async getStadisticsByDepartment(id_Departamento) {
+    try {
+        // 1. Obtener el nombre del departamento
+        const { data: departamento, error: departamentoError } = await supabase
+            .from('Departamentos')
+            .select('Nombre')
+            .eq('id_Departamento', id_Departamento)
+            .single();
+
+        if (departamentoError) {
+            console.error('Error al obtener el nombre del departamento:', departamentoError);
+            throw departamentoError;
+        }
+
+        // 2. Obtener las clases y sus códigos en el departamento
+        const { data: clases, error: clasesError } = await supabase
+            .from('Asignaturas')
+            .select('nombre, codigo')
+            .eq('id_Departamento', id_Departamento);
+
+        if (clasesError) {
+            console.error('Error al obtener las clases del departamento:', clasesError);
+            throw clasesError;
+        }
+
+        // 3. Obtener todas las observaciones (obs) para las clases en el departamento
+        const estadisticas = [];
+        for (const clase of clases) {
+            const { data: registros, error: registrosError } = await supabase
+                .from('Calificaciones_Registro')
+                .select('obs')
+                .eq('codigo_Asignatura', clase.codigo);
+
+            if (registrosError) {
+                console.error(`Error al obtener registros para la clase ${clase.nombre}:`, registrosError);
+                throw registrosError;
+            }
+
+            // 4. Contar las observaciones (obs) para cada opción
+            const conteoObs = {
+                RPB: 0,
+                APB: 0,
+                ADB: 0,
+                NSP: 0,
+            };
+
+            registros.forEach(registro => {
+                if (registro.obs in conteoObs) {
+                    conteoObs[registro.obs]++;
+                }
+            });
+
+            // 5. Crear la estadística para la clase actual
+            const estadistica = {
+                clase: clase.nombre,
+                codigo: clase.codigo,
+                ...conteoObs,
+            };
+
+            estadisticas.push(estadistica);
+        }
+
+        // 6. Retornar el nombre del departamento y las estadísticas por clase
+        return {
+            departamento: departamento.Nombre,
+            estadisticas,
+        };
+
+    } catch (error) {
+        console.error('Error en getStadisticsByDepartment:', error);
+        throw error;
+    }
+}
 
 
 

@@ -38,4 +38,6 @@ router.put('/useccion', departmentHeadController.updateSection);
 router.get('/encuestas/:id_Departamento', departmentHeadController.getEncuestasByDocente);
 router.get('/notasdpt/:id_Departamento', departmentHeadController.getNotasByDepartment);
 
+router.get('/estadisticas/:id_Departamento', departmentHeadController.getStadisticsByDepartment);
+
 module.exports = router;

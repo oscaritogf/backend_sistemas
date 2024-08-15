@@ -466,3 +466,13 @@ exports.getNotasByDepartment = async (req, res) => {
   }
 
 }
+
+exports.getStadisticsByDepartment = async (req, res) => {
+  try {
+      const { id_Departamento } = req.params;
+      const estadisticas = await Jefe.getStadisticsByDepartment(id_Departamento);
+      res.json({ message: 'Estadísticas del departamento', data: estadisticas });
+  } catch (error) {
+      res.status(500).json({ message: 'Error al obtener las estadísticas del departamento', error: error.message });
+  }
+}
