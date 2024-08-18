@@ -13,5 +13,6 @@ router.post('/fcourse', teacherController.finishCourse);
 router.post('/notas', teacherController.uploadNotes);
 router.put('/notasU', teacherController.updateNotes);
 router.put('/video', teacherController.updateVideo);
+router.get('/idUser/:numeroEmpleado', teacherController.getIdUser);
 
 module.exports = router;

@@ -4,6 +4,20 @@ const fs = require('fs');
 
 class Teacher {
 
+    static async getIdUser(numeroEmpleado) {
+        const { data, error } = await supabase
+            .from('empleado')
+            .select('usuario')
+            .eq('numeroEmpleado', numeroEmpleado)
+            .single();
+
+        if (error) {
+            throw error;
+        }
+
+        return data;
+    }
+
     static async updateVideo(id_Secciones, urlVideo) {
         const { data, error } = await supabase
             .from('Secciones')
