@@ -34,13 +34,19 @@ router.put('/cancelaciones/:id', adminController.actualizarCancelacion);
 
 router.post('/configuraciones', adminController.crearConfiguracion);
 router.get('/listarConfig', adminController.obtenerConfiguraciones);
+router.get('/datosMatricula', adminController.getDatosMatriculaSelect);
 router.get('/listarConfig/:id', adminController.obtenerConfiguracionPorId);
 
 router.put('/configuraciones/:id', adminController.actualizarConfiguracion);
 
 router.delete('/configuraciones/:id', adminController.eliminarConfiguracion);
 
+router.get('/procesoNotas', adminController.getProcesoNotas);
+router.get('/procesoNotas/:id', adminController.getProcesoNotasByID);
 router.post('/proceson', adminController.activateNotas);
+router.delete('/proceso_notas/:id', adminController.deleteProcesoNota);
+router.put('/proceso_notas/:id', adminController.updateProcesoNota);
+
 module.exports = router;
 
 //put: http://localhost:3000/api/admin/empleados/1 

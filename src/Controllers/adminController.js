@@ -256,6 +256,15 @@ exports.obtenerConfiguraciones = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.getDatosMatriculaSelect = async (req, res) => {
+  try {
+    const matriculaSelect = await Admin.getDatosMatriculaSelect();
+    res.json(matriculaSelect);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 //funciona
 exports.obtenerConfiguracionPorId = async (req, res) => {
   try {
@@ -279,6 +288,25 @@ exports.obtenerCancelacionExcepcional = async (req, res) => {
   }
 };
 
+exports.getProcesoNotas = async (req, res) => {
+  try {
+    const procesoNotas = await Admin.getProcesoNotas();
+    res.json(procesoNotas);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+exports.getProcesoNotasByID = async (req, res) => {
+  try {
+    const procNotas = await Admin.getProcesoNotasByID(req.params.id);
+    res.json(procNotas);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.obtenerCancelacionExcepcionalPorId = async (req, res) => {
     try {
     const cancelacion = await Admin.getCancelacionExcepcionalById(req.params.id);
@@ -291,6 +319,7 @@ exports.obtenerCancelacionExcepcionalPorId = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 exports.actualizarCancelacion = async (req, res) => {
   console.log('Received update request for id:', req.params.id);
@@ -402,4 +431,28 @@ exports.activateNotas = async (req, res) => {
   }
 
 };  
+
+exports.deleteProcesoNota = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    await Admin.deleteById(id);
+    res.status(200).json({ message: 'ProcesoNota eliminado exitosamente' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.updateProcesoNota = async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    const updatedProcesoNota = await Admin.updateById(id, updateData);
+    res.status(200).json({ message: 'ProcesoNota actualizado exitosamente', updatedProcesoNota });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 

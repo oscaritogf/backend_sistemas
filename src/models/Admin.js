@@ -982,20 +982,7 @@ static async createConfiguracion(data) {
 }
 
 
-static async getConfiguraciones() {
-  const { data, error } = await supabase
-    .from('ConfiguracionMatricula')
-    .select(`
-      *,
-      Pac (id_Pac, pac),
-      TipoMatricula (id_TipoMatricula, tipoMatricula)
-    `);
 
-  if (error) {
-    throw error;
-  }
-  return data;
-}
 
 static async getConfiguracionById(id) {
   const { data, error } = await supabase
@@ -1077,6 +1064,61 @@ static async deleteConfiguracion(id) {
   return data;
 }
 
+static async getDatosMatriculaSelect() {
+  const { data: matriculaSelect, error: matriculaSelectError  } = await supabase
+    .from('ConfiguracionMatricula')
+    .select(`
+      id_ConfMatri,
+      fecha_inicioPAC,
+      fecha_finPAC,
+      Pac ( pac),
+      TipoMatricula (tipoMatricula)
+    `);
+
+    if (matriculaSelectError) {
+      throw new Error(matriculaSelectError.message);
+    }
+    return matriculaSelect.map(datos => ({
+      id_ConfMatri: datos.id_ConfMatri,
+      fecha_inicioPAC: datos.fecha_inicioPAC,
+      fecha_finPAC: datos.fecha_finPAC,
+      pacSeleccionado: `${datos.Pac.pac} ${datos.TipoMatricula.tipoMatricula}`, 
+    }));
+  }
+
+static async getProcesoNotas() {
+  const { data: procesoNotas, error: procesoNotasError } = await supabase
+    .from('ProcesoNotas')
+    .select(`
+        id,
+        estado,
+        fecha_inicio,
+        fecha_final,
+        id_ConfMatri,
+        ConfiguracionMatricula(
+            Pac(
+              pac
+            ),
+            
+            TipoMatricula(
+              tipoMatricula
+            )
+        )
+    `)
+
+  if (procesoNotasError) {
+    throw new Error(procesoNotasError.message);
+  }
+  return procesoNotas.map(nota => ({
+    id_procesoNota: nota.id,
+    estado: nota.estado,
+    fecha_inicio: nota.fecha_inicio,
+    fecha_final: nota.fecha_final,
+    id_ConfMatri: nota.id_ConfMatri,
+    pacSeleccionado: `${nota.ConfiguracionMatricula.Pac.pac} ${nota.ConfiguracionMatricula.TipoMatricula.tipoMatricula}`, // Extrae nombre y apellido del estudiante
+  }));
+}
+
 static async getCancelacionExcepcional() {
   // Consulta a la tabla CancelacionExcepcional
   let query = supabase
@@ -1135,7 +1177,39 @@ static async getCancelacionExcepcionalById(id) {
   return data;
 }
 
+static async getProcesoNotasByID(id) {
+  const { data: procNotas, error: procNotasError } = await supabase
+    .from('ProcesoNotas')
+    .select(`
+        id,
+        estado,
+        fecha_inicio,
+        fecha_final,
+        id_ConfMatri,
+        ConfiguracionMatricula(
+            Pac(
+              pac
+            ),
+            
+            TipoMatricula(
+              tipoMatricula
+            )
+        )
+    `)
+    .eq('id', id)
 
+  if (procNotasError) {
+    throw new Error(procNotasError.message);
+  }
+  return procNotas.map(nota => ({
+    id_procesoNota: nota.id,
+    estado: nota.estado,
+    fecha_inicio: nota.fecha_inicio,
+    fecha_final: nota.fecha_final,
+    id_ConfMatri: nota.id_ConfMatri,
+    pacSeleccionado: `${nota.ConfiguracionMatricula.Pac.pac} ${nota.ConfiguracionMatricula.TipoMatricula.tipoMatricula}`,
+  }));
+}
 
 
 
@@ -1207,6 +1281,32 @@ static async notasProceso(fecha_inicio, fecha_fin, id_ConfMatri, estado) {
 
   return data;
   }
+  static async deleteById(id_procesoNota) {
+    const { data, error } = await supabase
+      .from('ProcesoNotas')
+      .delete()
+      .eq('id', id_procesoNota);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+  
+  static async updateById(id_procesoNota, updateData) {
+    const { data, error } = await supabase
+      .from('ProcesoNotas')
+      .update(updateData)
+      .eq('id', id_procesoNota);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data;
+  }
+
 };
 
 
