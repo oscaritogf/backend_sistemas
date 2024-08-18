@@ -63,7 +63,7 @@ const {
   
       if (ahora > new Date(configuracion.fecha_finMatri)) {
         mensaje = 'Ya pasó la fecha para adicionar asignaturas';
-        return res.status(400).json({ puedeMatricular: false, mensaje });
+        return res.status(200).json({ puedeMatricular: false, mensaje });
       }
   
       mensaje = 'Puedes adicionar asignaturas';

@@ -11,6 +11,17 @@ exports.getData = async (req, res) => {
     };
   };
 
+exports.changePassword = async (req, res) => {
+    try {
+        const { numeroCuenta } = req.params;
+        const { contrasenaActual, nuevaContrasena } = req.body;
+        const data = await Student.changePassword(numeroCuenta, contrasenaActual, nuevaContrasena);
+        res.json({ message: 'Contraseña actualizada', data });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar contraseña', error: error.message });
+    };
+};
+
 
 exports.updateProfile = async (req, res) => {
     try {
