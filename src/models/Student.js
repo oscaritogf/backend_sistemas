@@ -4,6 +4,54 @@ const cloudinary = require('../config/cloudinary');
 
 class Student {
 
+  static async cambioContrasenaSinValidacion(id, nuevaContrasena) {
+    try {
+      // Hashear la nueva contraseña
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(nuevaContrasena, saltRounds);
+
+      // Actualizar la contraseña
+      const { data, error } = await supabase
+        .from('Usuario')
+        .update({ Contrasena: hashedPassword })
+        .eq('id', id);
+      if (error) {
+        console.error('Error al actualizar la contraseña:', error);
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error en cambioContrasenaSinValidacion:', error);
+      throw error;
+    }
+
+  }
+
+    static async getCorreo(numeroCuenta) {
+        try {
+            // Obtener el correo institucional del estudiante
+            const { data, error } = await supabase
+                .from('estudiante')
+                .select('correo_Institucional, usuario')
+                .eq('numeroCuenta', numeroCuenta)
+                .single();
+
+            if (error) {  
+                console.error('Error al obtener el correo:', error);
+                throw error;
+            }
+
+            if (!data) {
+                throw new Error(`Estudiante con número de cuenta ${numeroCuenta} no encontrado`);
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error en getCorreo:', error);
+            throw error;
+        }
+    }
+
     static async changePassword(numeroCuenta, contrasenaActual, nuevaContrasena) {
 
         try {

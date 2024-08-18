@@ -126,6 +126,28 @@ const sendFriendRequestEmail = async (userName, userId, friendEmail, friendId) =
   }
 };
 
+
+const sendChangePasswordEmail = async (correo_Institucional, id) => {
+  try {
+    const acceptUrl = `http://localhost:3000/api/student/aceptarCambioContrasena/${id}`;
+    await transporter.sendMail({
+      from: '"Cambio de Contraseña" <garcia152511@gmail.com>',
+      to: correo_Institucional,
+      subject: "Tienes una nueva solicitud de cambio de contraseña",
+      html: `
+        <h1>Nueva solicitud de cambio de contraseña!</h1>
+        <p>Si no has solicitado un cambio de contraseña puedes ignorar este correo.</p>
+        <p>Si deseas cambiar tu contraseña haz click en el siguiente enlace:</p>
+        <a href="${acceptUrl}" style="display: inline-block; padding: 10px 20px; font-size: 16px; color: white; background-color: #007bff; text-decoration: none; border-radius: 5px;">Cambiar contraseña</a>
+      `
+    });
+    console.log('Correo de cambio de constrasena enviado');
+  } catch (error) {
+    console.error('Error al enviar correo de cambio de contrasena:', error);
+  }
+};
+
+
 const sendResetMail = async (to, token) => {
   try {
    await transporter.sendMail({
@@ -251,5 +273,5 @@ const sendNotesNtfy = async (id_Secciones, numeroCuenta, id_Asignaturas) => {
 };
 
 
-module.exports = { sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail, sendResetMail, sendFriendRequestEmail, sendEmailtoEmployee, sendNotesNtfy };
+module.exports = {sendChangePasswordEmail, sendConfirmationEmail, sendEmployeeWelcomeEmail, sendStudentWelcomeEmail, sendRejectionEmail, sendResetMail, sendFriendRequestEmail, sendEmailtoEmployee, sendNotesNtfy };
 

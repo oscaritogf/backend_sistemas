@@ -15,8 +15,13 @@ router.put('/:numeroCuenta',upload.single('Imagen'), studentController.updateEst
 
 router.post('/enviarSolicitud', studentController.enviarSolicitud);
 // router.post('/aceptarSolicitud', studentController.aceptarSolicitud);
-
 router.get('/aceptarSolicitud', studentController.aceptarSolicitud);
+
+router.get('/correo/:numeroCuenta', studentController.getCorreo);
+router.post('/enviarCambioContrasena', studentController.enviarCambioContrasena);
+router.get('/aceptarCambioContrasena/:id', studentController.aceptarCambioContrasena);
+router.post('/cambioContrasena', studentController.cambioContrasenaSinValidacion);
+
 router.get('/usuarios', studentController.getAllUsers);
 
 //encuesta y vista de notas

@@ -1,6 +1,6 @@
 const Student = require('../models/Student');
 const supabase = require('../config/supabase');
-const { sendFriendRequestEmail } = require('../utils/emailService');
+const { sendFriendRequestEmail, sendChangePasswordEmail } = require('../utils/emailService');
 
 exports.getData = async (req, res) => {
     try {
@@ -10,6 +10,40 @@ exports.getData = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener datos del estudiante', error: error.message });
     };
   };
+
+exports.cambioContrasenaSinValidacion = async (req, res) => {
+    try {
+        const { id, nuevaContrasena } = req.body;
+        const data = await Student.cambioContrasenaSinValidacion( id, nuevaContrasena );
+        res.json({ message: 'Contraseña actualizada' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar contraseña', error: error.message });
+    };
+};
+
+
+exports.enviarCambioContrasena = async (req, res) => {
+    const { correo_Institucional, id } = req.body;
+    console.log('Correo institucional:', correo_Institucional);
+    console.log('ID:', id);
+    try {
+        await sendChangePasswordEmail(correo_Institucional, id);
+        res.json({ message: 'Correo enviado para cambio de contraseña', data: { correo_Institucional } });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al enviar correo para cambio de contraseña', error: error.message });
+    };
+}
+
+
+exports.getCorreo = async (req, res) => {
+    try {
+        const { numeroCuenta } = req.params;
+        const {correo_Institucional, usuario} = await Student.getCorreo(numeroCuenta);
+        res.json({ message: 'Correo obtenido', correo_Institucional, id: usuario });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener correo', error: error.message });
+    };  
+};
 
 exports.changePassword = async (req, res) => {
     try {
@@ -102,6 +136,19 @@ exports.aceptarSolicitud = async (req, res) => {
       res.status(500).json({ message: 'Error al aceptar solicitud de amistad', error: error.message });
     }
   };
+
+exports.aceptarCambioContrasena = async (req, res) => {
+    const { id } = req.params;
+    console.log('ID listoooooooo:', id);
+    
+
+    try {
+      // Enviar una respuesta de éxito
+      res.redirect(`http://localhost:5173/cambiarContrasena/${id}`);
+    } catch (error) {
+      res.status(500).json({ message: 'Error al aceptar cambio de contraseña', error: error.message });
+    }
+  }
   
   const newFriendCometChat = async(userId, friendId) => {
     try {
