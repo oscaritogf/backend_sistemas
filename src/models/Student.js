@@ -4,6 +4,68 @@ const cloudinary = require('../config/cloudinary');
 
 class Student {
 
+    static async changePassword(numeroCuenta, contrasenaActual, nuevaContrasena) {
+
+        try {
+            // Obtener la contraseña actual del estudiante
+            const { data: estudiante, error: estudianteError } = await supabase
+                .from('estudiante')
+                .select('usuario')
+                .eq('numeroCuenta', numeroCuenta)
+                .single();
+
+            if (estudianteError) {
+                console.error('Error al buscar el estudiante:', estudianteError);
+                throw new Error(`Error al buscar estudiante: ${estudianteError.message}`);
+            }
+
+            if (!estudiante) {
+                throw new Error(`Estudiante con número de cuenta ${numeroCuenta} no encontrado`);
+            }
+
+            const userId = estudiante.usuario;
+            console.log('ID de usuario encontrado:', userId);
+
+            // Obtener la contraseña actual del usuario
+            const { data: userData, error: userError } = await supabase
+                .from('Usuario')
+                .select('Contrasena')
+                .eq('id', userId)
+                .single();
+            if (userError) {
+                console.error('Error al buscar la contraseña actual:', userError);
+                throw new Error(`Error al buscar la contraseña actual: ${userError.message}`);
+            }
+            if (!userData) {
+                throw new Error('Usuario no encontrado');
+            }
+            // Verificar si la contraseña actual coincide
+            const contrasenaValida = await bcrypt.compare(contrasenaActual, userData.Contrasena);
+
+            if (!contrasenaValida) {
+                throw new Error('La contraseña actual no coincide');
+            }
+            // Hashear la nueva contraseña
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(nuevaContrasena, saltRounds);
+
+            // Actualizar la contraseña
+            const { data, error } = await supabase
+                .from('Usuario')
+                .update({ Contrasena: hashedPassword })
+                .eq('id', userId);
+            if (error) {
+                console.error('Error al actualizar la contraseña:', error);
+                throw error;
+            }
+            return data;
+        }
+        catch (error) {
+            console.error('Error en changePassword:', error);
+            throw error;
+        }
+    }
+
         static async updateProfile(id_Usuario, usuarioData) {
           const { Fotografia1, Fotografia2, Fotografia3, Descripcion, ...userData } = usuarioData;
           try {
