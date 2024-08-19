@@ -31,8 +31,11 @@ router.get('/notas/:seccion/:estudiante', studentController.getNotas);
 ///Enpoindt de certificacion de notas y indices
 router.get('/certificacion/:id_estudiante', certifcacioController.getCertificacion);
 
+router.get('/certificacionVOAE/:numeroCuenta', certifcacioController.getCertificacionVOAE);
+router.get('/certificacionVOAE/pdf/:numeroCuenta', certifcacioController.getCertificacionVOAEpdf);
+
 router.get('/indice-global/:id_estudiante', certifcacioController.getIndiceGlobal);
-router.get('/indice-periodo/:id_estudiante/:periodo/:id_cunfigMatricula', certifcacioController.getIndicePorPeriodo);
+router.post('/indice-periodo/:id_estudiante/:periodo/:id_cunfigMatricula', certifcacioController.getIndicePorPeriodo);
 
 router.put('/indice-globalu/:id_estudiante', certifcacioController.putIndiceGlobal);
 router.put('/indice-periodou/:id_estudiante/:periodo', certifcacioController.putIndicePorPeriodo);
