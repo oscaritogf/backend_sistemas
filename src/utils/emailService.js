@@ -156,6 +156,8 @@ const sendResetMail = async (to, token) => {
     subject: "Recuperación de contraseña",
     html: `
       <h1>Recuperación de contraseña</h1>
+      <p>Has solicitado recuperar tu contraseña. El enlace vence en 2 minutos.</p>
+      <br>
       <p>Para recuperar tu contraseña, haz click en el siguiente enlace:</p>
       <a href="http://localhost:5173/reinicioClave/${token}">Recuperar contraseña</a>
     `

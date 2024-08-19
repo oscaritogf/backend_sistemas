@@ -583,15 +583,25 @@ static async updateSectionCupos(sectionId, newCupos) {
 
     //Justificacion para cancelar una seccion
     static async justificarCancelacionSeccion(id_Secciones) {
+        const { data:mat, error } = await supabase
+            .from('matricula')
+            .delete('*')
+            .eq('id_seccion', id_Secciones);
+
+        const { data:lista, error: errorlist } = await supabase
+            .from('lista_espera')
+            .delete('*')
+            .eq('id_seccion', id_Secciones);
+
         // Primero, elimina los registros de la tabla 'seccion_dias' relacionados con 'id_Secciones'
         const { data: secevent, error: errorSecc } = await supabase
         .from('evaluacion_docente')
-        .delete()
+        .delete('*')
         .eq('id_Seccion', id_Secciones)
 
         const { error: errorSeccionDias } = await supabase
             .from('seccion_dias')
-            .delete()
+            .delete('*')
             .eq('id_seccion', id_Secciones);
     
         if (errorSeccionDias) {
@@ -601,7 +611,7 @@ static async updateSectionCupos(sectionId, newCupos) {
         // Luego, elimina el registro de la tabla 'Secciones'
         const { data, error: errorSecciones } = await supabase
             .from('Secciones')
-            .delete()
+            .delete('*')
             .eq('id_Secciones', id_Secciones)
             .single();
     
