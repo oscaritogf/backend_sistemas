@@ -62,14 +62,19 @@ const getCertificacionVOAE = async (id_estudiante) => {
         periodo: periodo,
         registro: {
           id_CR: item.id_CR,
-          codigo: item.Asignaturas.codigo,
-          nombre: item.Asignaturas.nombre,
+          codigo: item.Asignaturas.codigo.toUpperCase(),  // Convertir a mayúsculas
+          nombre: item.Asignaturas.nombre.toUpperCase(),  // Convertir a mayúsculas
           uv: item.Asignaturas.uv,
           nota: item.nota,
           notaFinal: item.nota * item.Asignaturas.uv,
         }
       };
     });
+
+    // Calcular índice académico
+    const totalUV = processedData.reduce((acc, item) => acc + item.registro.uv, 0);
+    const totalNotas = processedData.reduce((acc, item) => acc + (item.registro.nota * item.registro.uv), 0);
+    const indice = totalUV > 0 ? Math.round(totalNotas / totalUV) : 0; // Redondear el índice
 
     const groupedData = processedData.reduce((acc, item) => {
       if (!acc[item.anio]) {
@@ -89,12 +94,19 @@ const getCertificacionVOAE = async (id_estudiante) => {
 
     return {
       infoEstudiante: infoEstudiante,
-      registros: result
+      registros: result,
+      indiceAcademico: {
+        totalUV: totalUV,
+        totalNotas: totalNotas,
+        indice: indice
+      }
     };
   } catch (error) {
     throw error;
   }
 };
+
+
 
 
 const getCalificacionesGlobal = async (id_estudiante) => {

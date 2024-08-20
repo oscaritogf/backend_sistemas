@@ -2,8 +2,496 @@
 const supabase = require('../../config/supabase');
 const { getCertificacion,getCertificacionVOAE, getCalificacionesGlobal, getCalificacionesPorPeriodo } = require('../../models/estudiante/Certificacion');
 const PDFDocument = require('pdfkit');
+
+
+
+
+
+// DEPENDENCIAS DE PDFMAKE
+const pdfMake = require('pdfmake/build/pdfmake');
+const pdfFonts = require('pdfmake/build/vfs_fonts');
 const fs = require('fs');
 const path = require('path');
+
+// Asigna el sistema de archivos virtual a pdfMake
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const timesNewRomanFont = fs.readFileSync(path.join(__dirname, 'fonts', 'TimesNewRomanMTStd.ttf')).toString('base64');
+pdfMake.vfs['TimesNewRoman'] = timesNewRomanFont;
+const fonts = {
+  TimesNewRoman: {
+    normal: 'TimesNewRoman',  // Nombre de la fuente en el archivo vfs
+    bold: 'TimesNewRoman',
+    italics: 'TimesNewRoman',
+    bolditalics: 'TimesNewRoman'
+  }
+};
+
+pdfMake.fonts = fonts;
+
+
+
+// Helper function to convert image to base64
+const getBase64Image = (imagePath) => {
+  const bitmap = fs.readFileSync(imagePath);
+  return `data:image/jpeg;base64,${Buffer.from(bitmap).toString('base64')}`;
+};
+
+
+exports.getCertificacionVOAEpdf = async (req, res) => {
+  const { numeroCuenta } = req.params;
+
+  const image1Path = path.join(__dirname, 'assets', 'Plantilla1.jpeg');
+  const image2Path = path.join(__dirname, 'assets', 'Plantilla2.jpeg');  // Añade la ruta de la segunda imagen
+  const imageBase64 = getBase64Image(image1Path);
+  const imageBase64_2 = getBase64Image(image2Path);  // Convierte la segunda imagen a base64
+  
+  try {
+    const certificacion = await getCertificacionVOAE(numeroCuenta);
+
+    // Definición del documento PDF
+    const docDefinition1 = {
+      pageSize: 'A4',
+      pageMargins: [30, 172, 30, 25],
+      background: [
+        {
+          image: imageBase64,
+          width: 595.28,
+          height: 841.89,
+        }
+      ],
+      content: [
+        // { text: '0000000', style: 'header', margin: [20, 0, 0, 15], color: 'red' },
+        {
+          text: `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la Universidad Nacional Autónoma de Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento}`,
+          font: 'TimesNewRoman',
+          fontSize: 12,
+          lineHeight: 2.2,
+          margin: [0, 10, 0, 0]
+        },
+        {
+          text: `obtuvo las siguientes calificaciones:`,
+          font: 'TimesNewRoman',
+          fontSize: 12,
+          margin: [0, 0, 0, 12]
+        },
+        // Otros contenidos...
+        { text: 'CODIGO      ASIGNATURA                                               CALIFICACION       UV', bold: true, lineHeight: 2.0 },
+
+        ...certificacion.registros.flatMap(item => [
+          { text: `Año ${item.anio}`, bold: true,  lineHeight: 2.0},
+          ...Object.keys(item.periodos).flatMap(periodo => [
+            { text: `${periodo}`, bold: true,  lineHeight: 2.0 },
+            {
+              table: {
+                widths: [50, 290, 50, 50, 50],  // Ajustar los anchos si es necesario
+                body: [
+                  ...item.periodos[periodo].map(calificacion => [
+                    { text: calificacion.codigo || '', alignment: 'left', lineHeight: 2.0 },
+                    { text: calificacion.nombre || '', alignment: 'left', lineHeight: 2.0 },
+                    { text: `${calificacion.nota}       x     ` || '', alignment: 'left', lineHeight: 2.0 },
+                    { text: `${calificacion.uv}         =` || '', alignment: 'left', lineHeight: 2.0 },
+                    { text: calificacion.notaFinal || '', alignment: 'left', lineHeight: 2.0 },
+                  ])
+                ]
+              },
+              layout: 'noBorders'
+            }
+          ])
+        ])
+
+        ,{ text: `.                                                                                                                                     _________________`, bold: true,  margin: [0, -17, 0, 6]  },
+        { text: `.                                                                                                                                        ${certificacion.indiceAcademico.totalUV}               ${certificacion.indiceAcademico.totalNotas} `, bold: true, lineHeight: 2.2 },
+        { text: `ÍNDICE ACADÉMICO:           (   ${certificacion.indiceAcademico.totalNotas}    )      /     (${certificacion.indiceAcademico.totalUV})    =    ${certificacion.indiceAcademico.indice}   %`, bold: true, lineHeight: 2.0, margin: [0, 0, 0, 15] },
+
+        {
+          table: {
+            headerRows: 2,
+            // keepWithHeaderRows: 1,
+            widths: [ '*' ],
+            body: [
+              [{text: 'TABLA DE CALIFICACIONES',  margin:[0,4,0,5]}],
+              [{text: 'DE GRADO', margin:[0,4,0,5]}], 
+              [{text: 'Calificación                         Vigente                                                          Normas Académicas', margin:[0,4,0,5]}], 
+              [{text: '60%-100%                           Al II Período Académico 2015                   Junio 1970', margin:[0,4,0,5]}], 
+              [{text: '65%-100%                           Desde el III Período Académico 2015       Enero 2015 Art.315', margin:[0,4,0,5]}], 
+            
+              [{text: 'MEDICINA, ENFERMERIA Y ARQUITECTURA', margin:[0,4,0,5]}], 
+              [{text: 'Calificación                         Vigente                                                          Normas Académicas', margin:[0,4,0,5]}], 
+              [{text: '60%-100%                           Hasta el II Período Académico 2015          Enero 2015 Art.245', margin:[0,4,0,5]}], 
+              [{text: '65%-100%                           Desde el I Período Académico 2016           Enero 2015 Art.245', margin:[0,4,0,5]}], 
+            
+              [{text: 'POSGRADO', margin:[0,4,0,5]}], 
+              [{text: 'Calificación                         Vigente                                                          Normas Académicas', margin:[0,4,0,5]}], 
+              [{text: '60%-100%                           Reflejados en plan de estudios                    Art.52 reglamentos de posgrado', margin:[0,4,0,5]}], 
+              [{text: '65%-100%                           A partír del I período Académico 2018     Art.52 reglamentos de posgrado', margin:[0,4,0,5]}], 
+            ]
+          },
+        },
+        {
+          text: `INDICE ACADÉMICO: Se obtiene de la sumatoria de las calificaciones obtenidas, multiplicada por las unidades valorativas o créditos dividido entre la totalidad de las unidades valorativas ó créditos académicos obtenidos. Segun las Nomras Acade¿émicas de la UNAH de Enero 2015(Art.188)`,
+          font: 'TimesNewRoman',
+          fontSize: 12,
+          lineHeight: 2.2,
+          margin: [0, 12, 0, 0]
+        },
+        {
+          text: `U. V.: La unidad Valorativa es la medida de la intensidad con que se imparte una asignatura.`,
+          font: 'TimesNewRoman',
+          fontSize: 12,
+          lineHeight: 2.2,
+        },
+        {
+          text: `Y, para los fines que al interesado (a) convenga, se extiende la presente en Ciudad Universitaria a los 13 días del mes del mes de febrero del 2024 .`,
+          font: 'TimesNewRoman',
+          fontSize: 12,
+          lineHeight: 2.2,
+        },
+
+
+
+
+
+
+
+
+        
+
+      ],
+
+
+
+
+
+      header: function(currentPage, pageCount) {
+        // Función para generar un número aleatorio de 6 dígitos
+        const generateRandomNumber = () => {
+          return Math.floor(100000 + Math.random() * 900000);
+        };
+    
+        const randomNumber = generateRandomNumber();
+        
+        return [
+          {
+            text: `Página ${currentPage} de ${pageCount}`,
+            alignment: 'right',
+            fontSize: 15,
+            width: 100,
+            margin: [0, 112, 15, 0], // Ajusta el margen para posicionar el texto
+            background: 'white', // Fondo blanco para el texto
+          },
+          {
+            text: `${randomNumber}${currentPage}`,
+            alignment: 'left',
+            fontSize: 18,
+            color: 'red',
+            margin: [50, 15, 0, 0], // Ajusta el margen para posicionar el texto debajo del anterior
+          }
+        ];
+      },
+      
+
+
+
+
+
+
+    };
+
+    // Definición de la segunda página
+    const docDefinition2 = {
+      background: {
+        image: imageBase64_2,
+        width: 595.28,
+        height: 841.89,
+      },
+      content: [
+        {
+          text: `Este documento pertenece a ${certificacion.infoEstudiante.nombre}`,
+          font: 'TimesNewRoman',
+          fontSize: 12,
+          lineHeight: 2.2,
+          margin: [10, 220, 0, 0]
+        },
+        {
+          text: `Con numero de cuenta ${numeroCuenta}, en la carrera de ${certificacion.infoEstudiante.departamento}`,
+          font: 'TimesNewRoman',
+          fontSize: 12,
+          lineHeight: 2.2,
+          margin: [10, 0, 0, 0]
+        },
+        {
+          text: `3                                                                                     3`,
+          font: 'TimesNewRoman',
+          fontSize: 12,
+          lineHeight: 2.2,
+          margin: [60, 4, 0, 0]
+        },
+        
+        // Aquí puedes añadir más contenido para la segunda página
+      ],
+      pageMargins: [30, 172, 30, 25],
+    };
+    
+
+        // Combina las definiciones de los documentos en un solo `docDefinition`
+        const docDefinition = {
+          pageSize: 'A4',
+          pageSize: 'A4',
+          pageMargins: [30, 172, 30, 25],
+          background: [
+            {
+              image: imageBase64,
+              width: 595.28,
+              height: 841.89,
+            }
+          ],
+          content: [
+            ...docDefinition1.content,
+            { text: '', pageBreak: 'after' }, // Fuerza la creación de una nueva página
+            ...docDefinition2.content,
+          ],
+          header: docDefinition1.header, // Asigna el footer al documento combinado
+          background: (currentPage) => {
+            if (currentPage === 3) {
+              return docDefinition2.background;
+            } else {
+              return docDefinition1.background;
+            }
+          },
+          styles: {
+            header: {
+              fontSize: 18,
+              bold: true,
+              font: 'TimesNewRoman'
+            },
+            subheader: {
+              fontSize: 14,
+              bold: true,
+              font: 'TimesNewRoman'
+            },
+            tableHeader: {
+              bold: true,
+              fontSize: 13,
+              color: 'black',
+              font: 'TimesNewRoman'
+            }
+          },
+          defaultStyle: {
+            font: 'TimesNewRoman'
+          }
+        };
+    
+
+    // Generación del PDF
+    const pdfDoc = pdfMake.createPdf(docDefinition);
+
+    // Convertir el PDF a buffer y enviarlo como respuesta
+    pdfDoc.getBuffer((buffer) => {
+      const fileName = `certificado_${numeroCuenta}.pdf`;
+
+      res.writeHead(200, {
+        'Content-Type': 'application/pdf',
+        'Content-disposition': `attachment; filename="${fileName}"`,
+        'Content-Length': buffer.length,
+      });
+
+      res.end(buffer);
+    });
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500).send('Error generating PDF');
+  }
+};
+// exports.getCertificacionVOAEpdf = async (req, res) => {
+//   const { numeroCuenta } = req.params;
+
+//   const image1Path = path.join(__dirname, 'assets', 'Plantilla1.jpeg');
+//   const image2Path = path.join(__dirname, 'assets', 'Plantilla2.jpeg');  // Añade la ruta de la segunda imagen
+//   const imageBase64 = getBase64Image(image1Path);
+//   const imageBase64_2 = getBase64Image(image2Path);  // Convierte la segunda imagen a base64
+  
+//   try {
+//     const certificacion = await getCertificacionVOAE(numeroCuenta);
+
+//     // Definición del documento PDF
+//     const docDefinition = {
+//       pageSize: 'A4',
+//       pageMargins: [30, 172, 30, 25],
+//       background: [
+//         {
+//           image: imageBase64,
+//           width: 595.28,
+//           height: 841.89,
+//         }
+//       ],
+//       content: [
+//         // { text: '0000000', style: 'header', margin: [20, 0, 0, 15], color: 'red' },
+//         {
+//           text: `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la Universidad Nacional Autónoma de Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento}`,
+//           font: 'TimesNewRoman',
+//           fontSize: 12,
+//           lineHeight: 2.2,
+//           margin: [0, 10, 0, 0]
+//         },
+//         {
+//           text: `obtuvo las siguientes calificaciones:`,
+//           font: 'TimesNewRoman',
+//           fontSize: 12,
+//           margin: [0, 0, 0, 12]
+//         },
+//         // Otros contenidos...
+//         { text: 'CODIGO      ASIGNATURA                                               CALIFICACION       UV', bold: true, lineHeight: 2.0 },
+
+//         ...certificacion.registros.flatMap(item => [
+//           { text: `Año ${item.anio}`, bold: true,  lineHeight: 2.0},
+//           ...Object.keys(item.periodos).flatMap(periodo => [
+//             { text: `${periodo}`, bold: true,  lineHeight: 2.0 },
+//             {
+//               table: {
+//                 widths: [50, 290, 50, 50, 50],  // Ajustar los anchos si es necesario
+//                 body: [
+//                   ...item.periodos[periodo].map(calificacion => [
+//                     { text: calificacion.codigo || '', alignment: 'left', lineHeight: 2.0 },
+//                     { text: calificacion.nombre || '', alignment: 'left', lineHeight: 2.0 },
+//                     { text: `${calificacion.nota}       x     ` || '', alignment: 'left', lineHeight: 2.0 },
+//                     { text: `${calificacion.uv}         =` || '', alignment: 'left', lineHeight: 2.0 },
+//                     { text: calificacion.notaFinal || '', alignment: 'left', lineHeight: 2.0 },
+//                   ])
+//                 ]
+//               },
+//               layout: 'noBorders'
+//             }
+//           ])
+//         ])
+
+//         ,{ text: `.                                                                                                                                     _________________`, bold: true,  margin: [0, -17, 0, 6]  },
+//         { text: `.                                                                                                                                        ${certificacion.indiceAcademico.totalUV}               ${certificacion.indiceAcademico.totalNotas} `, bold: true, lineHeight: 2.2 },
+//         { text: `ÍNDICE ACADÉMICO:           (   ${certificacion.indiceAcademico.totalNotas}    )      /     (${certificacion.indiceAcademico.totalUV})    =    ${certificacion.indiceAcademico.indice}   %`, bold: true, lineHeight: 2.0, margin: [0, 0, 0, 15] },
+
+//         {
+//           table: {
+//             headerRows: 2,
+//             // keepWithHeaderRows: 1,
+//             widths: [ '*' ],
+//             body: [
+//               [{text: 'TABLA DE CALIFICACIONES',  margin:[0,4,0,5]}],
+//               [{text: 'DE GRADO', margin:[0,4,0,5]}], 
+//               [{text: 'Calificación                         Vigente                                                          Normas Académicas', margin:[0,4,0,5]}], 
+//               [{text: '60%-100%                           Al II Período Académico 2015                   Junio 1970', margin:[0,4,0,5]}], 
+//               [{text: '65%-100%                           Desde el III Período Académico 2015       Enero 2015 Art.315', margin:[0,4,0,5]}], 
+            
+//               [{text: 'MEDICINA, ENFERMERIA Y ARQUITECTURA', margin:[0,4,0,5]}], 
+//               [{text: 'Calificación                         Vigente                                                          Normas Académicas', margin:[0,4,0,5]}], 
+//               [{text: '60%-100%                           Hasta el II Período Académico 2015          Enero 2015 Art.245', margin:[0,4,0,5]}], 
+//               [{text: '65%-100%                           Desde el I Período Académico 2016           Enero 2015 Art.245', margin:[0,4,0,5]}], 
+            
+//               [{text: 'POSGRADO', margin:[0,4,0,5]}], 
+//               [{text: 'Calificación                         Vigente                                                          Normas Académicas', margin:[0,4,0,5]}], 
+//               [{text: '60%-100%                           Reflejados en plan de estudios                    Art.52 reglamentos de posgrado', margin:[0,4,0,5]}], 
+//               [{text: '65%-100%                           A partír del I período Académico 2018     Art.52 reglamentos de posgrado', margin:[0,4,0,5]}], 
+//             ]
+//           },
+//         },
+//         {
+//           text: `INDICE ACADÉMICO: Se obtiene de la sumatoria de las calificaciones obtenidas, multiplicada por las unidades valorativas o créditos dividido entre la totalidad de las unidades valorativas ó créditos académicos obtenidos. Segun las Nomras Acade¿émicas de la UNAH de Enero 2015(Art.188)`,
+//           font: 'TimesNewRoman',
+//           fontSize: 12,
+//           lineHeight: 2.2,
+//           margin: [0, 12, 0, 0]
+//         },
+//         {
+//           text: `U. V.: La unidad Valorativa es la medida de la intensidad con que se imparte una asignatura.`,
+//           font: 'TimesNewRoman',
+//           fontSize: 12,
+//           lineHeight: 2.2,
+//         },
+//         {
+//           text: `Y, para los fines que al interesado (a) convenga, se extiende la presente en Ciudad Universitaria a los 13 días del mes del mes de febrero del 2024 .`,
+//           font: 'TimesNewRoman',
+//           fontSize: 12,
+//           lineHeight: 2.2,
+//         },
+
+
+
+
+
+
+
+
+        
+
+//       ],
+//       styles: {
+//         header: {
+//           fontSize: 18,
+//           bold: true,
+//           font: 'TimesNewRoman'
+//         },
+//         subheader: {
+//           fontSize: 14,
+//           bold: true,
+//           font: 'TimesNewRoman'
+//         },
+//         tableHeader: {
+//           bold: true,
+//           fontSize: 13,
+//           color: 'black',
+//           font: 'TimesNewRoman'
+//         }
+//       },
+//       defaultStyle: {
+//         font: 'TimesNewRoman'
+//       }
+//     };
+
+    
+    
+
+//     // Generación del PDF
+//     const pdfDoc = pdfMake.createPdf(docDefinition);
+
+//     // Convertir el PDF a buffer y enviarlo como respuesta
+//     pdfDoc.getBuffer((buffer) => {
+//       const fileName = `certificado_${numeroCuenta}.pdf`;
+
+//       res.writeHead(200, {
+//         'Content-Type': 'application/pdf',
+//         'Content-disposition': `attachment; filename="${fileName}"`,
+//         'Content-Length': buffer.length,
+//       });
+
+//       res.end(buffer);
+//     });
+
+//   } catch (error) {
+//     console.error('Error generating PDF:', error);
+//     res.status(500).send('Error generating PDF');
+//   }
+// };
+
+
+
+
+
+
+
+
 
 exports.getCertificacion = async (req, res) => {
   const { id_estudiante } = req.params;
@@ -25,139 +513,9 @@ exports.getCertificacionVOAE = async (req, res) => {
   }
 };
 
-exports.getCertificacionVOAEpdf = async (req, res) => {
-
-  const { numeroCuenta } = req.params;
-  const image1Path = path.join(__dirname, 'assets', 'Plantilla1.jpeg');
-  const image2Path = path.join(__dirname, 'assets', 'Plantilla2.jpeg');
-
-  try {
-    const certificacion = await getCertificacionVOAE(numeroCuenta);
-
-    res.setHeader('Content-disposition', 'attachment; filename=secciones.pdf');
-    res.setHeader('Content-type', 'application/pdf');
-
-    const doc = new PDFDocument({ size: 'A4', margin: 30 });
-    doc.pipe(res);
-    function addBackgroundImage(doc) {
-      const pageWidth = doc.page.width;
-      const pageHeight = doc.page.height;
-      doc.image(image1Path, 0, 0, { width: pageWidth, height: pageHeight });
-    }
-    // const pageWidth = doc.page.width;
-    // const pageHeight = doc.page.height;
-    // doc.image(image1Path, 0, 0, { width: pageWidth, height: pageHeight });
-
-    function styledText(doc, text, options = {}) {
-      const fontSize = options.fontSize || 12;
-      const marginBottom = 11.2; // Margen inferior en puntos, ajusta según necesites
-    
-      doc.font('Times-Roman').fontSize(fontSize).text(text, options);
-    
-      // Aplicar margen inferior después de imprimir el texto
-      doc.moveDown(marginBottom / fontSize); // Ajusta el espacio en función del tamaño de fuente
-    }
-    function addPage() {
-      if (doc.page) {
-        doc.addPage();
-      }
-      addBackgroundImage(doc);
-    }
-
-    addBackgroundImage(doc); // Agrega la imagen en la primera página
 
 
 
-    // doc.fontSize(18).text('Reporte de Secciones', { align: 'center' });
-    doc.moveDown( 8);
-
-    doc.font('Times-Roman').fontSize(18).text('0000000', { indent: 20 });
-    doc.moveDown();
-    
-    
-    
-    styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    // styledText(doc, `El suscrito Director(a) de la Dirección de Ingreso Permanencia y Promoción de la universidad Nacional`);
-    // styledText(doc, `Autónoma Honduras CERTIFICA QUE ${certificacion.infoEstudiante.nombre}, matriculado(a) con número de `);
-    // styledText(doc, `cuenta ${numeroCuenta} para la carrera de: ${certificacion.infoEstudiante.departamento} obtuvo las siguientes calificaciones:`);
-    
-    
-    
-    
-    
-    
-    
-    styledText(doc, `    CODIGO                         ASIGNATURA                                CALIFICACION          UV`);
-
-    certificacion.registros.forEach(item => {
-      // Añadir el año
-      styledText(doc, `Año ${item.anio}`);
-      // Recorrer cada periodo dentro del año
-      Object.keys(item.periodos).forEach(periodo => {
-        // Añadir el nombre del periodo
-        styledText(doc, `${periodo}`);
-        // Recorrer las calificaciones dentro de cada periodo
-        item.periodos[periodo].forEach(calificacion => {
-            styledText(doc, `${calificacion.codigo}                               ${calificacion.nombre}                                      ${calificacion.nota}              x               ${calificacion.uv} =            ${calificacion.notaFinal}` );
-        });
-      });
-    });
-    doc.end();
-
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    res.status(500).send('Error generating PDF');
-  }
-};
 
 
 const calcularIndice = (calificaciones) => {
