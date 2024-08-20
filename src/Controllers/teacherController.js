@@ -11,6 +11,16 @@
       res.status(500).json({ message: 'Error al actualizar el video', error: error.message });
     }
   };
+
+  exports.getIdUser = async (req, res) => {
+    try {
+      const { numeroEmpleado } = req.params;
+      const {usuario: id_usuario} = await Teacher.getIdUser(numeroEmpleado);
+      res.json({ message: 'ID de usuario obtenido', id_usuario });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al obtener el ID de usuario', error: error.message });
+    }
+  }
   
   exports.getSecciones = async (req, res) => {
     try {

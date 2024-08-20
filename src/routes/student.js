@@ -15,8 +15,13 @@ router.put('/:numeroCuenta',upload.single('Imagen'), studentController.updateEst
 
 router.post('/enviarSolicitud', studentController.enviarSolicitud);
 // router.post('/aceptarSolicitud', studentController.aceptarSolicitud);
-
 router.get('/aceptarSolicitud', studentController.aceptarSolicitud);
+
+router.get('/correo/:numeroCuenta', studentController.getCorreo);
+router.post('/enviarCambioContrasena', studentController.enviarCambioContrasena);
+router.get('/aceptarCambioContrasena/:id', studentController.aceptarCambioContrasena);
+router.post('/cambioContrasena', studentController.cambioContrasenaSinValidacion);
+
 router.get('/usuarios', studentController.getAllUsers);
 
 //encuesta y vista de notas
@@ -26,8 +31,11 @@ router.get('/notas/:seccion/:estudiante', studentController.getNotas);
 ///Enpoindt de certificacion de notas y indices
 router.get('/certificacion/:id_estudiante', certifcacioController.getCertificacion);
 
+router.get('/certificacionVOAE/:numeroCuenta', certifcacioController.getCertificacionVOAE);
+router.get('/certificacionVOAE/pdf/:numeroCuenta', certifcacioController.getCertificacionVOAEpdf);
+
 router.get('/indice-global/:id_estudiante', certifcacioController.getIndiceGlobal);
-router.get('/indice-periodo/:id_estudiante/:periodo/:id_cunfigMatricula', certifcacioController.getIndicePorPeriodo);
+router.post('/indice-periodo/:id_estudiante/:periodo/:id_cunfigMatricula', certifcacioController.getIndicePorPeriodo);
 
 router.put('/indice-globalu/:id_estudiante', certifcacioController.putIndiceGlobal);
 router.put('/indice-periodou/:id_estudiante/:periodo', certifcacioController.putIndicePorPeriodo);
