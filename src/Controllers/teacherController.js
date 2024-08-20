@@ -23,6 +23,21 @@
        }  
     };
 
+
+    exports.getProcesoNota = async (req, res) => {
+    try {
+        const procesoNotas = await Teacher.getProcesoNota();
+        const today = new Date().toISOString().split('T')[0]; // Obtén la fecha actual en formato YYYY-MM-DD
+        const filteredProcesoNotas = procesoNotas.filter(proceso => 
+            proceso.fecha_inicio <= today && proceso.fecha_final >= today
+        );
+        res.json({ message: 'Lista de procesoNotas', data: filteredProcesoNotas });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ message: 'Error al obtener la lista de procesos', error: error.message });
+    }
+};
+
 // Controlador ajustado para enviar el archivo Excel
 exports.getStudentsExcel = async (req, res) => {
   try {
@@ -43,6 +58,42 @@ exports.getStudents = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener los estudiantes de la sección', error: error.message });
   }
 };  
+
+exports.getStudentNota = async (req, res) => {
+  try {
+    const { id_Seccion } = req.params;
+
+    // Obtener los estudiantes de la sección
+    const studentsResponse = await Teacher.getStudentsBySeccion(id_Seccion);
+    const { estudiantes, codigo , seccion} = studentsResponse;
+
+    // Obtener las notas y observaciones de los estudiantes de la sección
+    const notas = await Teacher.getNotasBySeccion(id_Seccion);
+
+    // Combinar la información de los estudiantes con sus notas y observaciones
+    const estudiantesConNotas = estudiantes.map(estudiante => {
+      const numeroCuentaEstudiante = estudiante.estudiante[0]?.numeroCuenta;
+      const notaEstudiante = notas.find(nota => nota.id_Estudiante === numeroCuentaEstudiante);
+      return {
+        ...estudiante,
+        nota: notaEstudiante ? notaEstudiante.nota : null,
+        obs: notaEstudiante ? notaEstudiante.obs : null,
+      };
+    });
+
+    res.json({ 
+      message: 'Estudiantes de la sección con sus notas y observaciones', 
+      seccion: codigo, 
+      estudiantes: estudiantesConNotas ,
+      id_Seccion: seccion,
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Error al obtener los estudiantes de la sección', 
+      error: error.message 
+    });
+  }
+};
 
     exports.finishCourse = async (req, res) => {
       try {
@@ -89,16 +140,23 @@ exports.getStudents = async (req, res) => {
       }
     };
 
-exports.uploadNotes = async (req, res) => {
-  try{
-    const {id_Secciones, id_Docentes, id_Estudiante ,nota, proceso, detail} = req.body;
-    const notas = await Teacher.uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso, detail);
-    res.json({ message: 'Notas subidas', data: notas});        
-
-  }catch (error) {
-    res.status(500).json({ message: 'Error al subir notas', error: error.message });
-  }
-};
+    exports.uploadNotes = async (req, res) => {
+      try {
+        const notas = req.body; // Recibe el array completo de notas
+    
+        let results = [];
+        for (const nota of notas) {
+          const { id_Secciones, id_Docentes, id_Estudiante, nota: score, proceso, detail } = nota;
+          const resultado = await Teacher.uploadNotes(id_Secciones, id_Docentes, id_Estudiante, score, proceso, detail);
+          results.push(resultado);
+        }
+    
+        res.json({ message: 'Notas procesadas', results });        
+      } catch (error) {
+        res.status(500).json({ message: 'Error al subir notas', error: error.message });
+      }
+    };
+    
 
 exports.updateNotes = async (req, res) => {
   try{

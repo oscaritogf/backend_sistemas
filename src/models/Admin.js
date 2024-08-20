@@ -911,6 +911,20 @@ static async generateUniqueEmployeeNumber() {
     }
     return newCancelacion;
   }
+  static async getConfiguraciones() {
+    const { data, error } = await supabase
+      .from('ConfiguracionMatricula')
+      .select(`
+        *,
+        Pac (id_Pac, pac),
+        TipoMatricula (id_TipoMatricula, tipoMatricula)
+      `);
+  
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
 ///Modelo para crear una configuracion de matricula 
 static async createConfiguracion(data) {
   const {
