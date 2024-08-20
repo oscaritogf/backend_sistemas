@@ -63,7 +63,55 @@ class Teacher {
             return data;
         
         }
-      
+        static async getNotasBySeccion(id_Seccion) {
+          const { data: notasSeccion, error: notasError } = await supabase
+            .from('Calificaciones_Registro')
+            .select(`
+              id_Estudiante,
+              nota,
+              obs,
+              estudiante(
+                usuario(
+                  Nombre,
+                  Apellido
+                )
+              )
+            `)
+            .eq('id_Seccion', id_Seccion);
+        
+          if (notasError) {
+            throw new Error(notasError.message);
+          }
+        
+          return notasSeccion.map(nota => ({
+            id_Estudiante: nota.id_Estudiante,
+            nombreEstudiante: `${nota.estudiante.usuario.Nombre} ${nota.estudiante.usuario.Apellido}`,
+            nota: nota.nota,  // Asegúrate de que este campo contiene el valor correcto
+            obs: nota.obs
+          }));
+        }
+
+        static async getProcesoNota() {
+          const { data: procesoNotas, error:errorProcesoNotas } = await supabase
+              .from('ProcesoNotas')
+              .select(`
+                  *
+                `)
+                .eq('estado', true);
+                
+                if (errorProcesoNotas) {
+                  throw new Error(errorProcesoNotas.message);
+                }
+            
+                return procesoNotas.map(proceso => ({
+                  id_ProcesoNotas: proceso.id,
+                  estado:proceso.estado ,
+                  fecha_inicio:proceso.fecha_inicio,
+                  fecha_final:proceso.fecha_final,
+                  id_ConfMatri:proceso.id_ConfMatri,
+                }));
+      } 
+
         static async getStudentsBySeccion(id_Secciones) {
           // Obtener la data de la seccion
           const { data: dataSeccion, error: errorSeccion } = await supabase
