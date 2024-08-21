@@ -150,23 +150,48 @@ exports.getStudentNota = async (req, res) => {
       }
     };
 
-    exports.uploadNotes = async (req, res) => {
-      try {
-        const notas = req.body; // Recibe el array completo de notas
+    // exports.uploadNotes = async (req, res) => {
+    //   try {
+    //     const notas = req.body; // Recibe el array completo de notas
     
-        let results = [];
-        for (const nota of notas) {
-          const { id_Secciones, id_Docentes, id_Estudiante, nota: score, proceso, detail } = nota;
-          const resultado = await Teacher.uploadNotes(id_Secciones, id_Docentes, id_Estudiante, score, proceso, detail);
-          results.push(resultado);
-        }
+    //     let results = [];
+    //     for (const nota of notas) {
+    //       const { id_Secciones, id_Docentes, id_Estudiante, nota: score, proceso, detail } = nota;
+    //       const resultado = await Teacher.uploadNotes(id_Secciones, id_Docentes, id_Estudiante, score, proceso, detail);
+    //       results.push(resultado);
+    //     }
     
-        res.json({ message: 'Notas procesadas', results });        
-      } catch (error) {
-        res.status(500).json({ message: 'Error al subir notas', error: error.message });
-      }
-    };
+    //     res.json({ message: results.message });        
+    //   } catch (error) {
+    //     res.status(500).json({ message: 'Error al subir notas', error: error.message });
+    //   }
+    // };
     
+  // Backend - ejemplo de cómo enviar mensajes de éxito o error
+exports.uploadNotes = async (req, res) => {
+  try {
+    const notas = req.body; // Recibe el array completo de notas
+
+    let results = [];
+    for (const nota of notas) {
+      const { id_Secciones, id_Docentes, id_Estudiante, nota: score, proceso, detail } = nota;
+      const resultado = await Teacher.uploadNotes(id_Secciones, id_Docentes, id_Estudiante, score, proceso, detail);
+      results.push(resultado);
+    }
+
+    // Verifica si hubo algún mensaje de error en los resultados
+    const errorMessages = results.filter(result => result.message && result.message !== 'Nota registrada').map(result => result.message);
+    
+    if (errorMessages.length > 0) {
+      return res.status(400).json({ message: errorMessages.join(', ') });
+    }
+
+    res.json({ message: 'Notas registradas con éxito' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al subir notas', error: error.message });
+  }
+};
+
 
 exports.updateNotes = async (req, res) => {
   try{

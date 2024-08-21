@@ -1,6 +1,7 @@
 const supabase = require('../config/supabase');
 const XLSX = require('xlsx');
 const fs = require('fs');
+const { error } = require('console');
 
 class Teacher {
 
@@ -200,11 +201,11 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
           .single();
 
       if (errorNota) {
-          throw errorNota;
+          return { message: 'Error al obtener datos del proceso de notas', error: errorNota.message };
       }
 
       if (typeof dataNota.estado !== 'boolean') {
-          throw new Error('El estado del proceso no es un valor booleano');
+          return { message: 'El estado del proceso no es un valor booleano' };
       }
 
       if (!dataNota.estado) {
@@ -218,7 +219,7 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
           .maybeSingle();
 
       if (eS) {
-          throw eS;
+          return { message: 'Error al obtener datos de la sección', error: eS.message };
       }
 
       if (!dS) {
@@ -236,7 +237,7 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
           obs = 'RPB';
       }
 
-      if (detail !== null){
+      if (detail !== 0){
           obs = 'ABD';
       }
 
@@ -247,7 +248,7 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
           .maybeSingle();
 
       if (errorEstudiante) {
-          throw errorEstudiante;
+          return { message: 'Error al obtener datos del estudiante', error: errorEstudiante.message };
       }
 
       const { data: existingNote, error: errorExistingNote } = await supabase
@@ -258,11 +259,11 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
           .maybeSingle();
 
       if (errorExistingNote) {
-          throw errorExistingNote;
+          return { message: 'Error al verificar notas existentes', error: errorExistingNote.message };
       }
 
       if (existingNote) {
-          return { message: 'Ya existe una nota para este estudiante en esta sección' };
+         return { message: 'Ya existe una nota para este estudiante en esta sección' };
       }
 
       const { data: dataNotaEstudiante, error: errorNotaEstudiante } = await supabase
@@ -279,16 +280,16 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
           }]);
 
       if (errorNotaEstudiante) {
-          throw errorNotaEstudiante;
+          return { message: 'Error al registrar la nota', error: errorNotaEstudiante.message };
       }
 
-      return { message: 'Nota actualizada' };
+      return { message: 'Nota registrada' };
   } catch (error) {
       console.error('Error en uploadNotes:', error.message);
       return { message: 'Error al subir notas', error: error.message };
   }
 }
- 
+
       
       
   static async getNotesByDocent(id_Secciones, id_Docentes) {
@@ -316,15 +317,15 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
     }
 
     if (dataNota.estado === false) {
-      return { message: 'El proceso de notas esta cerrado' };
+      return { error: 'El proceso de notas esta cerrado' };
     }
 
     if (nota < 0 || nota > 100) {
-      return { message: 'La nota debe estar entre 0 y 100' };
+      return { error: 'La nota debe estar entre 0 y 100' };
     }
 
     if (nota === '') {
-      return { message: 'La nota no puede estar vacia' };
+      return { error: 'La nota no puede estar vacia' };
     }
 
     let obs = 'NSP';
