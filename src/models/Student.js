@@ -496,7 +496,26 @@ class Student {
         }
       }
        */     
+      static async verificarEncuesta(id_Seccion, id_Estudiante) {
+        try {
+          const { data: existingEncuesta, error: existingEncuestaError } = await supabase
+            .from('evaluacion_docente')
+            .select('id')
+            .eq('id_Seccion', id_Seccion)
+            .eq('id_Estudiante', id_Estudiante)
+            .single();
       
+          if (existingEncuestaError && existingEncuestaError.code !== 'PGRST116') {
+            console.error('Error al verificar encuesta existente:', existingEncuestaError);
+            throw existingEncuestaError;
+          }
+      
+          return { completada: !!existingEncuesta };
+        } catch (error) {
+          console.error('Error en verificarEncuesta:', error);
+          throw error;
+        }
+      }
 
       static async notasEstudiante(id_Seccion, id_Estudiante) {
         try {

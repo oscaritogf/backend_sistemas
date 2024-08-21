@@ -191,7 +191,7 @@ exports.getAllUsers = async (req, res) => {
     }
 };
 
-/*exports.Encuesta = async (req, res) => {
+exports.Encuesta = async (req, res) => {
       try{
           const { id_Seccion, id_Estudiante, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5 } = req.body;
           const data = await Student.encuestaDocente( id_Seccion, id_Estudiante, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5);
@@ -201,7 +201,7 @@ exports.getAllUsers = async (req, res) => {
       }
 };  
 
-
+/*
 exports.getNotas = async (req, res) => {
     try {
         const { seccion, estudiante } = req.params;
@@ -211,7 +211,15 @@ exports.getNotas = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener notas', error: error.message });
     }
 }*/
-
+exports.verificarEncuesta = async (req, res) => {
+  try {
+    const { seccion, estudiante } = req.params;
+    const data = await Student.verificarEncuesta(seccion, estudiante);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al verificar encuesta', error: error.message });
+  }
+};
 exports.getNotas = async (req, res) => {
     try {
       const { seccion, estudiante } = req.params;
@@ -231,7 +239,7 @@ exports.getNotas = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener las secciones', error: error.message });
     }
   };
-  
+  /*
   exports.Encuesta = async (req, res) => {
     try {
       const { id_Seccion, id_Estudiante, pregunta1, pregunta2, pregunta3, pregunta4, pregunta5 } = req.body;
@@ -245,3 +253,4 @@ exports.getNotas = async (req, res) => {
       res.status(500).json({ message: 'Error al enviar encuesta', error: error.message });
     }
   };
+  */

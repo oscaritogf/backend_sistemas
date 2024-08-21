@@ -28,6 +28,7 @@ router.get('/usuarios', studentController.getAllUsers);
 router.post('/encuesta', studentController.Encuesta);
 router.get('/notas/:seccion/:estudiante', studentController.getNotas);
 router.get('/secciones/:numeroCuenta', studentController.getSecciones);
+router.get('/verificar-encuesta/:seccion/:estudiante', studentController.verificarEncuesta);
 
 ///Enpoindt de certificacion de notas y indices
 router.get('/certificacion/:id_estudiante', certifcacioController.getCertificacion);
