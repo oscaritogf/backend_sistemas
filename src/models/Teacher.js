@@ -306,54 +306,105 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
     return data;
   }
 
+  // static async updateNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso) {
+  //   const { data: dataNota, error: errorNota } = await supabase
+  //     .from('ProcesoNotas')
+  //     .select('estado')
+  //     .eq('id', proceso);
+
+  //   if (errorNota) {
+  //     throw errorNota;
+  //   }
+
+  //   if (dataNota.estado === false) {
+  //     return { error: 'El proceso de notas esta cerrado' };
+  //   }
+
+  //   if (nota < 0 || nota > 100) {
+  //     return { error: 'La nota debe estar entre 0 y 100' };
+  //   }
+
+  //   if (nota === '') {
+  //     return { error: 'La nota no puede estar vacia' };
+  //   }
+
+  //   let obs = 'NSP';
+
+  //   if (nota >= 65) {
+  //     obs = 'APB';
+  //   } else {
+  //     obs = 'RPB';
+  //   } 
+
+  //   if (nota === 0) {
+  //     obs = 'NSP';
+  //   }
+
+  //   const { data: dataNotaEstudiante, error: errorNotaEstudiante } = await supabase
+  //     .from('Calificaciones_Registro')
+  //     .update([{ nota: nota, obs: obs }])
+  //     .eq('id_Seccion', id_Secciones)
+  //     .eq('id_Docente', id_Docentes)
+  //     .eq('id_Estudiante', id_Estudiante);
+
+  //   if (errorNotaEstudiante) {
+  //     throw errorNotaEstudiante;
+  //   }
+
+  //   return { message: 'Nota actualizada' };
+  // }
   static async updateNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso) {
-    const { data: dataNota, error: errorNota } = await supabase
-      .from('ProcesoNotas')
-      .select('estado')
-      .eq('id', proceso);
-
-    if (errorNota) {
-      throw errorNota;
+    try {
+      // Obtener el estado del proceso de notas
+      const { data: dataNota, error: errorNota } = await supabase
+        .from('ProcesoNotas')
+        .select('estado')
+        .eq('id', proceso)
+        .single(); // Asegúrate de usar .single() para obtener un único registro
+  
+      if (errorNota) {
+        throw errorNota;
+      }
+  
+      if (dataNota.estado === false) {
+        return { error: 'El proceso de notas está cerrado' };
+      }
+  
+      if (nota < 0 || nota > 100) {
+        return { error: 'La nota debe estar entre 0 y 100' };
+      }
+  
+      if (nota === '') {
+        return { error: 'La nota no puede estar vacía' };
+      }
+  
+      // Determinar la observación
+      let obs = 'NSP';
+      if (nota >= 65) {
+        obs = 'APB';
+      } else if (nota !== 0) {
+        obs = 'RPB';
+      }
+  
+      // Actualizar la nota
+      const { data: dataNotaEstudiante, error: errorNotaEstudiante } = await supabase
+        .from('Calificaciones_Registro')
+        .update({ nota, obs })
+        .eq('id_Seccion', id_Secciones)
+        .eq('id_Docente', id_Docentes)
+        .eq('id_Estudiante', id_Estudiante);
+  
+      if (errorNotaEstudiante) {
+        throw errorNotaEstudiante;
+      }
+  
+      return { message: 'Nota actualizada' };
+    } catch (error) {
+      console.error('Error en updateNotes:', error.message);
+      return { error: 'Error al actualizar la nota', details: error.message };
     }
-
-    if (dataNota.estado === false) {
-      return { error: 'El proceso de notas esta cerrado' };
-    }
-
-    if (nota < 0 || nota > 100) {
-      return { error: 'La nota debe estar entre 0 y 100' };
-    }
-
-    if (nota === '') {
-      return { error: 'La nota no puede estar vacia' };
-    }
-
-    let obs = 'NSP';
-
-    if (nota >= 65) {
-      obs = 'APB';
-    } else {
-      obs = 'RPB';
-    } 
-
-    if (nota === 0) {
-      obs = 'NSP';
-    }
-
-    const { data: dataNotaEstudiante, error: errorNotaEstudiante } = await supabase
-      .from('Calificaciones_Registro')
-      .update([{ nota: nota, obs: obs }])
-      .eq('id_Seccion', id_Secciones)
-      .eq('id_Docente', id_Docentes)
-      .eq('id_Estudiante', id_Estudiante);
-
-    if (errorNotaEstudiante) {
-      throw errorNotaEstudiante;
-    }
-
-    return { message: 'Nota actualizada' };
   }
-
+  
 
 }
 module.exports = Teacher;
