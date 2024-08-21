@@ -445,8 +445,6 @@ exports.updateSection = async (req, res) => {
 
 };  
 
-
-
 exports.getEncuestasByDocente = async (req, res) => {
     try {
         const { id_Departamento } = req.params;

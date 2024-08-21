@@ -811,25 +811,42 @@ static async updateSeccion(data) {
     // Incluir id_Docentes solo si es diferente al original
     if (id_Docentes !== currentSeccion.id_Docentes) {
       updateData.id_Docentes = id_Docentes;
-  
+        
       // Verificar si el docente ya está asignado a otra sección en los mismos días y horarios
-      const { data: docenteConflict, error: docenteConflictError } = await supabase
-        .from('Secciones')
-        .select('id_Secciones')
-        .eq('id_Docentes', id_Docentes)
-        .eq('Hora_inicio', Hora_inicio)
-        .eq('Hora_Final', Hora_Final)
-        .neq('id_Secciones', id_Secciones)
-        .in('id_Secciones', dias.map(dia => dia.id_dia)) // Verificar en los mismos días
-        .single(); // Asegúrate de que se está usando el método correcto
-  
-      if (docenteConflictError) {
-        throw docenteConflictError;
-      }
-  
-      if (docenteConflict) {
-        throw new Error("El docente ya está asignado a otra sección con el mismo horario en los días seleccionados.");
-      }
+const { data: docenteConflict, error: docenteConflictError } = await supabase
+.from('Secciones')
+.select('id_Secciones')
+.eq('id_Docentes', id_Docentes)
+.eq('Hora_inicio', Hora_inicio)
+.eq('Hora_Final', Hora_Final)
+.neq('id_Secciones', id_Secciones);
+
+if (docenteConflictError) {
+throw docenteConflictError;
+}
+
+if (docenteConflict && docenteConflict.length > 0) {
+// Iterar sobre cada sección que tenga un conflicto potencial de horario
+for (const conflict of docenteConflict) {
+  // Obtener los días asignados a la sección conflictiva
+  const { data: conflictDays, error: conflictDaysError } = await supabase
+    .from('seccion_dias')
+    .select('id_dia')
+    .eq('id_seccion', conflict.id_Secciones);
+
+  if (conflictDaysError) {
+    throw conflictDaysError;
+  }
+
+  // Comparar los días de la sección conflictiva con los días de la sección actual
+  const conflictingDays = conflictDays.map(day => day.id_dia);
+  const hasDayConflict = dias.some(dia => conflictingDays.includes(dia));
+
+  if (hasDayConflict) {
+    throw new Error("El docente ya está asignado a otra sección con el mismo horario en los días seleccionados.");
+  }
+}
+}
     }
   
     if (canUpdateTime) {
