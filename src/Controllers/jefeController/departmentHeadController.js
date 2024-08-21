@@ -467,7 +467,7 @@ exports.getNotasByDepartment = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener la lista de notas', error: error.message });
   }
 
-}
+};
 
 exports.getStadisticsByDepartment = async (req, res) => {
   try {
@@ -477,4 +477,25 @@ exports.getStadisticsByDepartment = async (req, res) => {
   } catch (error) {
       res.status(500).json({ message: 'Error al obtener las estadísticas del departamento', error: error.message });
   }
-}
+};
+
+exports.getActiveDocentesByCenter = async (req, res) => {
+  try {
+      // Extraer el id del departamento del cuerpo de la solicitud
+      const { id_Departamento, id_Centro } = req.params;
+      
+      // Validar que id_Departamento esté presente
+      if (!id_Departamento) {
+          return res.status(400).json({ message: 'El id del departamento es requerido.' });
+      }
+
+      // Obtener la lista de docentes activos por departamento
+      const docentes = await Jefe.getActiveDocentesByCenter(id_Departamento, id_Centro);
+
+      // Enviar respuesta exitosa
+      res.json({ message: 'Lista de docentes activos por departamento', data: docentes });
+  } catch (error) {
+      console.error('Error al obtener la lista de docentes activos por departamento:', error);
+      res.status(500).json({ message: 'Error al obtener la lista de docentes activos por departamento', error: error.message });
+  }
+};

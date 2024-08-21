@@ -40,4 +40,5 @@ router.get('/notasdpt/:id_Departamento', departmentHeadController.getNotasByDepa
 
 router.get('/estadisticas/:id_Departamento', departmentHeadController.getStadisticsByDepartment);
 
+router.get('/docentes/activos/:id_Centro/:id_Departamento', departmentHeadController.getActiveDocentesByCenter);
 module.exports = router;

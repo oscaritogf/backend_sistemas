@@ -1243,6 +1243,63 @@ static async getStadisticsByDepartment(id_Departamento) {
 }
 
 
+static async getActiveDocentesByCenter(id_Departamento, id_Centro) {
+    // Paso 1: Obtener los empleados activos del departamento
+    const { data: empleados, error: empleadosError } = await supabase
+        .from('empleado')
+        .select('usuario, numeroEmpleado, Usuario(Correo, Nombre)')
+        .eq('estado', true)
+        .eq('id_Departamento', id_Departamento)
+        .eq('id_Centros', id_Centro);
+
+    if (empleadosError) {
+        throw empleadosError;
+    }
+
+    // Paso 2: Obtener los roles de los usuarios
+    const usuarios = empleados.map(e => e.usuario);
+    const { data: roles, error: rolesError } = await supabase
+        .from('UsuarioRol')
+        .select('id_Usuario, id_Rol')
+        .in('id_Usuario', usuarios);
+
+    if (rolesError) {
+        throw rolesError;
+    }
+
+    // Paso 3: Filtrar los usuarios que tienen roles 2 o 4
+    const usuariosConRolesExcluidos = roles
+        .filter(r => [2, 5].includes(r.id_Rol))
+        .map(r => r.id_Usuario);
+
+    // Paso 4: Obtener la información de Nombre y Apellido de los usuarios
+    const { data: usuariosInfo, error: usuariosInfoError } = await supabase
+        .from('Usuario')
+        .select('id, Nombre, Apellido')
+        .in('id', usuarios);
+
+    if (usuariosInfoError) {
+        throw usuariosInfoError;
+    }
+
+    // Paso 5: Filtrar los docentes que no tienen roles 2 o 4 y combinar nombres
+    const docentes = empleados
+        .filter(e => !usuariosConRolesExcluidos.includes(e.usuario))
+        .map(e => {
+            // Buscar el nombre y apellido del usuario
+            const usuarioInfo = usuariosInfo.find(ui => ui.id === e.usuario);
+            const nombreDocente = usuarioInfo ? `${usuarioInfo.Nombre} ${usuarioInfo.Apellido}` : 'Desconocido';
+            
+            return {
+                id_Usuario: e.usuario,
+                numeroEmpleado: e.numeroEmpleado,
+                Nombre_docente: nombreDocente,
+                correo: e.Usuario.Correo
+            };
+        });
+
+    return docentes;
+}
 
 
 
