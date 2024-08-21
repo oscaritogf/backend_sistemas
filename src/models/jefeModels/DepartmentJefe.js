@@ -711,110 +711,197 @@ static async Reset(token, newPassword) {
 
 }
 
+// * version correcta
+
 static async updateSeccion(data) {
     const { id_Secciones, id_Docentes, id_Aula, id_Edificios, Hora_inicio, Hora_Final, Cupos, dias } = data;
-
+  
+    // Validar que todos los valores necesarios estén definidos
+    if (!id_Secciones || !id_Docentes || !id_Aula || !id_Edificios || !Hora_inicio || !Hora_Final) {
+      throw new Error("Faltan valores necesarios para la actualización.");
+    }
+  
+    if (!Array.isArray(dias) || dias.length === 0) {
+      throw new Error("Debe seleccionar al menos un día para la sección.");
+    }
+  
+    // Obtener la cantidad de registros originales en la tabla seccion_dias
+    const { data: originalDias, error: originalDiasError } = await supabase
+      .from('seccion_dias')
+      .select('id_dia')
+      .eq('id_seccion', id_Secciones);
+  
+    if (originalDiasError) {
+      throw originalDiasError;
+    }
+  
+    const originalDiasCount = originalDias.length;
+  
     // Verificar si hay registros en la tabla matricula para la sección
     const { data: matriculaRecords, error: matriculaError } = await supabase
-        .from('matricula')
-        .select('id_matricula')
-        .eq('id_seccion', id_Secciones);
-
+      .from('matricula')
+      .select('id_matricula')
+      .eq('id_seccion', id_Secciones);
+  
     if (matriculaError) {
-        throw matriculaError;
+      throw matriculaError;
     }
-
-    // Si existen registros en la tabla matricula, no permitir la actualización de Hora_inicio ni Hora_Final
+  
+    // Obtener la Hora_inicio y Hora_Final actuales de la sección
+    const { data: currentSeccion, error: currentSeccionError } = await supabase
+      .from('Secciones')
+      .select('Hora_inicio, Hora_Final, id_Docentes')
+      .eq('id_Secciones', id_Secciones)
+      .single();
+  
+    if (currentSeccionError) {
+      throw currentSeccionError;
+    }
+  
+    const originalStartTime = new Date(`1970-01-01T${currentSeccion.Hora_inicio}`);
+    const originalEndTime = new Date(`1970-01-01T${currentSeccion.Hora_Final}`);
+    const originalTimeDifference = (originalEndTime - originalStartTime) / (1000 * 60 * 60); // Diferencia en horas
+  
+    // Verificar si se pueden actualizar las horas
     const canUpdateTime = matriculaRecords.length === 0;
-
-    if (!canUpdateTime && (Hora_inicio || Hora_Final)) {
-        console.log("No se puede modificar la hora de inicio o fin debido a que hay estudiantes matriculados en esta sección.");
+  
+    // Verificación adicional: Si hay estudiantes y se cambian las horas, lanzar error
+    if (matriculaRecords.length > 0 && (Hora_inicio !== currentSeccion.Hora_inicio || Hora_Final !== currentSeccion.Hora_Final)) {
+      throw new Error("No se pueden cambiar las horas de una sección que ya tiene estudiantes matriculados.");
     }
-
-    // Construir el objeto de actualización
-    const updateData = {
-        id_Docentes,
-        id_Aula,
-        id_Edificios
-    };
-
-    // Solo incluir Cupos si no es undefined
-    if (Cupos !== undefined) {
-        updateData.Cupos = Cupos;
-    }
-
-    if (canUpdateTime) {
-        updateData.Hora_inicio = Hora_inicio;
-        updateData.Hora_Final = Hora_Final;
-
-        // Validar que la Hora_Final sea mayor que la Hora_inicio
+  
+    // Validaciones de días y horas
+    if (!canUpdateTime) {
+      if (Hora_inicio === currentSeccion.Hora_inicio && Hora_Final === currentSeccion.Hora_Final) {
+        // Si las horas no cambian, la cantidad de días debe ser la misma
+        if (dias.length !== originalDiasCount) {
+          throw new Error(`Debe seleccionar exactamente ${originalDiasCount} días, que es la cantidad de días originales de la sección.`);
+        }
+      } else {
+        // Si las horas cambian, verificar la nueva diferencia
         const newStartTime = new Date(`1970-01-01T${Hora_inicio}`);
         const newEndTime = new Date(`1970-01-01T${Hora_Final}`);
-        if (newEndTime <= newStartTime) {
-            throw new Error("La Hora_Final debe ser mayor que la Hora_inicio");
+        const newTimeDifference = (newEndTime - newStartTime) / (1000 * 60 * 60); // Diferencia en horas
+  
+        if (dias.length === 1) {
+          // Si la nueva cantidad de días es 1, la nueva diferencia de horas debe ser igual a la anterior multiplicada por la cantidad original de días
+          if (newTimeDifference !== originalTimeDifference * originalDiasCount) {
+            throw new Error(`La diferencia de horas para un solo día debe ser equivalente a la diferencia original multiplicada por el número de días originales (${originalTimeDifference * originalDiasCount} horas).`);
+          }
+        } else if (dias.length > 1) {
+          // Si la nueva cantidad de días es mayor que 1, la diferencia de horas debe dividirse equitativamente entre los días
+          if (newTimeDifference * dias.length !== originalTimeDifference * originalDiasCount) {
+            throw new Error(`La diferencia de horas total debe ser equivalente a la diferencia original (${originalTimeDifference * originalDiasCount} horas) distribuida entre los días.`);
+          }
         }
-
-        // Verificar si hay traslape de horarios con el mismo aula, edificio y hora inicial
-        const { data: conflict, error: conflictError } = await supabase
-            .from('Secciones')
-            .select('id_Secciones')
-            .eq('id_Aula', id_Aula)
-            .eq('id_Edificios', id_Edificios)
-            .eq('Hora_inicio', Hora_inicio)
-            .neq('id_Secciones', id_Secciones)
-            .single();
-
-        if (conflictError && conflictError.code !== 'PGRST116') { // Ignorar error si no se encuentran registros
-            throw conflictError;
-        }
-
-        if (conflict) {
-            throw new Error("Existe un traslape de horarios con otra sección en el mismo aula y edificio.");
-        }
+      }
     }
-
+  
+    // Construir el objeto de actualización
+    const updateData = {
+      id_Aula,
+      id_Edificios
+    };
+  
+    // Solo incluir Cupos si no es undefined
+    if (Cupos !== undefined) {
+      updateData.Cupos = Cupos;
+    }
+  
+    // Incluir id_Docentes solo si es diferente al original
+    if (id_Docentes !== currentSeccion.id_Docentes) {
+      updateData.id_Docentes = id_Docentes;
+  
+      // Verificar si el docente ya está asignado a otra sección en los mismos días y horarios
+      const { data: docenteConflict, error: docenteConflictError } = await supabase
+        .from('Secciones')
+        .select('id_Secciones')
+        .eq('id_Docentes', id_Docentes)
+        .eq('Hora_inicio', Hora_inicio)
+        .eq('Hora_Final', Hora_Final)
+        .neq('id_Secciones', id_Secciones)
+        .in('id_Secciones', dias.map(dia => dia.id_dia)) // Verificar en los mismos días
+        .single(); // Asegúrate de que se está usando el método correcto
+  
+      if (docenteConflictError) {
+        throw docenteConflictError;
+      }
+  
+      if (docenteConflict) {
+        throw new Error("El docente ya está asignado a otra sección con el mismo horario en los días seleccionados.");
+      }
+    }
+  
+    if (canUpdateTime) {
+      updateData.Hora_inicio = Hora_inicio;
+      updateData.Hora_Final = Hora_Final;
+  
+      // Validar que la Hora_Final sea mayor que la Hora_inicio
+      const newStartTime = new Date(`1970-01-01T${Hora_inicio}`);
+      const newEndTime = new Date(`1970-01-01T${Hora_Final}`);
+      if (newEndTime <= newStartTime) {
+        throw new Error("La Hora_Final debe ser mayor que la Hora_inicio");
+      }
+  
+      // Verificar si hay traslape de horarios con el mismo aula, edificio y hora inicial
+      const { data: conflict, error: conflictError } = await supabase
+        .from('Secciones')
+        .select('id_Secciones')
+        .eq('id_Aula', id_Aula)
+        .eq('id_Edificios', id_Edificios)
+        .eq('Hora_inicio', Hora_inicio)
+        .neq('id_Secciones', id_Secciones)
+        .single(); // Asegúrate de que se está usando el método correcto
+  
+      if (conflictError && conflictError.code !== 'PGRST116') { // Ignorar error si no se encuentran registros
+        throw conflictError;
+      }
+  
+      if (conflict) {
+        throw new Error("Existe un traslape de horarios con otra sección en el mismo aula y edificio.");
+      }
+    }
+  
     // Registrar el objeto updateData antes de hacer la actualización
     console.log("Datos de actualización:", updateData);
-
+  
     // Actualizar la sección con los nuevos datos
     const { data: seccion, error } = await supabase
-        .from('Secciones')
-        .update(updateData)
-        .eq('id_Secciones', id_Secciones)
-        .single();
-
+      .from('Secciones')
+      .update(updateData)
+      .eq('id_Secciones', id_Secciones)
+      .single();
+  
     if (error) {
-        throw error;
+      throw error;
     }
-
+  
     // Eliminar los días existentes para la sección
     const { error: deleteError } = await supabase
-        .from('seccion_dias')
-        .delete()
-        .eq('id_seccion', id_Secciones);
-
+      .from('seccion_dias')
+      .delete()
+      .eq('id_seccion', id_Secciones);
+  
     if (deleteError) {
-        throw deleteError;
+      throw deleteError;
     }
-
+  
     // Insertar los nuevos días
     const insertData = dias.map(dia => ({
-        id_seccion: id_Secciones,
-        id_dia: dia
+      id_seccion: id_Secciones,
+      id_dia: dia
     }));
-
+  
     const { error: insertError } = await supabase
-        .from('seccion_dias')
-        .insert(insertData);
-
+      .from('seccion_dias')
+      .insert(insertData);
+  
     if (insertError) {
-        throw insertError;
+      throw insertError;
     }
-
+  
     return seccion;
-}
-
-
+  }
 
 // DAtos de las encuestas por departamento
 static async getEvaluacionesDocente(id_Departamento) {

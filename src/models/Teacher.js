@@ -195,7 +195,7 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
   try {
       const { data: dataNota, error: errorNota } = await supabase
           .from('ProcesoNotas')
-          .select('estado')
+          .select('estado', 'id_ConfMatri')
           .eq('id', proceso)
           .single();
 
@@ -240,6 +240,16 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
           obs = 'ABD';
       }
 
+      const { data: dataEstudiante, error: errorEstudiante } = await supabase
+          .from('estudiante')
+          .select('id_Departamento')
+          .eq('numeroCuenta', id_Estudiante)
+          .maybeSingle();
+
+      if (errorEstudiante) {
+          throw errorEstudiante;
+      }
+
       const { data: existingNote, error: errorExistingNote } = await supabase
           .from('Calificaciones_Registro')
           .select('id_CR')
@@ -263,7 +273,9 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
               id_Estudiante: id_Estudiante,
               codigo_Asignatura: dS.codigoAsignatura,
               nota: nota,
-              obs: obs
+              obs: obs,
+              id_ConfMatri: dataNota.id_ConfMatri,
+              id_Departamento: dataEstudiante.id_Departamento
           }]);
 
       if (errorNotaEstudiante) {
