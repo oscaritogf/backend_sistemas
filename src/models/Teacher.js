@@ -195,7 +195,7 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
   try {
       const { data: dataNota, error: errorNota } = await supabase
           .from('ProcesoNotas')
-          .select('estado', 'id_ConfMatri')
+          .select('estado , id_ConfMatri')
           .eq('id', proceso)
           .single();
 
@@ -274,7 +274,7 @@ static async uploadNotes(id_Secciones, id_Docentes, id_Estudiante, nota, proceso
               codigo_Asignatura: dS.codigoAsignatura,
               nota: nota,
               obs: obs,
-              id_ConfMatri: dataNota.id_ConfMatri,
+              id_CunfigMatricula: dataNota.id_ConfMatri,
               id_Departamento: dataEstudiante.id_Departamento
           }]);
 
