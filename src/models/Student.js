@@ -408,7 +408,7 @@ class Student {
           throw error;
         }
       }
-      
+      /*
       static async notasEstudiante(id_Seccion, id_Estudiante) {
         try {
           // Verificar si existe una evaluación docente para el estudiante y la sección
@@ -448,55 +448,145 @@ class Student {
           return notas[0]; // Retorna la primera nota si existe
         } catch (error) {
           console.error('Error en notasEstudiante:', error);
+          throw error;
+        }
+      }*/
+
+      /*
+      static async notasEstudiante(id_Seccion, id_Estudiante) {
+        try {
+          // Verificar si existe una evaluación docente para el estudiante y la sección
+          const { data: evaluacion, error: evaluacionError } = await supabase
+            .from('evaluacion_docente')
+            .select('id')
+            .eq('id_Seccion', id_Seccion)
+            .eq('id_Estudiante', id_Estudiante)
+            .single();
+      
+          if (evaluacionError && evaluacionError.code !== 'PGRST116') { // 'PGRST116' es el código de error para "no hay resultados"
+            console.error('Error al verificar evaluación docente:', evaluacionError);
+            throw evaluacionError;
+          }
+      
+          if (!evaluacion) {
+            return { message: 'evalua al docente' };
+          }
+      
+          // Si existe la evaluación, obtener las notas
+          const { data: notas, error: notasError } = await supabase
+            .from('Calificaciones_Registro')
+            .select('*')
+            .eq('id_Seccion', id_Seccion)
+            .eq('id_Estudiante', id_Estudiante)
+            .limit(1); // Usa limit en lugar de single
+      
+          if (notasError) {
+            console.error('Error al obtener notas:', notasError);
+            throw notasError;
+          }
+      
+          if (!notas || notas.length === 0) {
+            return { message: 'No se encontraron notas para este estudiante en esta sección' };
+          }
+      
+          return notas[0]; // Retorna la primera nota si existe
+        } catch (error) {
+          console.error('Error en notasEstudiante:', error);
+          throw error;
+        }
+      }
+       */     
+      
+
+      static async notasEstudiante(id_Seccion, id_Estudiante) {
+        try {
+          const { data: notas, error: notasError } = await supabase
+            .from('Calificaciones_Registro')
+            .select('*, Secciones:id_Seccion(*), Usuario:id_Docente(Usuario:usuario(Nombre, Apellido))')
+            .eq('id_Seccion', id_Seccion)
+            .eq('id_Estudiante', id_Estudiante)
+            .limit(1);
+    
+          if (notasError) {
+            console.error('Error al obtener notas:', notasError);
+            throw notasError;
+          }
+    
+          if (!notas || notas.length === 0) {
+            return { message: 'No se encontraron notas para este estudiante en esta sección' };
+          }
+    
+          return notas[0];
+        } catch (error) {
+          console.error('Error en notasEstudiante:', error);
+          throw error;
+        }
+      }
+    
+      static async getSecciones(numeroCuenta) {
+        try {
+            // 1. Obtener el id del estudiante basado en el numeroCuenta
+            const { data: studentData, error: studentError } = await supabase
+                .from('estudiante')
+                .select('id')
+                .eq('numeroCuenta', numeroCuenta)
+                .single(); // Solo debería haber un registro que coincida
+    
+            if (studentError) throw studentError;
+            const estudianteId = studentData.id;
+    
+            // 2. Obtener las secciones matriculadas por el id del estudiante
+            const { data, error } = await supabase
+                .from('matricula')
+                .select(`
+                    id_seccion,
+                    Secciones (
+                        Hora_inicio,
+                        id_Secciones, 
+                        codigoAsignatura, 
+                        Asignaturas (nombre),
+                        empleado:id_Docentes(Usuario(Nombre, Apellido))
+                    )
+                `)
+                .eq('id_estudiante', estudianteId);
+    
+            if (error) throw error;
+    
+            return data.map(item => ({
+                id_Secciones: item.Secciones.id_Secciones,
+                codigoAsignatura: item.Secciones.codigoAsignatura,
+                nombreAsignatura: item.Secciones.Asignaturas.nombre,
+                Hora_inicio: item.Secciones.Hora_inicio,
+                nombreDocente: `${item.Secciones.empleado.Usuario.Nombre} ${item.Secciones.empleado.Usuario.Apellido}`
+            }));
+        } catch (error) {
+            console.error('Error en getSecciones:', error);
+            throw error;
+        }
+    }
+    
+
+      static async getEvaluacionDocente(id_Seccion, id_Estudiante) {
+        try {
+          const { data, error } = await supabase
+            .from('evaluacion_docente')
+            .select('id')
+            .eq('id_Seccion', id_Seccion)
+            .eq('id_Estudiante', id_Estudiante)
+            .single();
+    
+          if (error) {
+            console.error('Error al verificar evaluación docente:', error);
+            throw error;
+          }
+    
+          return !!data;
+        } catch (error) {
+          console.error('Error en getEvaluacionDocente:', error);
           throw error;
         }
       }
 
-      
-      static async notasEstudiante(id_Seccion, id_Estudiante) {
-        try {
-          // Verificar si existe una evaluación docente para el estudiante y la sección
-          const { data: evaluacion, error: evaluacionError } = await supabase
-            .from('evaluacion_docente')
-            .select('id')
-            .eq('id_Seccion', id_Seccion)
-            .eq('id_Estudiante', id_Estudiante)
-            .single();
-      
-          if (evaluacionError && evaluacionError.code !== 'PGRST116') { // 'PGRST116' es el código de error para "no hay resultados"
-            console.error('Error al verificar evaluación docente:', evaluacionError);
-            throw evaluacionError;
-          }
-      
-          if (!evaluacion) {
-            return { message: 'evalua al docente' };
-          }
-      
-          // Si existe la evaluación, obtener las notas
-          const { data: notas, error: notasError } = await supabase
-            .from('Calificaciones_Registro')
-            .select('*')
-            .eq('id_Seccion', id_Seccion)
-            .eq('id_Estudiante', id_Estudiante)
-            .limit(1); // Usa limit en lugar de single
-      
-          if (notasError) {
-            console.error('Error al obtener notas:', notasError);
-            throw notasError;
-          }
-      
-          if (!notas || notas.length === 0) {
-            return { message: 'No se encontraron notas para este estudiante en esta sección' };
-          }
-      
-          return notas[0]; // Retorna la primera nota si existe
-        } catch (error) {
-          console.error('Error en notasEstudiante:', error);
-          throw error;
-        }
-      }
-            
-   
 }
 
 module.exports = Student;
